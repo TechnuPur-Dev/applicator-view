@@ -1,0 +1,12 @@
+{
+	"extends": "./tsconfig.json",         // Inherit settings from tsconfig.json
+	"compilerOptions": {
+		"outDir": "./dist",               // Output directory for build files
+		"declaration": true,              // Generate .d.ts declaration files
+		"sourceMap": false,               // Do not generate source maps for production
+		"removeComments": true            // Remove comments from the output
+	},
+	"exclude": ["apps/**/src/modules/**/tests/**",       // Exclude test files
+	            "dist",                   // Exclude already-built files
+	            "node_modules"]
+}

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022"],                  // Use ES2022 for safer compatibility
+    "target": "ES2022",                // Match the lib version
+    "module": "commonjs",              // Use commonjs for Node.js compatibility
+    "strict": true,                    // Enable strict type-checking
+    "moduleResolution": "node",        // Resolve modules using Node.js conventions
+    "outDir": "./build",               // Directory for compiled output
+    "emitDecoratorMetadata": true,     // Emit metadata for decorators
+    "experimentalDecorators": true,    // Enable support for decorators
+    "sourceMap": true,                 // Generate source maps for debugging
+    "resolveJsonModule": true,         // Allow importing JSON modules
+    "esModuleInterop": true            // Enable interop with CommonJS modules
+  },
+  "include": [
+    "apps",               // Include all files in apps folder
+    "shared"               // Include all files in the shared folder
+  ],
+  "exclude": [
+    "node_modules",                    // Exclude dependencies
+    "dist",                            // Exclude build output
+    "build"                            // Optionally exclude build directory
+  ]
+}

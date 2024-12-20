@@ -1,0 +1,41 @@
+# IDE & Editor Files
+.idea/                 
+.vscode/
+
+# Node.js Dependencies
+node_modules/
+
+# Build Artifacts
+build/                 
+tmp/                   
+temp/                  
+
+# Log Files
+logs                   
+coverage               
+coverage/lcov.info     
+coverage/lcov-report   
+coverage/coverage-final.json  
+coverage/clover.xml    
+
+# NYC output (for Istanbul coverage tool)
+/.nyc_output/          
+
+# Environment files
+.env.prod              
+.env.staging           
+**/.DS_Store           
+
+# Test Debug Files
+npm-debug.log*         
+yarn-debug.log*        
+yarn-error.log*        
+
+# Dist output (for transpiled/compiled files)
+dist/
+
+# ESLint cache
+.eslintcache            
+
+# Docker files
+.dockerignore

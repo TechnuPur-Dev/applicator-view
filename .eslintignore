@@ -1,0 +1,18 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build output
+dist/
+build/
+
+# Ignore TypeScript declaration files
+*.d.ts
+
+# Ignore environment configuration files
+.env
+
+# Ignore coverage reports
+coverage/
+
+# Ignore specific files
+src/legacy-code.js
