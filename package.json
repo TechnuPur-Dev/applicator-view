@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node build/src/server.js",
-    "dev": "nodemon apps/auth-service/index.ts",
+    "dev": "nodemon apps/user-service/index.ts",
     "build": "tsc -p . && cp package.json ./build/package.json && cp package-lock.json ./build/package-lock.json && cp .env ./build/.env",
     "lint": "eslint src/**/*.ts",
     "lint-fix": "eslint --fix src/**/*.ts",

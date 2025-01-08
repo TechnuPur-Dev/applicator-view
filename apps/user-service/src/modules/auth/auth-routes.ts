@@ -5,10 +5,6 @@ import authController from './auth-controller';
 const router: Router = express.Router();
 
 // Define routes
-router.route('/signUp/sendOTP').post(authController.verifyPhoneAndSendOTP);
-
-// router
-//   .route('/signUp/verifyOTP')
-//   .post(authController.verifyOTPAndRegisterPhone);
+router.route('/register').post(authController.registerUser);
 
 export default router;

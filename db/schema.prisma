@@ -1,20 +1,41 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["metrics", "omitApi", "tracing"]
+  previewFeatures = ["metrics", "omitApi"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  firstName String?
-  lastName  String?
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    Int      @id @default(autoincrement())
+  profileImage          String?
+  thumbnailProfileImage String?
+  firstName             String?
+  lastName              String?
+  fullName              String?  @default("")
+  email                 String?  @unique
+  phoneNumber           String?
+  password              String?
+  role                  UserRole
+  businessName          String?
+  experience            Decimal?
+  address1              String?
+  address2              String?
+  state                 String?
+  county                String?
+  township              String?
+  zipCode               String?
+  bio                   String?
+  additionalInfo        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+enum UserRole {
+  GROWER
+  APPLICATOR
+  WORKER
 }

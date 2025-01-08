@@ -4,20 +4,53 @@ import { Prisma } from '@prisma/client';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { VerifyPhoneRequestBody } from './auth-types';
+import { RegisterUser } from './auth-types';
 
 // Service for verifying phone and sending OTP
-const verifyPhoneAndSendOTP = async (data: VerifyPhoneRequestBody) => {
+const registerUser = async (data: RegisterUser) => {
 	try {
-		const { firstName, lastName, email, password } = data;
+		const {
+			profileImage,
+			thumbnailProfileImage,
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			password,
+			role,
+			businessName,
+			experience,
+			address1,
+			address2,
+			state,
+			county,
+			township,
+			zipCode,
+			bio,
+			additionalInfo,
+		} = data;
 
-		// Create user in the database
 		const user = await prisma.user.create({
 			data: {
+				profileImage,
+				thumbnailProfileImage,
 				firstName,
 				lastName,
+				fullName: `${firstName} ${lastName}`,
 				email,
+				phoneNumber,
 				password,
+				role,
+				businessName,
+				experience,
+				address1,
+				address2,
+				state,
+				county,
+				township,
+				zipCode,
+				bio,
+				additionalInfo,
 			},
 			omit: {
 				password: true, // Omit password from the response to prevent exposing it to clients
@@ -44,5 +77,5 @@ const verifyPhoneAndSendOTP = async (data: VerifyPhoneRequestBody) => {
 };
 
 export default {
-	verifyPhoneAndSendOTP,
+	registerUser,
 };
