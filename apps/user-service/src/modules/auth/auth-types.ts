@@ -20,5 +20,10 @@ interface RegisterUser {
 	bio?: string;
 	additionalInfo?: string;
 }
+interface LoginUser{
+	email: string;
+	password: string;
 
-export { RegisterUser };
+}
+
+export { RegisterUser ,LoginUser };
