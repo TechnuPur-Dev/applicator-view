@@ -30,12 +30,45 @@ model User {
   zipCode               String?
   bio                   String?
   additionalInfo        String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+
+  applicators ApplcatorGrower[] @relation("Applcators")
+  growers     ApplcatorGrower[] @relation("Growers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum UserRole {
   GROWER
   APPLICATOR
   WORKER
+}
+
+model ApplcatorGrower {
+  id                  Int     @id @default(autoincrement())
+  applicatorId        Int
+  growerId            Int
+  // Custom names specific to the relationship
+  applicatorFirstName String?
+  applicatorLastName  String?
+  growerFirstName     String?
+  growerLastName      String?
+
+  inviteStatus InviteStatus @default(NOT_SENT)
+  isArchived   Boolean      @default(false)
+
+  applicator User @relation("Applcators", fields: [applicatorId], references: [id])
+  grower     User @relation("Growers", fields: [growerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicatorId, growerId])
+}
+
+enum InviteStatus {
+  NOT_SENT
+  PENDING
+  ACCEPTED
+  REJECTED
 }
