@@ -7,8 +7,12 @@ const router: Router = express.Router();
 
 // Define routes
 router.route('/all-users').get(userController.getUserList);
+router.route('/:email').get(userController.getUserByEmail);
 router.route('/:id').get(userController.getUserById);
 router.route('/:id').patch(userController.updateUserById);
 router.route('/:id').delete(userController.deleteUser);
+router.route('/create-grower').post(userController.createGrower);
+
+
 
 export default router;
