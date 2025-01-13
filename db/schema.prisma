@@ -45,9 +45,15 @@ enum UserRole {
 }
 
 model ApplcatorGrower {
-  id           Int          @id @default(autoincrement())
-  applicatorId Int
-  growerId     Int
+  id                  Int     @id @default(autoincrement())
+  applicatorId        Int
+  growerId            Int
+  // Custom names specific to the relationship
+  applicatorFirstName String?
+  applicatorLastName  String?
+  growerFirstName     String?
+  growerLastName      String?
+
   inviteStatus InviteStatus @default(NOT_SENT)
   isArchived   Boolean      @default(false)
 
