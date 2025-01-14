@@ -201,6 +201,9 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 				additionalInfo,
 				role: 'GROWER',
 			},
+			omit: {
+				password: true, // Omit password from the response to prevent exposing it to clients
+			},
 		});
 
 		await prisma.applcatorGrower.create({
@@ -235,6 +238,51 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 		}
 	}
 };
+// get All Growers
+const getAllGrowers = async () => {
+	try {
+		const users = await prisma.applcatorGrower.findMany({
+			// where: {
+			// 	isArchived: false, // You can filter out archived records if needed
+			//   },
+			  include: {
+				grower: {
+					select: {
+						id: true,
+						profileImage:true,
+						thumbnailProfileImage:true,
+						firstName: true,
+						lastName: true,
+						fullName:true,
+						email: true,
+						phoneNumber: true,
+						role:true,
+						businessName: true,
+						experience: true,
+						address1: true,
+						address2: true,
+						state: true,
+						county: true,
+						township: true,
+						zipCode: true,
+						bio: true,
+						additionalInfo: true,
+						// No password field included here
+					  }
+				} // Include related grower data
+			  },
+			
+		}
+			
+		); // Fetch all users
+		return users || [];
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.NOT_FOUND, 'some thing went wrong');
+		}
+	}
+};
 export default {
 	getUserByID,
 	deleteUser,
@@ -242,4 +290,5 @@ export default {
 	getUserList,
 	getUserByEmail,
 	createGrower,
+	getAllGrowers
 };
