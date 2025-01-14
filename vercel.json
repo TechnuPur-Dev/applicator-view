@@ -3,10 +3,7 @@
   "builds": [
     {
       "src": "apps/user-service/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "installCommand": "npm install --prefix ."
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -14,5 +11,6 @@
       "src": "/(.*)",
       "dest": "apps/user-service/index.ts"
     }
-  ]
+  ],
+  "installCommand": "npm install --prefix ./"
 }
