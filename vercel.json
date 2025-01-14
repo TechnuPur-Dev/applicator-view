@@ -1,25 +1,15 @@
 {
   "version": 2,
-  "projects": {
-    "user-service": {
-      "source": "apps/user-service",
-      "outputDirectory": "apps/user-service/build",
-      "buildCommand": "npm run build:user-service"
-    }
-  },
   "builds": [
     {
-      "src": "apps/user-service/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "distDir": "apps/user-service/build"
-      }
+      "src": "apps/user-service/index.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/user-service/(.*)",
-      "dest": "apps/user-service/index.js"
+      "src": "/(.*)",
+      "dest": "apps/user-service/index.ts"
     }
   ]
 }
