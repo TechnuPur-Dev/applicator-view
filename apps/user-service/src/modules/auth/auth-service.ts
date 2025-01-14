@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { RegisterUser } from './auth-types';
+import { RegisterUser, LoginUser } from './auth-types';
 
 // Service for verifying phone and sending OTP
 const registerUser = async (data: RegisterUser) => {
@@ -75,7 +75,57 @@ const registerUser = async (data: RegisterUser) => {
 		}
 	}
 };
+const loginUser = async (data: LoginUser) => {
+	try {
+		const { email, password } = data;
+
+		const user = await prisma.user.findUnique({
+			where: { email },
+		});
+
+		if (!user) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+		}
+
+		const isPasswordValid = password === user.password;
+
+		if (!isPasswordValid) {
+			throw new ApiError(httpStatus.UNAUTHORIZED,'Password is incorrect');
+		} 
+		else {
+			const { password, ...userWithoutPassword } = user; // Exclude password
+			return userWithoutPassword;
+		}
+	} catch (error) {
+		if (error instanceof Error) {
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
+const verifyEmail = async (email: string) => {
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				email,
+			},
+			omit: {
+				password: true, // Omit password from the response to prevent exposing it to clients
+			},
+		});
+
+		if (!user) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+		}
+		return user;
+	} catch (error) {
+		if (error instanceof Error) {
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
 
 export default {
 	registerUser,
+	loginUser,
+	verifyEmail,
 };
