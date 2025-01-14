@@ -13,6 +13,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "auth-service": "file:"
+    "@types/express": "^5.0.0",
+    "auth-service": "file:",
+    "express": "^4.21.1"
   }
 }

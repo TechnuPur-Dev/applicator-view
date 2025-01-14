@@ -15,7 +15,8 @@
     "precommit": "npm run lint-fix && npm run format",
     "prepush": "npm run lint ",
     "test": "jest --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "postinstall": "npm install --prefix apps/user-service"
   },
   "author": "Mudassar Ansari",
   "dependencies": {
@@ -23,6 +24,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.9.1",
     "@types/swagger-ui-express": "^4.1.7",
+    "@vercel/node": "^5.0.2",
     "acre-connect": "file:",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
