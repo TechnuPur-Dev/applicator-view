@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node build/apps/user-service/index.js",
+    "dev": "nodemon apps/user-service/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest --coverage"
   },
   "author": "",
   "license": "ISC",

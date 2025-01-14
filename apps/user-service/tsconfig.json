@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "moduleResolution": "node",
+    "outDir": "./build",  // Directory for compiled output
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*",           // Include everything in the src folder
+    "index.ts",           // Explicitly include index.ts outside src
+    "app.ts",             // Explicitly include app.ts outside src
+    "../../shared/**/*"   // Include shared folder, relative path from user-service
+  ],
+  "exclude": [
+    "node_modules",       // Exclude dependencies
+    "dist",               // Exclude build output
+    "build"               // Optionally exclude build directory
+  ]
+}
