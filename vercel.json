@@ -12,5 +12,5 @@
       "dest": "apps/user-service/index.ts"
     }
   ],
-  "installCommand": "npm install --prefix ./../"
+  "installCommand": "npm install"
 }
