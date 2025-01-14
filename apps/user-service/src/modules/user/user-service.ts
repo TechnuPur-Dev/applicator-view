@@ -11,6 +11,9 @@ const getUserByID = async (userId: string) => {
 			where: {
 				id: parseInt(userId),
 			},
+			include: {
+				applicators: true,
+			},
 		});
 
 		return user;
@@ -36,7 +39,6 @@ const getUserByID = async (userId: string) => {
 const updateUserById = async (data: UpdateUser, userId: string) => {
 	// Only accept the fields sent by the frontend
 	const dataToUpdate = data;
-	console.log(dataToUpdate, 'dataToUpdate');
 	try {
 		await prisma.user.update({
 			where: {
@@ -122,9 +124,122 @@ const getUserList = async () => {
 		}
 	}
 };
+
+// getUserByEmail
+const getUserByEmail = async (userEmail: string) => {
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				email: userEmail,
+				role: 'GROWER',
+			},
+			// Ensure the user has the 'GROWER' role
+		});
+
+		return user || null;
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A user with this email does not exist.',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors or unexpected errors
+			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+		}
+	}
+};
+
+// create grower
+const createGrower = async (data: UpdateUser, userId: number) => {
+	// Only accept the fields sent by the frontend
+	try {
+		const {
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			businessName,
+			experience,
+			address1,
+			address2,
+			state,
+			county,
+			township,
+			zipCode,
+			bio,
+			additionalInfo,
+		} = data;
+
+		// to extract applicator data for applcatorGrower model
+		const applicator = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+		const grower = await prisma.user.create({
+			data: {
+				firstName,
+				lastName,
+				fullName: `${firstName} ${lastName}`,
+				email,
+				phoneNumber,
+				businessName,
+				experience,
+				address1,
+				address2,
+				state,
+				county,
+				township,
+				zipCode,
+				bio,
+				additionalInfo,
+				role: 'GROWER',
+			},
+		});
+
+		await prisma.applcatorGrower.create({
+			data: {
+				applicatorId: userId,
+				growerId: grower.id,
+				applicatorFirstName: applicator?.firstName,
+				applicatorLastName: applicator?.lastName,
+				growerFirstName: grower.firstName,
+				growerLastName: grower.lastName,
+				inviteStatus: 'NOT_SENT',
+				isArchived: false,
+				// Optionally set other fields like inviteStatus, isArchived
+			},
+		});
+
+		return { grower, message: 'Grower successfully added.' };
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2002') {
+				throw new ApiError(
+					httpStatus.CONFLICT,
+					'A user with this email already exists.',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
 export default {
 	getUserByID,
 	deleteUser,
 	updateUserById,
 	getUserList,
+	getUserByEmail,
+	createGrower,
 };
