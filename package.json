@@ -10,13 +10,11 @@
     "lint": "eslint apps/user-service/src/**/*.ts",
     "lint-fix": "eslint --fix apps/user-service/src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "prepare": "husky",
     "test:custom": "npm test --  tests/unit-tests/lib/crypto.spec.ts",
     "precommit": "npm run lint-fix && npm run format",
     "prepush": "npm run lint ",
     "test": "jest --coverage",
-    "test:watch": "jest --watch",
-    "postinstall": "npm install --prefix apps/user-service"
+    "test:watch": "jest --watch"
   },
   "author": "Mudassar Ansari",
   "dependencies": {
@@ -24,7 +22,6 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.9.1",
     "@types/swagger-ui-express": "^4.1.7",
-    "@vercel/node": "^5.0.2",
     "acre-connect": "file:",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
@@ -53,6 +50,7 @@
     "@types/jest": "^29.5.14",
     "@types/morgan": "^1.9.9",
     "@types/supertest": "^6.0.2",
+    "@vercel/node": "^5.0.2",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jest": "^28.9.0",
