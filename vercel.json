@@ -6,12 +6,6 @@
       "use": "@vercel/node"
     }
   ],
-  "functions": {
-    "apps/user-service/index.ts": {
-      "runtime": "@vercel/node",
-      "includeFiles": "apps/user-service/**"
-    }
-  },
   "routes": [
     {
       "src": "/(.*)",
