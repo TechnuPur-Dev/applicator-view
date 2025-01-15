@@ -14,7 +14,8 @@
     "precommit": "npm run lint-fix && npm run format",
     "prepush": "npm run lint ",
     "test": "jest --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "postinstall": "prisma generate"
   },
   "author": "Mudassar Ansari",
   "dependencies": {
