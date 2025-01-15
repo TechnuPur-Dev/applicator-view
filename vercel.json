@@ -3,12 +3,21 @@
   "builds": [
     {
       "src": "apps/user-service/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["apps/user-service/**", "node_modules/**", "tsconfig.json", "package.json"]
-      }
+      "use": "@vercel/node"
     }
   ],
+  "functions": {
+    "apps/user-service/index.ts": {
+      "runtime": "nodejs",
+      "includeFiles": [
+        "apps/user-service/**",
+        "node_modules/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.build.json"
+      ]
+    }
+  },
   "routes": [
     {
       "src": "/(.*)",
