@@ -8,14 +8,8 @@
   ],
   "functions": {
     "apps/user-service/index.ts": {
-      "runtime": "nodejs",
-      "includeFiles": [
-        "apps/user-service/**",
-        "node_modules/**",
-        "package.json",
-        "tsconfig.json",
-        "tsconfig.build.json"
-      ]
+      "runtime": "@vercel/node",
+      "includeFiles": "apps/user-service/**"
     }
   },
   "routes": [
