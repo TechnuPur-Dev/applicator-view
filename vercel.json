@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "apps/user-service/index.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["apps/user-service/**", "node_modules/**", "tsconfig.json", "package.json"]
+      }
     }
   ],
   "routes": [
