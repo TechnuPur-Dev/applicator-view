@@ -31,8 +31,68 @@ model User {
   bio                   String?
   additionalInfo        String?
 
-  applicators ApplcatorGrower[] @relation("Applcators")
-  growers     ApplcatorGrower[] @relation("Growers")
+  applicators   ApplcatorGrower[] @relation("Applcators")
+  growers       ApplcatorGrower[] @relation("Growers")
+  farmsCreated  Farm[]            @relation("FarmCreator")
+  farms         Farm[]            @relation("FarmGrower")
+  fieldsCreated Field[]           @relation("FieldCreator")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApplcatorGrower {
+  id                  Int          @id @default(autoincrement())
+  applicatorId        Int
+  growerId            Int
+  applicatorFirstName String?
+  applicatorLastName  String?
+  growerFirstName     String?
+  growerLastName      String?
+  inviteStatus        InviteStatus @default(NOT_SENT)
+  isArchived          Boolean      @default(false)
+
+  applicator User @relation("Applcators", fields: [applicatorId], references: [id])
+  grower     User @relation("Growers", fields: [growerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicatorId, growerId])
+}
+
+model Farm {
+  id          Int     @id @default(autoincrement())
+  name        String?
+  createdById Int
+  growerId    Int
+  state       String?
+  county      String?
+  township    String?
+  zipCode     String?
+  isActive    Boolean
+
+  grower    User    @relation("FarmGrower", fields: [growerId], references: [id])
+  createdBy User    @relation("FarmCreator", fields: [createdById], references: [id])
+  fields    Field[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Field {
+  id          Int     @id @default(autoincrement())
+  name        String?
+  crop        String?
+  acres       String?
+  legal       String?
+  latitude    String?
+  longitude   String?
+  createdById Int
+  farmId      Int
+
+  createdBy User @relation("FieldCreator", fields: [createdById], references: [id])
+  farm      Farm @relation(fields: [farmId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,28 +102,6 @@ enum UserRole {
   GROWER
   APPLICATOR
   WORKER
-}
-
-model ApplcatorGrower {
-  id                  Int     @id @default(autoincrement())
-  applicatorId        Int
-  growerId            Int
-  // Custom names specific to the relationship
-  applicatorFirstName String?
-  applicatorLastName  String?
-  growerFirstName     String?
-  growerLastName      String?
-
-  inviteStatus InviteStatus @default(NOT_SENT)
-  isArchived   Boolean      @default(false)
-
-  applicator User @relation("Applcators", fields: [applicatorId], references: [id])
-  grower     User @relation("Growers", fields: [growerId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([applicatorId, growerId])
 }
 
 enum InviteStatus {
