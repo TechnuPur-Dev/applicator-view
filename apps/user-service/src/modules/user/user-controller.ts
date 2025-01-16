@@ -1,7 +1,19 @@
-import { application, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import userService from './user-service';
+
+// contoroller to get userList
+const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
+	const file = req.file;
+
+	if (!file) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+
+	const result = await userService.uploadProfileImage(file);
+	res.status(httpStatus.OK).json(result);
+});
 
 // contoroller to get user by ID
 
@@ -47,6 +59,7 @@ const getAllGrowers = catchAsync(async (req: Request, res: Response) => {
 	const userData = await userService.getAllGrowers();
 	res.status(httpStatus.OK).json({ result: userData });
 });
+
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	const data = req.body;
 
@@ -58,7 +71,16 @@ const getUserByStatus = catchAsync(async (req: Request, res: Response) =>{
 	const result = await userService.getUserByStatus(status);
 	res.status(httpStatus.OK).json({result:result});
 })
+
+const deleteGrower = catchAsync(async (req: Request, res: Response) => {
+	const { id, userId } = req.params;
+	const growerId = parseInt(id);
+	const applicatorId = parseInt(userId);
+	const result = await userService.deleteGrower(growerId, applicatorId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
+	uploadProfileImage,
 	getUserById,
 	updateUserById,
 	deleteUser,
@@ -68,4 +90,5 @@ export default {
 	getAllGrowers,
 	updateInviteStatus,
 	getUserByStatus
+	deleteGrower,
 };

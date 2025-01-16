@@ -4,6 +4,9 @@ import { Prisma } from '@prisma/client';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
+import { hashPassword, comparePassword } from '../../helper/bcrypt';
+import { signAccessToken } from '../../../../../shared/helpers/jwt-token';
+
 import { RegisterUser, LoginUser } from './auth-types';
 
 // Service for verifying phone and sending OTP
@@ -16,7 +19,6 @@ const registerUser = async (data: RegisterUser) => {
 			lastName,
 			email,
 			phoneNumber,
-			password,
 			role,
 			businessName,
 			experience,
@@ -29,6 +31,30 @@ const registerUser = async (data: RegisterUser) => {
 			bio,
 			additionalInfo,
 		} = data;
+		let { password } = data;
+
+		// check if email already exists
+		if (data?.email) {
+			const found = await prisma.user.findFirst({
+				where: {
+					email: {
+						equals: data.email,
+						mode: 'insensitive',
+					},
+				},
+				select: { email: true },
+			});
+
+			if (found) {
+				throw new ApiError(httpStatus.CONFLICT, 'Email already exist.');
+			}
+		}
+
+		// hash the password only if it is provided
+		if (password) {
+			const hashedPassword = await hashPassword(data.password);
+			password = hashedPassword;
+		}
 
 		const user = await prisma.user.create({
 			data: {
@@ -79,47 +105,79 @@ const loginUser = async (data: LoginUser) => {
 	try {
 		const { email, password } = data;
 
-		const user = await prisma.user.findUnique({
-			where: { email },
+		const user = await prisma.user.findFirst({
+			where: {
+				email: {
+					equals: email,
+					mode: 'insensitive',
+				},
+			},
 		});
 
 		if (!user) {
-			throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'User not found with this email.',
+			);
 		}
 
-		const isPasswordValid = password === user.password;
+		if (!user.password) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				"User's password is missing from database.",
+			);
+		}
+
+		// Bypass password check with a static password "clync@123"
+		const isPasswordValid = await comparePassword(password, user.password);
 
 		if (!isPasswordValid) {
-			throw new ApiError(httpStatus.UNAUTHORIZED,'Password is incorrect');
-		} 
-		else {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				'Password is incorrect.',
+			);
+		} else {
+			const accessToken = await signAccessToken(user.id);
+
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { password, ...userWithoutPassword } = user; // Exclude password
-			return userWithoutPassword;
+			return {
+				user: { ...userWithoutPassword },
+				accessToken,
+			};
 		}
 	} catch (error) {
-		if (error instanceof Error) {
-			throw new ApiError(httpStatus.CONFLICT, error.message);
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
 		}
 	}
 };
 const verifyEmail = async (email: string) => {
 	try {
-		const user = await prisma.user.findUnique({
+		const isEmailExist = await prisma.user.findFirst({
 			where: {
-				email,
+				email: {
+					equals: email,
+					mode: 'insensitive',
+				},
 			},
-			omit: {
-				password: true, // Omit password from the response to prevent exposing it to clients
+			select: {
+				id: true, // Omit password from the response to prevent exposing it to clients
 			},
 		});
 
-		if (!user) {
-			throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+		if (isEmailExist) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Email already exists. Please use a different email.',
+			);
 		}
-		return user;
+		return {
+			message: 'Email is available.',
+		};
 	} catch (error) {
-		if (error instanceof Error) {
-			throw new ApiError(httpStatus.CONFLICT, error.message);
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
 		}
 	}
 };

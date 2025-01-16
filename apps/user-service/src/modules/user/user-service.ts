@@ -1,9 +1,88 @@
 import httpStatus from 'http-status';
 import { Prisma } from '@prisma/client';
+import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UpdateUser, UpdateStatus } from './user-types';
 import { InviteStatus } from '@prisma/client';
+import config from '../../../../../shared/config/env-config';
+import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
+
+const uploadProfileImage = async (file: Express.Multer.File) => {
+	try {
+		const storageUrl = config.azureStorageUrl;
+		const containerName = config.azureContainerName;
+
+		const blobServiceClient =
+			BlobServiceClient.fromConnectionString(storageUrl);
+		const containerClient: ContainerClient =
+			blobServiceClient.getContainerClient(containerName);
+		// Generate unique blob names
+		const blobName = `users/profiles/${uuidv4()}_${file.originalname}`;
+		const thumbnailBlobName = `users/profiles/thumbnail_${uuidv4()}_${file.originalname}`;
+
+		// Get original image dimensions
+		const imageMetadata = await sharp(file.buffer).metadata();
+		const originalWidth = imageMetadata.width || 0;
+		const originalHeight = imageMetadata.height || 0;
+		const thumbnailSize = Math.min(originalWidth, originalHeight);
+		const left = Math.floor((originalWidth - thumbnailSize) / 2);
+		const top = Math.floor((originalHeight - thumbnailSize) / 2);
+
+		// Create and upload the original image
+		const compressedImageBuffer = await sharp(file.buffer)
+			.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
+			.resize({
+				width: thumbnailSize,
+				height: thumbnailSize,
+				fit: 'cover',
+			})
+			.toBuffer();
+
+		const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+		await blockBlobClient.upload(
+			compressedImageBuffer,
+			compressedImageBuffer.length,
+			{
+				blobHTTPHeaders: {
+					blobContentType: file.mimetype,
+				},
+			},
+		);
+
+		// Create and upload the thumbnail
+		const thumbnailBuffer = await sharp(file.buffer)
+			.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
+			.resize({ width: 50, height: 50, fit: 'cover' })
+			.toBuffer();
+
+		const thumbnailBlobClient =
+			containerClient.getBlockBlobClient(thumbnailBlobName);
+		await thumbnailBlobClient.upload(
+			thumbnailBuffer,
+			thumbnailBuffer.length,
+			{
+				blobHTTPHeaders: {
+					blobContentType: file.mimetype,
+				},
+			},
+		);
+
+		return {
+			profileImage: `/${containerName}/${blobName}`,
+			thumbnailProfileImage: `/${containerName}/${thumbnailBlobName}`,
+		};
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors or unexpected errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error uploading profile image.',
+			);
+		}
+	}
+};
 
 // service for user
 const getUserByID = async (userId: string) => {
@@ -12,11 +91,15 @@ const getUserByID = async (userId: string) => {
 			where: {
 				id: parseInt(userId),
 			},
-			include: {
-				applicators: true,
-			},
+			
 		});
-
+	// Check if user is null
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'A user with this id does not exist.',
+		);
+	}
 		return user;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -31,7 +114,7 @@ const getUserByID = async (userId: string) => {
 
 		if (error instanceof Error) {
 			// Handle generic errors or unexpected errors
-			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+			throw new ApiError(httpStatus.NOT_FOUND, error.message);
 		}
 	}
 };
@@ -49,6 +132,7 @@ const updateUserById = async (data: UpdateUser, userId: string) => {
 			data: {
 				// update only those value which are send by the frontend and the values that are not sended by the frontend will remain the same
 				...dataToUpdate,
+				updatedAt: new Date(),
 			},
 		});
 
@@ -281,6 +365,7 @@ const getAllGrowers = async () => {
 		}
 	}
 };
+
 const updateInviteStatus = async (data: UpdateStatus) => {
 	try {
 		// Destructure
@@ -315,7 +400,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 			if (error.code === 'P2025') {
 				throw new ApiError(
 					httpStatus.NOT_FOUND,
-					'A user with this id does not exist.',
+					'A grower with this ID and applicator ID does not exist',
 				);
 			}
 		}
@@ -326,6 +411,45 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		}
 	}
 };
+// delete grower
+
+const deleteGrower = async (growerId: number, applicatorId: number) => {
+	try {
+		const result = await prisma.applcatorGrower.deleteMany({
+			where: {
+				growerId: growerId,
+				applicatorId: applicatorId,
+			},
+		});
+		// if grower id is not found
+		if (result.count === 0) {
+			return {
+				status: httpStatus.NOT_FOUND, // 204
+				message: 'Grower not found ',
+			};
+		}
+		return {
+			status: httpStatus.NO_CONTENT, // 204
+			message: 'Grower deleted successfully',
+		};
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A grower with this ID and applicator ID does not exist',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
+    
 const getUserByStatus = async (status: string) => {
 	if (!Object.values(InviteStatus).includes(status as InviteStatus)) {
 		throw new ApiError(
@@ -343,12 +467,13 @@ const getUserByStatus = async (status: string) => {
 		return user || [];
 	} catch (error) {
 		if (error instanceof Error) {
-			// Handle generic errors or unexpected errors
+			// Handle generic errors or unexpected error
 			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
 		}
 	}
 };
 export default {
+	uploadProfileImage,
 	getUserByID,
 	deleteUser,
 	updateUserById,
@@ -358,4 +483,5 @@ export default {
 	getAllGrowers,
 	updateInviteStatus,
 	getUserByStatus,
+	deleteGrower,
 };

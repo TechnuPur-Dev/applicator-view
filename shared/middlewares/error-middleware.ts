@@ -85,6 +85,8 @@ function createErrorHandler(config: { env: string }) {
 		err: Record<string, unknown>,
 		req: Request,
 		res: Response,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		next: NextFunction,
 	): void => {
 		const logger = createLoggerInstance(config);
 		let { statusCode, message } = err as unknown as ErrorWithStatus;
@@ -104,11 +106,6 @@ function createErrorHandler(config: { env: string }) {
 			...(config.env === 'development' && { stack: err.stack }),
 		};
 
-		// Log the error in development environment
-		if (config.env === 'development') {
-			logger.error(err);
-		}
-
 		const logEntry = {
 			method: req.method,
 			statusCode,
@@ -119,7 +116,11 @@ function createErrorHandler(config: { env: string }) {
 			timestamp: new Date().toISOString(),
 		};
 
-		writeLog(logEntry);
+		// Log the error in development environment
+		if (config.env === 'development') {
+			logger.error(err);
+			writeLog(logEntry);
+		}
 
 		res.status(statusCode).send(response);
 	};

@@ -1,6 +1,10 @@
 import { UserRole } from '@prisma/client';
 import { InviteStatus } from '@prisma/client';
 
+interface UploadProfileImage {
+	statusCode: number;
+	body: Record<string, unknown>;
+}
 interface UpdateUser {
 	profileImage?: string;
 	thumbnailProfileImage?: string;
@@ -26,5 +30,4 @@ interface UpdateStatus{
 	 growerId: number,
 	 applicatorId :number
 	}
-
-export { UpdateUser,UpdateStatus };
+export { UploadProfileImage, UpdateUser,UpdateStatus };
