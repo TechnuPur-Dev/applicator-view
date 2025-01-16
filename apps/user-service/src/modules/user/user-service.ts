@@ -2,7 +2,8 @@ import httpStatus from 'http-status';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
-import { UpdateUser } from './user-types';
+import { UpdateUser, UpdateStatus } from './user-types';
+import { InviteStatus } from '@prisma/client';
 
 // service for user
 const getUserByID = async (userId: string) => {
@@ -245,18 +246,18 @@ const getAllGrowers = async () => {
 			// where: {
 			// 	isArchived: false, // You can filter out archived records if needed
 			//   },
-			  include: {
+			include: {
 				grower: {
 					select: {
 						id: true,
-						profileImage:true,
-						thumbnailProfileImage:true,
+						profileImage: true,
+						thumbnailProfileImage: true,
 						firstName: true,
 						lastName: true,
-						fullName:true,
+						fullName: true,
 						email: true,
 						phoneNumber: true,
-						role:true,
+						role: true,
 						businessName: true,
 						experience: true,
 						address1: true,
@@ -268,18 +269,60 @@ const getAllGrowers = async () => {
 						bio: true,
 						additionalInfo: true,
 						// No password field included here
-					  }
-				} // Include related grower data
-			  },
-			
-		}
-			
-		); // Fetch all users
+					},
+				}, // Include related grower data
+			},
+		}); // Fetch all users
 		return users || [];
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
 			throw new ApiError(httpStatus.NOT_FOUND, 'some thing went wrong');
+		}
+	}
+};
+const updateInviteStatus = async (data: UpdateStatus) => {
+	try {
+		// Destructure 
+		const { status,applicatorId,growerId } = data;
+
+		if (!Object.values(InviteStatus).includes(status)) {
+			throw new ApiError(
+			  httpStatus.BAD_REQUEST,
+			  `Invalid status value, allowed values are: ${Object.values(InviteStatus).join(', ')}.`
+			);
+		  }
+		// Update the inviteStatus field
+		await prisma.applcatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+				applicatorId:Number(applicatorId),
+				growerId: Number(growerId),
+				}
+			},
+			data: {
+				inviteStatus:status, // Only updating the inviteStatus field
+			},
+		});
+
+		return {
+			status: httpStatus.OK, // 200
+			message: 'Invite status updated successfully',
+		};
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A user with this id does not exist.',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
 		}
 	}
 };
@@ -290,5 +333,6 @@ export default {
 	getUserList,
 	getUserByEmail,
 	createGrower,
-	getAllGrowers
+	getAllGrowers,
+	updateInviteStatus,
 };

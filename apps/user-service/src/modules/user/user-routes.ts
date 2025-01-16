@@ -13,6 +13,7 @@ router.route('/:id').get(userController.getUserById);
 router.route('/:id').patch(userController.updateUserById);
 router.route('/:id').delete(userController.deleteUser);
 router.route('/create-grower').post(userController.createGrower);
+router.route('/update-invite-status').put(userController.updateInviteStatus);
 
 
 
