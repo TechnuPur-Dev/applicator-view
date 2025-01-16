@@ -1,5 +1,9 @@
 import { UserRole } from '@prisma/client';
 
+interface UploadProfileImage {
+	statusCode: number;
+	body: Record<string, unknown>;
+}
 interface UpdateUser {
 	profileImage?: string;
 	thumbnailProfileImage?: string;
@@ -21,4 +25,4 @@ interface UpdateUser {
 	additionalInfo?: string;
 }
 
-export { UpdateUser };
+export { UploadProfileImage, UpdateUser };
