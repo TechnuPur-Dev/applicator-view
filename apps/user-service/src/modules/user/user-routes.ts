@@ -5,7 +5,6 @@ import upload from '../../../../../shared/middlewares/multer-middleware';
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware'; // Uncomment and add correct path for TypeScript support if needed
 
 const router: Router = express.Router();
-
 // Define routes
 router
 	.route('/upload/profile-image')
@@ -22,5 +21,7 @@ router.route('/:id').delete(verifyToken, userController.deleteUser);
 router
 	.route('/delete-grower/:id/:userId')
 	.delete(verifyToken, userController.deleteGrower);
+
+
 
 export default router;

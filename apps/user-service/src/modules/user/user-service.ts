@@ -90,11 +90,15 @@ const getUserByID = async (userId: string) => {
 			where: {
 				id: parseInt(userId),
 			},
-			include: {
-				applicators: true,
-			},
+			
 		});
-
+	// Check if user is null
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'A user with this id does not exist.',
+		);
+	}
 		return user;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -109,7 +113,7 @@ const getUserByID = async (userId: string) => {
 
 		if (error instanceof Error) {
 			// Handle generic errors or unexpected errors
-			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+			throw new ApiError(httpStatus.NOT_FOUND, error.message);
 		}
 	}
 };
@@ -127,6 +131,7 @@ const updateUserById = async (data: UpdateUser, userId: string) => {
 			data: {
 				// update only those value which are send by the frontend and the values that are not sended by the frontend will remain the same
 				...dataToUpdate,
+				updatedAt: new Date(),
 			},
 		});
 
