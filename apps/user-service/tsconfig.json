@@ -2,9 +2,9 @@
   "compilerOptions": {
     "lib": ["ES2022"],
     "target": "ES2022",
-    "module": "commonjs",
+    "module": "Node16",
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "outDir": "./build",  // Directory for compiled output
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,

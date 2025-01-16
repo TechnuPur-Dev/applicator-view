@@ -1,34 +1,35 @@
-# Use the official Node.js slim image
-FROM node:20.16.0-slim
+# Step 1: Base image
+FROM node:20.12.2-alpine
 
 # Set environment variables
 ENV NODE_ENV=production
 
-# Create and set the working directory
-WORKDIR /home/nodeuser/app
+# Set the working directory in the container
+WORKDIR /app
 
-# Create a non-root user
-RUN useradd -m -s /bin/bash nodeuser && chown -R nodeuser:nodeuser /home/nodeuser
-
-# Copy package.json and package-lock.json first for better caching
+# Copy package.json and package-lock.json to the working directory
 COPY package.json package-lock.json ./
 
-# Install only production dependencies
-RUN npm install --ignore-scripts --only=production
+# Install all dependencies (including devDependencies)
+RUN npm install
 
-# Copy the rest of the application code
-COPY tsconfig.json ./
-COPY swagger.json ./
-COPY src/ ./src
+# Change ownership of node_modules to current user
+RUN chown -R node:node /app/node_modules
 
-# Build the project
-RUN npm run build
+# Copy the rest of your application code to the working directory
+COPY --chown=node:node . .
 
-# Change to the non-root user
-USER nodeuser
+# Generate Prisma client
+RUN npx prisma generate
 
-# Expose the port the app runs on
-EXPOSE 8082
+# Build application
+RUN npm run build:user-service
 
-# Set the command to start the application
-CMD ["npm", "start"]
+# Switch to non-root user
+USER node
+
+# Expose the port
+EXPOSE 3000
+
+# Application startup
+CMD ["node", "./apps/user-service/build/index.js"]
