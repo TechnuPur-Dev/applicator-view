@@ -85,6 +85,8 @@ function createErrorHandler(config: { env: string }) {
 		err: Record<string, unknown>,
 		req: Request,
 		res: Response,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		next: NextFunction,
 	): void => {
 		const logger = createLoggerInstance(config);
 		let { statusCode, message } = err as unknown as ErrorWithStatus;
