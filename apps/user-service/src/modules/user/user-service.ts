@@ -91,15 +91,14 @@ const getUserByID = async (userId: string) => {
 			where: {
 				id: parseInt(userId),
 			},
-			
 		});
-	// Check if user is null
-	if (!user) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'A user with this id does not exist.',
-		);
-	}
+		// Check if user is null
+		if (!user) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'A user with this id does not exist.',
+			);
+		}
 		return user;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -400,7 +399,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 			if (error.code === 'P2025') {
 				throw new ApiError(
 					httpStatus.NOT_FOUND,
-					'A grower with this ID and applicator ID does not exist',
+					'A user with this id does not exist.',
 				);
 			}
 		}
@@ -449,7 +448,7 @@ const deleteGrower = async (growerId: number, applicatorId: number) => {
 		}
 	}
 };
-    
+
 const getUserByStatus = async (status: string) => {
 	if (!Object.values(InviteStatus).includes(status as InviteStatus)) {
 		throw new ApiError(

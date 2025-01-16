@@ -66,11 +66,11 @@ const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.updateInviteStatus(data);
 	res.status(httpStatus.OK).json(result);
 });
-const getUserByStatus = catchAsync(async (req: Request, res: Response) =>{
+const getUserByStatus = catchAsync(async (req: Request, res: Response) => {
 	const status = req.params.status;
 	const result = await userService.getUserByStatus(status);
-	res.status(httpStatus.OK).json({result:result});
-})
+	res.status(httpStatus.OK).json({ result: result });
+});
 
 const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 	const { id, userId } = req.params;
@@ -89,6 +89,6 @@ export default {
 	createGrower,
 	getAllGrowers,
 	updateInviteStatus,
-	getUserByStatus
+	getUserByStatus,
 	deleteGrower,
 };

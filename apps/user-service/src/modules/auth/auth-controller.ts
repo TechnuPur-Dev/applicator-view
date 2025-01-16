@@ -49,18 +49,12 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-	const {
-		email
-	} = req.body; // Destructure body
+	const { email } = req.body; // Destructure body
 	const result = await authService.verifyEmail(email);
 	res.status(httpStatus.OK).json(result);
 });
 const loginUser = catchAsync(async (req: Request, res: Response) => {
-	const {
-		email,
-		password,
-		
-	} = req.body; // Destructure body
+	const { email, password } = req.body; // Destructure body
 	const result = await authService.loginUser({
 		email,
 		password,
@@ -70,5 +64,5 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 export default {
 	registerUser,
 	verifyEmail,
-	loginUser
+	loginUser,
 };
