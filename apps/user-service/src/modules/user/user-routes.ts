@@ -14,6 +14,7 @@ router.route('/:id').patch(userController.updateUserById);
 router.route('/:id').delete(userController.deleteUser);
 router.route('/create-grower').post(userController.createGrower);
 router.route('/update-invite-status').put(userController.updateInviteStatus);
+router.route('/all-growers/:status').get(userController.getUserByStatus);
 
 
 

@@ -283,25 +283,25 @@ const getAllGrowers = async () => {
 };
 const updateInviteStatus = async (data: UpdateStatus) => {
 	try {
-		// Destructure 
-		const { status,applicatorId,growerId } = data;
+		// Destructure
+		const { status, applicatorId, growerId } = data;
 
 		if (!Object.values(InviteStatus).includes(status)) {
 			throw new ApiError(
-			  httpStatus.BAD_REQUEST,
-			  `Invalid status value, allowed values are: ${Object.values(InviteStatus).join(', ')}.`
+				httpStatus.BAD_REQUEST,
+				`Invalid status value, allowed values are: ${Object.values(InviteStatus).join(', ')}.`,
 			);
-		  }
+		}
 		// Update the inviteStatus field
 		await prisma.applcatorGrower.update({
 			where: {
 				applicatorId_growerId: {
-				applicatorId:Number(applicatorId),
-				growerId: Number(growerId),
-				}
+					applicatorId: Number(applicatorId),
+					growerId: Number(growerId),
+				},
 			},
 			data: {
-				inviteStatus:status, // Only updating the inviteStatus field
+				inviteStatus: status, // Only updating the inviteStatus field
 			},
 		});
 
@@ -326,6 +326,28 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		}
 	}
 };
+const getUserByStatus = async (status: string) => {
+	if (!Object.values(InviteStatus).includes(status as InviteStatus)) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			`Invalid status value. Allowed values are: ${Object.values(InviteStatus).join(', ')}.`,
+		);
+	}
+	try {
+		const user = await prisma.applcatorGrower.findMany({
+			where: {
+				inviteStatus: status as InviteStatus,
+			},
+		});
+
+		return user || [];
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors or unexpected errors
+			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+		}
+	}
+};
 export default {
 	getUserByID,
 	deleteUser,
@@ -335,4 +357,5 @@ export default {
 	createGrower,
 	getAllGrowers,
 	updateInviteStatus,
+	getUserByStatus,
 };
