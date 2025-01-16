@@ -4,7 +4,8 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
-import { UpdateUser } from './user-types';
+import { UpdateUser, UpdateStatus } from './user-types';
+import { InviteStatus } from '@prisma/client';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 
@@ -365,6 +366,51 @@ const getAllGrowers = async () => {
 	}
 };
 
+const updateInviteStatus = async (data: UpdateStatus) => {
+	try {
+		// Destructure
+		const { status, applicatorId, growerId } = data;
+
+		if (!Object.values(InviteStatus).includes(status)) {
+			throw new ApiError(
+				httpStatus.BAD_REQUEST,
+				`Invalid status value, allowed values are: ${Object.values(InviteStatus).join(', ')}.`,
+			);
+		}
+		// Update the inviteStatus field
+		await prisma.applcatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					applicatorId: Number(applicatorId),
+					growerId: Number(growerId),
+				},
+			},
+			data: {
+				inviteStatus: status, // Only updating the inviteStatus field
+			},
+		});
+
+		return {
+			status: httpStatus.OK, // 200
+			message: 'Invite status updated successfully',
+		};
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A grower with this ID and applicator ID does not exist',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
 // delete grower
 
 const deleteGrower = async (growerId: number, applicatorId: number) => {
@@ -399,11 +445,33 @@ const deleteGrower = async (growerId: number, applicatorId: number) => {
 
 		if (error instanceof Error) {
 			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
+    
+const getUserByStatus = async (status: string) => {
+	if (!Object.values(InviteStatus).includes(status as InviteStatus)) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			`Invalid status value. Allowed values are: ${Object.values(InviteStatus).join(', ')}.`,
+		);
+	}
+	try {
+		const user = await prisma.applcatorGrower.findMany({
+			where: {
+				inviteStatus: status as InviteStatus,
+			},
+		});
+
+		return user || [];
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors or unexpected error
 			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
 		}
 	}
 };
-
 export default {
 	uploadProfileImage,
 	getUserByID,
@@ -413,5 +481,7 @@ export default {
 	getUserByEmail,
 	createGrower,
 	getAllGrowers,
+	updateInviteStatus,
+	getUserByStatus,
 	deleteGrower,
 };

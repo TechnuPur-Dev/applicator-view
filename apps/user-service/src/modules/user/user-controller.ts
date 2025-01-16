@@ -59,6 +59,19 @@ const getAllGrowers = catchAsync(async (req: Request, res: Response) => {
 	const userData = await userService.getAllGrowers();
 	res.status(httpStatus.OK).json({ result: userData });
 });
+
+const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
+	const data = req.body;
+
+	const result = await userService.updateInviteStatus(data);
+	res.status(httpStatus.OK).json(result);
+});
+const getUserByStatus = catchAsync(async (req: Request, res: Response) =>{
+	const status = req.params.status;
+	const result = await userService.getUserByStatus(status);
+	res.status(httpStatus.OK).json({result:result});
+})
+
 const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 	const { id, userId } = req.params;
 	const growerId = parseInt(id);
@@ -75,5 +88,7 @@ export default {
 	getUserByEmail,
 	createGrower,
 	getAllGrowers,
+	updateInviteStatus,
+	getUserByStatus
 	deleteGrower,
 };
