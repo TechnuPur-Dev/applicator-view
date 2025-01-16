@@ -283,6 +283,48 @@ const getAllGrowers = async () => {
 		}
 	}
 };
+
+// delete grower 
+
+const deleteGrower = async (growerId: number, applicatorId: number, ) => {
+    try {
+       const result =  await prisma.applcatorGrower.deleteMany({
+            where: {
+                growerId: growerId,
+                applicatorId: applicatorId,
+            },
+        });
+		// if grower id is not found
+		if (result.count === 0) {
+            return {
+				status: httpStatus.NOT_FOUND, // 204
+				message: 'Grower not found ',
+			};
+            
+        }
+        return {
+            status: httpStatus.NO_CONTENT, // 204
+            message: 'Grower deleted successfully',
+        };
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            // Handle Prisma-specific error codes
+            if (error.code === 'P2025') {
+                throw new ApiError(
+                    httpStatus.NOT_FOUND,
+                    'A grower with this ID and applicator ID does not exist',
+                );
+            }
+        }
+
+        if (error instanceof Error) {
+            // Handle generic errors
+            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+};
+
+
 export default {
 	getUserByID,
 	deleteUser,
@@ -290,5 +332,6 @@ export default {
 	getUserList,
 	getUserByEmail,
 	createGrower,
-	getAllGrowers
+	getAllGrowers,
+	deleteGrower
 };

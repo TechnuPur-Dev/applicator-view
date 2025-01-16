@@ -47,6 +47,13 @@ const getAllGrowers = catchAsync(async (req: Request, res: Response) => {
 	const userData = await userService.getAllGrowers();
 	res.status(httpStatus.OK).json({ result: userData });
 });
+const deleteGrower = catchAsync(async (req: Request, res: Response) => {
+	const { id, userId } = req.params;
+	const growerId = parseInt(id)
+	const applicatorId= parseInt(userId)
+	const result = await userService.deleteGrower(growerId,applicatorId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	getUserById,
 	updateUserById,
@@ -54,5 +61,6 @@ export default {
 	getUserList,
 	getUserByEmail,
 	createGrower,
-	getAllGrowers
+	getAllGrowers,
+	deleteGrower
 };
