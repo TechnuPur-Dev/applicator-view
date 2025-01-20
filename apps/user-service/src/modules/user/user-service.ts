@@ -232,7 +232,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 				},
 			});
 
-			await prisma.applcatorGrower.create({
+			await prisma.applicatorGrower.create({
 				data: {
 					applicatorId: userId,
 					growerId: grower.id,
@@ -265,7 +265,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 // get All Growers
 const getAllGrowersByApplicator = async (applicatorId: number) => {
 	try {
-		const growers = await prisma.applcatorGrower.findMany({
+		const growers = await prisma.applicatorGrower.findMany({
 			where: {
 				applicatorId,
 			},
@@ -306,7 +306,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		const { status, applicatorId, growerId } = data;
 		if (status === 'PENDING') {
 			// Update the inviteStatus field
-			await prisma.applcatorGrower.update({
+			await prisma.applicatorGrower.update({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
@@ -323,7 +323,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		}
 		if (status === 'ACCEPTED') {
 			// Update the inviteStatus field
-			await prisma.applcatorGrower.update({
+			await prisma.applicatorGrower.update({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
@@ -340,7 +340,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		}
 		if (status === 'REJECTED') {
 			// Update the inviteStatus field
-			await prisma.applcatorGrower.update({
+			await prisma.applicatorGrower.update({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
@@ -376,7 +376,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 
 const deleteGrower = async (growerId: number, applicatorId: number) => {
 	try {
-		await prisma.applcatorGrower.delete({
+		await prisma.applicatorGrower.delete({
 			where: {
 				applicatorId_growerId: {
 					growerId,
@@ -401,7 +401,7 @@ const deleteGrower = async (growerId: number, applicatorId: number) => {
 
 const getPendingInvites = async (userId: number) => {
 	try {
-		const pendingInvites = await prisma.applcatorGrower.findMany({
+		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: {
 				OR: [{ applicatorId: userId }, { growerId: userId }],
 				inviteStatus: 'PENDING',

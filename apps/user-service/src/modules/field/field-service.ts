@@ -172,7 +172,7 @@ const createField = async (data: field) => {
 			farmId,
 		} = data;
 
-		// to extract applicator data for applcatorGrower model
+		// to extract applicator data for applicatorGrower model
 		if (!createdById) {
 			throw new ApiError(
 				httpStatus.BAD_REQUEST,
