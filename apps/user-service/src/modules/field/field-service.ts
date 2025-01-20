@@ -5,11 +5,11 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { field } from './field-types';
 
 // service for field
-const getFieldById = async (fieldId: string) => {
+const getFieldById = async (fieldId: number) => {
 	try {
 		const field = await prisma.field.findUnique({
 			where: {
-				id: parseInt(fieldId),
+				id: fieldId,
 			},
 			include: {
 				farm: {
@@ -53,34 +53,23 @@ const getFieldById = async (fieldId: string) => {
 };
 
 // to update field
-const updateFieldById = async (data: field, fieldId: string) => {
+const updateFieldById = async (data: field, fieldId: number) => {
 	// Only accept the fields sent by the frontend
 	const dataToUpdate = data;
 	try {
-		await prisma.field.update({
+		const updatedField = await prisma.field.update({
 			where: {
-				id: Number(fieldId),
+				id: fieldId,
 			},
-
 			data: {
 				// update value
 				...dataToUpdate,
 			},
 		});
 
-		return {
-			status: httpStatus.OK,
-			message: 'Field updated successfully',
-		};
+		return updatedField;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2002') {
-				throw new ApiError(
-					httpStatus.CONFLICT,
-					'A Field with this email already exists.',
-				);
-			}
 			// it depends on one or more records that were required but not found.
 			if (error.code === 'P2025') {
 				throw new ApiError(
@@ -130,7 +119,7 @@ const deleteField = async (fieldId: string) => {
 };
 
 // get field List
-const getFieldList = async () => {
+const getAllFields = async () => {
 	try {
 		const fields = await prisma.field.findMany({
 			include: {
@@ -158,31 +147,11 @@ const getFieldList = async () => {
 };
 
 // create field
-const createField = async (data: field) => {
+const createField = async (createdById: number, data: field) => {
 	// Only accept the fields sent by the frontend
 	try {
-		const {
-			name,
-			crop,
-			acres,
-			legal,
-			latitude,
-			longitude,
-			createdById,
-			farmId,
-		} = data;
+		const { name, crop, acres, legal, latitude, longitude, farmId } = data;
 
-		// to extract applicator data for applicatorGrower model
-		if (!createdById) {
-			throw new ApiError(
-				httpStatus.BAD_REQUEST,
-				'createdById is required.',
-			);
-		}
-
-		if (!farmId) {
-			throw new ApiError(httpStatus.BAD_REQUEST, 'farmId is required.');
-		}
 		const field = await prisma.field.create({
 			data: {
 				name,
@@ -196,7 +165,7 @@ const createField = async (data: field) => {
 			},
 		});
 
-		return { field, message: 'Field successfully added.' };
+		return field;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
@@ -209,6 +178,6 @@ export default {
 	getFieldById,
 	updateFieldById,
 	deleteField,
-	getFieldList,
+	getAllFields,
 	createField,
 };

@@ -53,9 +53,16 @@ const createFarm = async (
 	}
 };
 
-const getAllFarms = async () => {
+const getAllFarmsByGrower = async (growerId: number) => {
 	try {
-		const result = await prisma.farm.findMany(); // Fetch all users
+		const result = await prisma.farm.findMany({
+			where: {
+				growerId,
+			},
+			include: {
+				fields: true, // Include related fields in the result
+			},
+		}); // Fetch all users
 		return result;
 	} catch (error) {
 		if (error instanceof Error) {
@@ -75,10 +82,13 @@ const getFarmById = async (Id: number) => {
 			include: {
 				fields: true, // Include related fields in the result
 			},
-		}); // Fetch all users
-		console.log(farm,"farm")
+		});
+		console.log(farm, 'farm');
 		if (!farm) {
-			throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid farm Id');
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Farm with this ID not found.',
+			);
 		}
 		return farm;
 	} catch (error) {
@@ -94,18 +104,16 @@ const getFarmById = async (Id: number) => {
 	}
 };
 
-const deleteFarm = async (Id: number, userId: number) => {
+const deleteFarm = async (Id: number) => {
 	try {
-		 await prisma.farm.delete({
+		await prisma.farm.delete({
 			where: {
 				id: Id,
-				createdById: userId,
 			},
 		});
-	
+
 		return {
-		
-			message: 'Farm deleted successfully',
+			message: 'Farm deleted successfully.',
 		};
 	} catch (error) {
 		if (error instanceof ApiError) {
@@ -115,18 +123,20 @@ const deleteFarm = async (Id: number, userId: number) => {
 
 		if (error instanceof Error) {
 			// Handle generic errors
-			throw new ApiError(httpStatus.CONFLICT, 'Errror while deleting farm.',);
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Errror while deleting farm.',
+			);
 		}
 	}
 };
-const updateFarm = async (
-	farmId: number,
-	data: CreateFarmParams,
-	updatedById: number,
-) => {
+const updateFarm = async (farmId: number, data: CreateFarmParams) => {
 	try {
 		// Validate farm existence
-		const farm = await prisma.farm.findUnique({ where: { id: farmId } });
+		const farm = await prisma.farm.findUnique({
+			where: { id: farmId },
+			select: { id: true },
+		});
 		if (!farm) {
 			throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
 		}
@@ -134,11 +144,7 @@ const updateFarm = async (
 		// Update farm
 		const updatedFarm = await prisma.farm.update({
 			where: { id: farmId },
-			data: {
-				...data,
-				createdById: updatedById,
-				growerId: farm.growerId, // Retain the existing growerId from farmModel
-			},
+			data,
 		});
 
 		return updatedFarm;
@@ -165,7 +171,7 @@ const updateFarm = async (
 
 export default {
 	createFarm,
-	getAllFarms,
+	getAllFarmsByGrower,
 	getFarmById,
 	deleteFarm,
 	updateFarm,
