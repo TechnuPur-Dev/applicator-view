@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UpdateUser, UpdateStatus } from './user-types';
-import { InviteStatus } from '@prisma/client';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 
@@ -78,18 +77,44 @@ const uploadProfileImage = async (file: Express.Multer.File) => {
 			// Handle generic errors or unexpected errors
 			throw new ApiError(
 				httpStatus.CONFLICT,
-				'Error uploading profile image.',
+				'Error while uploading profile image.',
+			);
+		}
+	}
+};
+
+// to update user profile
+const updateProfile = async (data: UpdateUser, userId: number) => {
+	try {
+		const udpatedUser = await prisma.user.update({
+			where: {
+				id: userId,
+			},
+			data,
+		});
+		return udpatedUser;
+	} catch (error) {
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
+		if (error instanceof Error) {
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while updating user profile.',
 			);
 		}
 	}
 };
 
 // service for user
-const getUserByID = async (userId: string) => {
+const getUserByID = async (userId: number) => {
 	try {
 		const user = await prisma.user.findUnique({
 			where: {
-				id: parseInt(userId),
+				id: userId,
+			},
+			omit: {
+				password: true,
 			},
 		});
 		// Check if user is null
@@ -101,210 +126,125 @@ const getUserByID = async (userId: string) => {
 		}
 		return user;
 	} catch (error) {
-		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2025') {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'A user with this id does not exist.',
-				);
-			}
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
 		}
-
 		if (error instanceof Error) {
 			// Handle generic errors or unexpected errors
-			throw new ApiError(httpStatus.NOT_FOUND, error.message);
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retrieving user with this id.',
+			);
 		}
 	}
 };
 
-// to update user
-const updateUserById = async (data: UpdateUser, userId: string) => {
-	// Only accept the fields sent by the frontend
-	const dataToUpdate = data;
-	try {
-		await prisma.user.update({
-			where: {
-				id: Number(userId),
-			},
-
-			data: {
-				// update only those value which are send by the frontend and the values that are not sended by the frontend will remain the same
-				...dataToUpdate,
-				updatedAt: new Date(),
-			},
-		});
-
-		return {
-			status: httpStatus.OK, // 200
-			message: 'User updated successfully',
-		};
-	} catch (error) {
-		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2002') {
-				throw new ApiError(
-					httpStatus.CONFLICT,
-					'A user with this email already exists.',
-				);
-			}
-			// it depends on one or more records that were required but not found.
-			if (error.code === 'P2025') {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'A user with this id does not exist.',
-				);
-			}
-		}
-
-		if (error instanceof Error) {
-			// Handle generic errors
-			throw new ApiError(httpStatus.CONFLICT, error.message);
-		}
-	}
-};
-
-// to delete User
-
-const deleteUser = async (userId: string) => {
+// to delete Use
+const deleteUser = async (userId: number) => {
 	try {
 		await prisma.user.delete({
 			where: {
-				id: parseInt(userId),
+				id: userId,
 			},
 		});
 
 		return {
-			status: httpStatus.NO_CONTENT, // 204
-			message: 'User deleted successfully',
+			message: 'User deleted successfully.',
 		};
 	} catch (error) {
-		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2025') {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'A user to delete with this id not exist',
-				);
-			}
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
 		}
-
 		if (error instanceof Error) {
-			// Handle generic errors
-			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Errror while deleting user.',
+			);
 		}
 	}
 };
 
 // get user List
-const getUserList = async () => {
+const getAllUsers = async () => {
 	try {
 		const users = await prisma.user.findMany(); // Fetch all users
 		return users;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
-			throw new ApiError(httpStatus.NOT_FOUND, 'some thing went wrong');
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving all users.',
+			);
 		}
 	}
 };
 
 // getUserByEmail
-const getUserByEmail = async (userEmail: string) => {
+const getGrowerByEmail = async (userEmail: string) => {
 	try {
-		const user = await prisma.user.findUnique({
+		const grower = await prisma.user.findFirst({
 			where: {
-				email: userEmail,
+				email: {
+					equals: userEmail,
+					mode: 'insensitive',
+				},
 				role: 'GROWER',
 			},
-			// Ensure the user has the 'GROWER' role
+			omit: {
+				password: true,
+			},
 		});
-
-		return user || null;
-	} catch (error) {
-		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2025') {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'A user with this email does not exist.',
-				);
-			}
+		if (!grower) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Grower with this email not found.',
+			);
 		}
 
+		return grower;
+	} catch (error) {
+		if (error instanceof ApiError) {
+			// Handle generic errors or unexpected errors
+			throw new ApiError(error.statusCode, error.message);
+		}
 		if (error instanceof Error) {
 			// Handle generic errors or unexpected errors
-			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving grower.',
+			);
 		}
 	}
 };
 
 // create grower
 const createGrower = async (data: UpdateUser, userId: number) => {
-	// Only accept the fields sent by the frontend
 	try {
-		const {
-			firstName,
-			lastName,
-			email,
-			phoneNumber,
-			businessName,
-			experience,
-			address1,
-			address2,
-			state,
-			county,
-			township,
-			zipCode,
-			bio,
-			additionalInfo,
-		} = data;
+		const { firstName, lastName } = data;
 
-		// to extract applicator data for applcatorGrower model
-		const applicator = await prisma.user.findUnique({
-			where: {
-				id: userId,
-			},
-		});
-		const grower = await prisma.user.create({
-			data: {
-				firstName,
-				lastName,
-				fullName: `${firstName} ${lastName}`,
-				email,
-				phoneNumber,
-				businessName,
-				experience,
-				address1,
-				address2,
-				state,
-				county,
-				township,
-				zipCode,
-				bio,
-				additionalInfo,
-				role: 'GROWER',
-			},
-			omit: {
-				password: true, // Omit password from the response to prevent exposing it to clients
-			},
+		const [grower] = await prisma.$transaction(async (prisma) => {
+			const grower = await prisma.user.create({
+				data: {
+					...data,
+					fullName: `${firstName} ${lastName}`,
+					role: 'GROWER',
+				},
+			});
+
+			await prisma.applcatorGrower.create({
+				data: {
+					applicatorId: userId,
+					growerId: grower.id,
+					growerFirstName: firstName,
+					growerLastName: lastName,
+				},
+			});
+
+			return [grower];
 		});
 
-		await prisma.applcatorGrower.create({
-			data: {
-				applicatorId: userId,
-				growerId: grower.id,
-				applicatorFirstName: applicator?.firstName,
-				applicatorLastName: applicator?.lastName,
-				growerFirstName: grower.firstName,
-				growerLastName: grower.lastName,
-				inviteStatus: 'NOT_SENT',
-				isArchived: false,
-				// Optionally set other fields like inviteStatus, isArchived
-			},
-		});
-
-		return { grower, message: 'Grower successfully added.' };
+		return grower;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			// Handle Prisma-specific error codes
@@ -323,44 +263,39 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 	}
 };
 // get All Growers
-const getAllGrowers = async () => {
+const getAllGrowersByApplicator = async (applicatorId: number) => {
 	try {
-		const users = await prisma.applcatorGrower.findMany({
-			// where: {
-			// 	isArchived: false, // You can filter out archived records if needed
-			//   },
-			include: {
+		const growers = await prisma.applcatorGrower.findMany({
+			where: {
+				applicatorId,
+			},
+			select: {
+				growerFirstName: true,
+				growerLastName: true,
+				inviteStatus: true,
+				isArchived: true,
 				grower: {
-					select: {
-						id: true,
-						profileImage: true,
-						thumbnailProfileImage: true,
-						firstName: true,
-						lastName: true,
-						fullName: true,
-						email: true,
-						phoneNumber: true,
-						role: true,
-						businessName: true,
-						experience: true,
-						address1: true,
-						address2: true,
-						state: true,
-						county: true,
-						township: true,
-						zipCode: true,
-						bio: true,
-						additionalInfo: true,
-						// No password field included here
+					include: {
+						farms: {
+							include: {
+								fields: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
 					},
 				}, // Include related grower data
 			},
 		}); // Fetch all users
-		return users || [];
+		return growers;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
-			throw new ApiError(httpStatus.NOT_FOUND, 'some thing went wrong');
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Error while retrieving growers.',
+			);
 		}
 	}
 };
@@ -369,30 +304,57 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 	try {
 		// Destructure
 		const { status, applicatorId, growerId } = data;
-
-		if (!Object.values(InviteStatus).includes(status)) {
-			throw new ApiError(
-				httpStatus.BAD_REQUEST,
-				`Invalid status value, allowed values are: ${Object.values(InviteStatus).join(', ')}.`,
-			);
-		}
-		// Update the inviteStatus field
-		await prisma.applcatorGrower.update({
-			where: {
-				applicatorId_growerId: {
-					applicatorId: Number(applicatorId),
-					growerId: Number(growerId),
+		if (status === 'PENDING') {
+			// Update the inviteStatus field
+			await prisma.applcatorGrower.update({
+				where: {
+					applicatorId_growerId: {
+						applicatorId,
+						growerId,
+					},
 				},
-			},
-			data: {
-				inviteStatus: status, // Only updating the inviteStatus field
-			},
-		});
-
-		return {
-			status: httpStatus.OK, // 200
-			message: 'Invite status updated successfully',
-		};
+				data: {
+					inviteStatus: status, // Only updating the inviteStatus field
+				},
+			});
+			return {
+				message: 'Invite sent successfully.',
+			};
+		}
+		if (status === 'ACCEPTED') {
+			// Update the inviteStatus field
+			await prisma.applcatorGrower.update({
+				where: {
+					applicatorId_growerId: {
+						applicatorId,
+						growerId,
+					},
+				},
+				data: {
+					inviteStatus: status, // Only updating the inviteStatus field
+				},
+			});
+			return {
+				message: 'Invite accepted successfully.',
+			};
+		}
+		if (status === 'REJECTED') {
+			// Update the inviteStatus field
+			await prisma.applcatorGrower.update({
+				where: {
+					applicatorId_growerId: {
+						applicatorId,
+						growerId,
+					},
+				},
+				data: {
+					inviteStatus: status, // Only updating the inviteStatus field
+				},
+			});
+			return {
+				message: 'Invite rejected successfully.',
+			};
+		}
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			// Handle Prisma-specific error codes
@@ -414,73 +376,71 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 
 const deleteGrower = async (growerId: number, applicatorId: number) => {
 	try {
-		const result = await prisma.applcatorGrower.deleteMany({
+		await prisma.applcatorGrower.delete({
 			where: {
-				growerId: growerId,
-				applicatorId: applicatorId,
+				applicatorId_growerId: {
+					growerId,
+					applicatorId,
+				},
 			},
 		});
-		// if grower id is not found
-		if (result.count === 0) {
-			return {
-				status: httpStatus.NOT_FOUND, // 204
-				message: 'Grower not found ',
-			};
-		}
+
 		return {
-			status: httpStatus.NO_CONTENT, // 204
 			message: 'Grower deleted successfully',
 		};
 	} catch (error) {
-		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2025') {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'A grower with this ID and applicator ID does not exist',
-				);
-			}
-		}
-
 		if (error instanceof Error) {
 			// Handle generic errors
-			throw new ApiError(httpStatus.CONFLICT, error.message);
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while deleting grower.',
+			);
 		}
 	}
 };
 
-const getUserByStatus = async (status: string) => {
-	if (!Object.values(InviteStatus).includes(status as InviteStatus)) {
-		throw new ApiError(
-			httpStatus.BAD_REQUEST,
-			`Invalid status value. Allowed values are: ${Object.values(InviteStatus).join(', ')}.`,
-		);
-	}
+const getPendingInvites = async (userId: number) => {
 	try {
-		const user = await prisma.applcatorGrower.findMany({
+		const pendingInvites = await prisma.applcatorGrower.findMany({
 			where: {
-				inviteStatus: status as InviteStatus,
+				OR: [{ applicatorId: userId }, { growerId: userId }],
+				inviteStatus: 'PENDING',
+			},
+			include: {
+				grower: {
+					omit: {
+						password: true,
+					},
+				},
+				applicator: {
+					omit: {
+						password: true,
+					},
+				},
 			},
 		});
 
-		return user || [];
+		return pendingInvites;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors or unexpected error
-			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retrieving pending invites.',
+			);
 		}
 	}
 };
 export default {
 	uploadProfileImage,
+	updateProfile,
 	getUserByID,
 	deleteUser,
-	updateUserById,
-	getUserList,
-	getUserByEmail,
+	getAllUsers,
+	getGrowerByEmail,
 	createGrower,
-	getAllGrowers,
+	getAllGrowersByApplicator,
 	updateInviteStatus,
-	getUserByStatus,
+	getPendingInvites,
 	deleteGrower,
 };

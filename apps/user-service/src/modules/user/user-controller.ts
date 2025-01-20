@@ -15,80 +15,82 @@ const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
+// contoroller to update user profile
+const updateProfile = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
+	const data = req.body;
+	const result = await userService.updateProfile(data, userId);
+	res.status(httpStatus.OK).json(result);
+});
+
 // contoroller to get user by ID
 
 const getUserById = catchAsync(async (req: Request, res: Response) => {
-	const userId = req.params.id;
+	const userId = +req.params.id;
 	const result = await userService.getUserByID(userId);
 	res.status(httpStatus.OK).json(result);
 });
 
-// contoroller to update user by ID
-const updateUserById = catchAsync(async (req: Request, res: Response) => {
-	const userId = req.params.id;
-	const data = req.body;
-
-	const result = await userService.updateUserById(data, userId);
-	res.status(httpStatus.OK).json(result);
-});
-// contoroller to get userList
-const getUserList = catchAsync(async (req: Request, res: Response) => {
-	const userData = await userService.getUserList();
-	res.status(httpStatus.OK).json({ result: userData });
-});
-
 // contoroller to delete user by ID
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
-	const userId = req.params.id;
+	const userId = +req.params.id;
 	const result = await userService.deleteUser(userId);
 	res.status(httpStatus.OK).json(result);
 });
-const getUserByEmail = catchAsync(async (req: Request, res: Response) => {
-	const userEmail = req.params.email;
-	console.log(userEmail);
-	const result = await userService.getUserByEmail(userEmail);
-	res.status(httpStatus.OK).json({ result: result });
-});
-const createGrower = catchAsync(async (req: Request, res: Response) => {
-	const data = req.body;
-	const applicatorId = 1;
-	const result = await userService.createGrower(data, applicatorId);
-	res.status(httpStatus.OK).json({ result: result });
-});
-const getAllGrowers = catchAsync(async (req: Request, res: Response) => {
-	const userData = await userService.getAllGrowers();
+
+// contoroller to get userList
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+	const userData = await userService.getAllUsers();
 	res.status(httpStatus.OK).json({ result: userData });
 });
 
+const getGrowerByEmail = catchAsync(async (req: Request, res: Response) => {
+	const email = req.params.email;
+	const result = await userService.getGrowerByEmail(email);
+	res.status(httpStatus.OK).json(result);
+});
+const createGrower = catchAsync(async (req: Request, res: Response) => {
+	const data = req.body;
+	const applicatorId = req.payload.id;
+	const result = await userService.createGrower(data, applicatorId);
+	res.status(httpStatus.CREATED).json(result);
+});
+const getAllGrowersByApplicator = catchAsync(
+	async (req: Request, res: Response) => {
+		const applicatorId = req.payload.id;
+		const result =
+			await userService.getAllGrowersByApplicator(applicatorId);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
+
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	const data = req.body;
-
 	const result = await userService.updateInviteStatus(data);
 	res.status(httpStatus.OK).json(result);
 });
-const getUserByStatus = catchAsync(async (req: Request, res: Response) => {
-	const status = req.params.status;
-	const result = await userService.getUserByStatus(status);
+const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
+	const result = await userService.getPendingInvites(userId);
 	res.status(httpStatus.OK).json({ result: result });
 });
 
 const deleteGrower = catchAsync(async (req: Request, res: Response) => {
-	const { id, userId } = req.params;
-	const growerId = parseInt(id);
-	const applicatorId = parseInt(userId);
+	const growerId = +req.params.growerId;
+	const applicatorId = req.payload.id;
 	const result = await userService.deleteGrower(growerId, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
 	uploadProfileImage,
 	getUserById,
-	updateUserById,
+	updateProfile,
 	deleteUser,
-	getUserList,
-	getUserByEmail,
+	getAllUsers,
+	getGrowerByEmail,
 	createGrower,
-	getAllGrowers,
+	getAllGrowersByApplicator,
 	updateInviteStatus,
-	getUserByStatus,
+	getPendingInvites,
 	deleteGrower,
 };
