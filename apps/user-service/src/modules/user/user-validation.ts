@@ -23,7 +23,7 @@ const createGrowerSchema: Schema = Joi.object({
 			.pattern(/^\d{5}(-\d{4})?$/)
 			.required(), // ZIP code in standard formats
 		bio: Joi.string().max(500).optional(), // Short biography
-		additionalInfo: Joi.object().optional(), // Additional information as a flexible object
+		additionalInfo: Joi.string().optional(), // Additional information as a flexible object
 	}).required(),
 });
 

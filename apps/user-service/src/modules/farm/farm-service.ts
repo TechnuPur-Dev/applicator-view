@@ -5,13 +5,12 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { CreateFarmParams } from './farm-types';
 
-const createForm = async (
+const createFarm = async (
 	data: CreateFarmParams,
 	createdById: number,
 	growerId: number,
 ) => {
 	try {
-		const { name, state, county, township, zipCode, isActive } = data;
 		// Validate grower existence
 		const grower = await prisma.user.findUnique({
 			where: { id: growerId },
@@ -26,18 +25,13 @@ const createForm = async (
 		// Create farm
 		const result = await prisma.farm.create({
 			data: {
-				name: name || null, // Optional fields should allow null
-				state: state || null,
-				county: county || null,
-				township: township || null,
-				zipCode: zipCode || null,
-				isActive: isActive ?? true, // Default isActive to true if not provided
+				...data,
 				createdById,
 				growerId,
 			},
 		});
 
-		return { result, message: 'Farm created successfully.' };
+		return result;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			// Handle Prisma-specific error codes
@@ -48,7 +42,10 @@ const createForm = async (
 				);
 			}
 		}
-
+		if (error instanceof ApiError) {
+			// Handle APi error errors
+			throw new ApiError(error.statusCode, error.message);
+		}
 		if (error instanceof Error) {
 			// Handle generic errors
 			throw new ApiError(httpStatus.CONFLICT, error.message);
@@ -62,58 +59,63 @@ const getAllFarms = async () => {
 		return result;
 	} catch (error) {
 		if (error instanceof Error) {
-			// Handle generic errors
-			throw new ApiError(httpStatus.NOT_FOUND, 'some thing went wrong');
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Error while retrieving farms.',
+			);
 		}
 	}
 };
 const getFarmById = async (Id: number) => {
 	try {
-		const result = await prisma.farm.findMany({
+		const farm = await prisma.farm.findUnique({
 			where: {
 				id: Id,
 			},
 			include: {
 				fields: true, // Include related fields in the result
 			},
-			
 		}); // Fetch all users
-		return result;
+		console.log(farm,"farm")
+		if (!farm) {
+			throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid farm Id');
+		}
+		return farm;
 	} catch (error) {
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
 		if (error instanceof Error) {
-			// Handle generic errors
-			throw new ApiError(httpStatus.NOT_FOUND, 'some thing went wrong');
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Error while retrieving Farm.',
+			);
 		}
 	}
 };
 
-const deleteFarm = async (Id: string, userId: string) => {
+const deleteFarm = async (Id: number, userId: number) => {
 	try {
-		await prisma.farm.delete({
+		 await prisma.farm.delete({
 			where: {
-				id: parseInt(Id),
-				createdById: parseInt(userId),
+				id: Id,
+				createdById: userId,
 			},
 		});
-
+	
 		return {
-			status: httpStatus.NO_CONTENT, // 204
-			message: 'User deleted successfully',
+		
+			message: 'Farm deleted successfully',
 		};
 	} catch (error) {
-		if (error instanceof Prisma.PrismaClientKnownRequestError) {
-			// Handle Prisma-specific error codes
-			if (error.code === 'P2025') {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'A farm to delete with this id not exist',
-				);
-			}
+		if (error instanceof ApiError) {
+			// Handle generic errors
+			throw new ApiError(error.statusCode, error.message);
 		}
 
 		if (error instanceof Error) {
 			// Handle generic errors
-			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
+			throw new ApiError(httpStatus.CONFLICT, 'Errror while deleting farm.',);
 		}
 	}
 };
@@ -128,7 +130,7 @@ const updateFarm = async (
 		if (!farm) {
 			throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
 		}
-         console.log(farm,"farm")
+		console.log(farm, 'farm');
 		// Update farm
 		const updatedFarm = await prisma.farm.update({
 			where: { id: farmId },
@@ -136,11 +138,10 @@ const updateFarm = async (
 				...data,
 				createdById: updatedById,
 				growerId: farm.growerId, // Retain the existing growerId from farmModel
-				updatedAt: new Date(), // Ensure updatedAt is updated
 			},
 		});
 
-		return { updatedFarm, message: 'Farm updated successfully.' };
+		return updatedFarm;
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			if (error.code === 'P2003') {
@@ -150,17 +151,20 @@ const updateFarm = async (
 				);
 			}
 		}
-
-		// Generic error handling
-		throw new ApiError(
-			httpStatus.INTERNAL_SERVER_ERROR,
-			'An error occurred.',
-		);
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
+		if (error instanceof Error) {
+			throw new ApiError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				'An error occurred.',
+			);
+		}
 	}
 };
 
 export default {
-	createForm,
+	createFarm,
 	getAllFarms,
 	getFarmById,
 	deleteFarm,

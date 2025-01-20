@@ -6,6 +6,9 @@ import Joi, { Schema } from 'joi';
 // } from '../../../../../shared/utils/joi-common-validations';
 
 const farmSchema: Schema = Joi.object({
+	params: Joi.object({
+		growerId: Joi.number().integer().positive().required(), // growerId should be a positive number
+	}).required(),
 	body: Joi.object({
 		name: Joi.string().min(1).max(50).required(), // First name with minimum and maximum length
 		state: Joi.string().max(50).required(), // State name
