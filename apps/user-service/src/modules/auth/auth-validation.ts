@@ -16,7 +16,7 @@ const registerUserSchema: Schema = Joi.object({
 		password: passwordSchema.required(), // Password with length constraints
 		role: userRoleSchema.required(), // Adjust roles as needed
 		businessName: Joi.string().max(100).optional(), // Business name with a maximum length
-		experience: Joi.number().integer().min(0).max(50).optional(), // Experience in years
+		experience: Joi.number().min(0).max(50).optional(), // Experience in years
 		address1: Joi.string().max(100).required(), // Address line 1
 		address2: Joi.string().max(100).optional(), // Address line 2
 		state: Joi.string().max(50).required(), // State name
@@ -26,7 +26,7 @@ const registerUserSchema: Schema = Joi.object({
 			.pattern(/^\d{5}(-\d{4})?$/)
 			.required(), // ZIP code in standard formats
 		bio: Joi.string().max(500).optional(), // Short biography
-		additionalInfo: Joi.object().optional(), // Additional information as a flexible object
+		additionalInfo: Joi.string().max(500).optional(), // Additional information as a flexible object
 	}).required(),
 });
 
