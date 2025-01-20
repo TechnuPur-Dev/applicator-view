@@ -10,8 +10,8 @@ const router: Router = express.Router();
 // Define routes
 router.route('/create-farm/:growerId').post(verifyToken ,validateSchema(farmValidation.farmSchema), farmController.createFarm);
 router.route('/all-farms').get(verifyToken, farmController.getAllFarms)
-router.route('/getById/:farmId').get(verifyToken ,farmController.getFarmById)
-router.route('/delete/:farmId').delete(verifyToken, farmController.deleteFarm)
-router.route('/update-farm/:farmId').put(verifyToken , farmController.updateFarm)
+router.route('/getById/:farmId').get(verifyToken ,validateSchema(farmValidation.paramsSchema), farmController.getFarmById)
+router.route('/delete/:farmId').delete(verifyToken,validateSchema(farmValidation.paramsSchema), farmController.deleteFarm)
+router.route('/update-farm/:farmId').put(verifyToken ,validateSchema(farmValidation.farmUpdateSchema), farmController.updateFarm)
 
 export default router;

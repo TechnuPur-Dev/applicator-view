@@ -29,4 +29,18 @@ const createGrowerSchema: Schema = Joi.object({
 
 
 
-export default { createGrowerSchema };
+const paramsSchema: Schema = Joi.object({
+	params: Joi.object({
+		id: Joi.number().integer().positive(),
+		growerId: Joi.number().integer().positive(),
+	})
+	.or('id', 'growerId') // At least one must be present
+	.required(),
+});
+
+const verifyEmailSchema: Schema = Joi.object({
+	params: Joi.object({
+		email: Joi.string().email().required(),
+	}).required(),
+});
+export default { createGrowerSchema,paramsSchema ,verifyEmailSchema};
