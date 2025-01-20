@@ -9,8 +9,6 @@ const createGrowerSchema: Schema = Joi.object({
 		lastName: Joi.string().min(1).max(50).required(), // Last name with minimum and maximum length
 		email: Joi.string().email().required(), // Valid email address
 		phoneNumber: phoneNumberSchema.required(), // International phone number format
-		businessName: Joi.string().max(100).optional(), // Business name with a maximum length
-		experience: Joi.number().min(0).max(50).optional(), // Experience in years
 		address1: Joi.string().max(100).required(), // Address line 1
 		address2: Joi.string().max(100).optional(), // Address line 2
 		state: Joi.string().max(50).required(), // State name

@@ -20,5 +20,14 @@ router
 router.route('/:farmId').get(verifyToken, farmController.getFarmById);
 router.route('/delete/:farmId').delete(verifyToken, farmController.deleteFarm);
 router.route('/update/:farmId').put(verifyToken, farmController.updateFarm);
+router
+	.route('/permission/assign')
+	.post(verifyToken, farmController.assignFarmPermission);
+router
+	.route('/permission/update/:permissionId')
+	.put(verifyToken, farmController.updateFarmPermission);
+router
+	.route('/permission/delete/:permissionId')
+	.delete(verifyToken, farmController.deleteFarmPermission);
 
 export default router;

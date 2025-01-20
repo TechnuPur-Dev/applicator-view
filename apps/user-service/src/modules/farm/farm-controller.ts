@@ -51,10 +51,32 @@ const updateFarm = catchAsync(async (req: Request, res: Response) => {
 	const result = await farmService.updateFarm(farmId, data);
 	res.status(httpStatus.OK).json(result);
 });
+// controler to update Farm
+const assignFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const data = req.body;
+	const result = await farmService.assignFarmPermission(data);
+	res.status(httpStatus.OK).json(result);
+});
+// controler to update Farm
+const updateFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const permissionId = +req.params.permissionId;
+	const data = req.body;
+	const result = await farmService.updateFarmPermission(permissionId, data);
+	res.status(httpStatus.OK).json(result);
+});
+// controler to update Farm
+const deleteFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const permissionId = +req.params.permissionId;
+	const result = await farmService.deleteFarmPermission(permissionId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createFarm,
 	getAllFarmsByGrower,
 	getFarmById,
 	deleteFarm,
 	updateFarm,
+	assignFarmPermission,
+	updateFarmPermission,
+	deleteFarmPermission,
 };

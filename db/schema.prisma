@@ -38,8 +38,9 @@ model User {
   fieldsCreated Field[]            @relation("FieldCreator")
   tableViews    TableView[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  FarmPermission FarmPermission[]
 }
 
 model ApplicatorGrower {
@@ -63,7 +64,7 @@ model ApplicatorGrower {
 }
 
 model Farm {
-  id          Int     @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   name        String?
   createdById Int
   growerId    Int
@@ -72,10 +73,25 @@ model Farm {
   township    String?
   zipCode     String?
   isActive    Boolean
+  permissions FarmPermission[]
 
   grower    User    @relation("FarmGrower", fields: [growerId], references: [id])
   createdBy User    @relation("FarmCreator", fields: [createdById], references: [id])
   fields    Field[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FarmPermission {
+  id           Int     @id @default(autoincrement())
+  farmId       Int
+  applicatorId Int
+  canView      Boolean @default(true)
+  canEdit      Boolean
+
+  farm       Farm @relation(fields: [farmId], references: [id])
+  applicator User @relation(fields: [applicatorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

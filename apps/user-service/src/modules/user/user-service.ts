@@ -281,13 +281,23 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 				grower: {
 					include: {
 						farms: {
+							where: {
+								permissions: {
+									some: {
+										applicatorId,
+									},
+								},
+							},
 							include: {
+								permissions: true, // Include permissions to calculate farm permissions for the applicator
 								fields: true, // Include fields to calculate total acres
 							},
 						},
 					},
 					omit: {
 						password: true, // Exclude sensitive data
+						businessName: true,
+						experience: true,
 					},
 				},
 			},

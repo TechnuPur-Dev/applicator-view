@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { CreateFarmParams } from './farm-types';
+import { CreateFarmParams, AssignFarmPermission } from './farm-types';
 
 const createFarm = async (
 	data: CreateFarmParams,
@@ -55,15 +55,50 @@ const createFarm = async (
 
 const getAllFarmsByGrower = async (growerId: number) => {
 	try {
-		const result = await prisma.farm.findMany({
+		const farms = await prisma.farm.findMany({
 			where: {
 				growerId,
 			},
 			include: {
 				fields: true, // Include related fields in the result
+				permissions: {
+					include: {
+						applicator: {
+							select: {
+								id: true,
+								profileImage: true,
+								thumbnailProfileImage: true,
+								firstName: true,
+								lastName: true,
+								fullName: true,
+							},
+						},
+					},
+				},
+			},
+			orderBy: {
+				createdAt: 'desc',
 			},
 		}); // Fetch all users
-		return result;
+		// Calculate total acres for each grower and each farm
+		const enrichedFarms = farms.map((farm) => {
+			const totalAcresByFarm = farm.fields.reduce(
+				(totalFarmAcres, field) => {
+					return (
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0')
+					);
+				},
+				0,
+			);
+
+			// Add total acres to the grower object
+			return {
+				...farm,
+				totalAcres: totalAcresByFarm,
+			};
+		});
+		return enrichedFarms;
 	} catch (error) {
 		if (error instanceof Error) {
 			throw new ApiError(
@@ -169,10 +204,124 @@ const updateFarm = async (farmId: number, data: CreateFarmParams) => {
 	}
 };
 
+const assignFarmPermission = async (data: AssignFarmPermission) => {
+	try {
+		const { farmId, applicatorId, canView, canEdit } = data;
+
+		// Validate farm existence
+		const farm = await prisma.farm.findUnique({
+			where: { id: farmId },
+			select: { id: true },
+		});
+		if (!farm) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
+		}
+		console.log(farm, 'farm');
+		// Update farm
+		const permission = await prisma.farmPermission.create({
+			data: { farmId, applicatorId, canView, canEdit },
+		});
+
+		return permission;
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			if (error.code === 'P2003') {
+				throw new ApiError(
+					httpStatus.BAD_REQUEST,
+					'Foreign key constraint violated.',
+				);
+			}
+		}
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
+		if (error instanceof Error) {
+			throw new ApiError(httpStatus.CONFLICT, 'An error occurred.');
+		}
+	}
+};
+const updateFarmPermission = async (
+	permissionId: number,
+	data: AssignFarmPermission,
+) => {
+	try {
+		// Update farm
+		const updatedPermission = await prisma.farmPermission.update({
+			where: { id: permissionId },
+			data,
+		});
+
+		return updatedPermission;
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A record to udpate with this id does not exist',
+				);
+			}
+			if (error.code === 'P2003') {
+				throw new ApiError(
+					httpStatus.BAD_REQUEST,
+					'Foreign key constraint violated.',
+				);
+			}
+		}
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
+		if (error instanceof Error) {
+			throw new ApiError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				'An error occurred.',
+			);
+		}
+	}
+};
+const deleteFarmPermission = async (permissionId: number) => {
+	try {
+		// Update farm
+		await prisma.farmPermission.delete({
+			where: { id: permissionId },
+		});
+
+		return {
+			message: 'Farm permission deleted successfully.',
+		};
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A record to delete with this id does not exist',
+				);
+			}
+			if (error.code === 'P2003') {
+				throw new ApiError(
+					httpStatus.BAD_REQUEST,
+					'Foreign key constraint violated.',
+				);
+			}
+		}
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
+		if (error instanceof Error) {
+			throw new ApiError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				'An error occurred.',
+			);
+		}
+	}
+};
+
 export default {
 	createFarm,
 	getAllFarmsByGrower,
 	getFarmById,
 	deleteFarm,
 	updateFarm,
+	assignFarmPermission,
+	updateFarmPermission,
+	deleteFarmPermission,
 };

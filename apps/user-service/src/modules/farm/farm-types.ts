@@ -1,5 +1,4 @@
 interface CreateFarmParams {
-
 	name: string;
 	state: string;
 	county: string;
@@ -8,4 +7,11 @@ interface CreateFarmParams {
 	isActive: boolean;
 }
 
-export { CreateFarmParams };
+interface AssignFarmPermission {
+	farmId: number;
+	applicatorId: number;
+	canView: boolean;
+	canEdit: boolean;
+}
+
+export { CreateFarmParams, AssignFarmPermission };
