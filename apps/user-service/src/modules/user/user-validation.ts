@@ -21,6 +21,24 @@ const createGrowerSchema: Schema = Joi.object({
 		additionalInfo: Joi.string().max(500).optional(), // Additional information as a flexible object
 	}).required(),
 });
+
+
+
+const paramsSchema: Schema = Joi.object({
+	params: Joi.object({
+		id: Joi.number().integer().positive(),
+		growerId: Joi.number().integer().positive(),
+	})
+	.or('id', 'growerId') // At least one must be present
+	.required(),
+});
+
+const verifyEmailSchema: Schema = Joi.object({
+	params: Joi.object({
+		email: Joi.string().email().required(),
+	}).required(),
+});
+
 const updateInviteStatus: Schema = Joi.object({
 	body: Joi.object({
 		status: inviteStatusSchema.required(), 
@@ -28,4 +46,4 @@ const updateInviteStatus: Schema = Joi.object({
 		growerId: Joi.number().integer().positive().required(), 
 			}).required(),
 });
-export default { createGrowerSchema ,updateInviteStatus};
+export default { createGrowerSchema,paramsSchema ,verifyEmailSchema ,updateInviteStatus};
