@@ -265,9 +265,10 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 		}
 	}
 };
-// get All Growers
+
 const getAllGrowersByApplicator = async (applicatorId: number) => {
 	try {
+		// Fetch growers with their farms and fields
 		const growers = await prisma.applicatorGrower.findMany({
 			where: {
 				applicatorId,
@@ -280,21 +281,63 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 				grower: {
 					include: {
 						farms: {
+							where: {
+								permissions: {
+									some: {
+										applicatorId,
+									},
+								},
+							},
 							include: {
-								fields: true,
+								permissions: true, // Include permissions to calculate farm permissions for the applicator
+								fields: true, // Include fields to calculate total acres
 							},
 						},
 					},
 					omit: {
-						password: true,
+						password: true, // Exclude sensitive data
+						businessName: true,
+						experience: true,
 					},
-				}, // Include related grower data
+				},
 			},
-		}); // Fetch all users
-		return growers;
+		});
+
+		// Calculate total acres for each grower and each farm
+		const enrichedGrowers = growers.map((grower) => {
+			const totalAcresByGrower = grower.grower?.farms.reduce(
+				(totalGrowerAcres, farm) => {
+					// Calculate total acres for this farm
+					const totalAcresByFarm = farm.fields.reduce(
+						(totalFarmAcres, field) => {
+							return (
+								totalFarmAcres +
+								parseFloat(field.acres?.toString() || '0')
+							);
+						},
+						0,
+					);
+
+					// Type assertion to inform TypeScript about `totalAcres`
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					(farm as any).totalAcres = totalAcresByFarm;
+
+					// Accumulate total grower acres
+					return totalGrowerAcres + totalAcresByFarm;
+				},
+				0,
+			);
+
+			// Add total acres to the grower object
+			return {
+				...grower,
+				totalAcres: totalAcresByGrower,
+			};
+		});
+
+		return enrichedGrowers;
 	} catch (error) {
 		if (error instanceof Error) {
-			// Handle generic errors
 			throw new ApiError(
 				httpStatus.NOT_FOUND,
 				'Error while retrieving growers.',

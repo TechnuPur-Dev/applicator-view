@@ -1,15 +1,14 @@
 import express, { Router } from 'express';
 import fieldController from './field-controller';
-// import authController from './auth-controller';
-// import { verifyToken } from '../../../middlewares/auth.middleware'; // Uncomment and add correct path for TypeScript support if needed
+import { verifyToken } from '../../../../../shared/middlewares/auth-middleware';
 
 const router: Router = express.Router();
 
 // Define routes
-router.route('/all-fields').get(fieldController.getFieldList);
-router.route('/:id').get(fieldController.getFieldById);
-router.route('/:id').patch(fieldController.updateFieldById);
-router.route('/:id').delete(fieldController.deleteField);
-router.route('/create-field').post(fieldController.createField);
+router.route('/create').post(verifyToken, fieldController.createField);
+router.route('/all').get(verifyToken, fieldController.getAllFields);
+router.route('/:id').get(verifyToken, fieldController.getFieldById);
+router.route('/:id').put(verifyToken, fieldController.updateFieldById);
+router.route('/:id').delete(verifyToken, fieldController.deleteField);
 
 export default router;

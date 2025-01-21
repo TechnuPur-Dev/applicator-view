@@ -3,7 +3,7 @@ import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import userService from './user-service';
 
-// contoroller to get userList
+// Controller to get userList
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
 	const file = req.file;
 
@@ -15,7 +15,7 @@ const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-// contoroller to update user profile
+// Controller to update user profile
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const data = req.body;
@@ -23,7 +23,7 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-// contoroller to get user by ID
+// Controller to get user by ID
 
 const getUserById = catchAsync(async (req: Request, res: Response) => {
 	const userId = +req.params.id;
@@ -31,14 +31,14 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-// contoroller to delete user by ID
+// Controller to delete user by ID
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
 	const userId = +req.params.id;
 	const result = await userService.deleteUser(userId);
 	res.status(httpStatus.OK).json(result);
 });
 
-// contoroller to get userList
+// Controller to get userList
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 	const userData = await userService.getAllUsers();
 	res.status(httpStatus.OK).json({ result: userData });

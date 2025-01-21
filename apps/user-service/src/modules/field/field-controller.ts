@@ -3,29 +3,28 @@ import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import fieldService from './field-service';
 
-// contoroller to get field by ID
+// Controller to get field by ID
 
 const getFieldById = catchAsync(async (req: Request, res: Response) => {
-	const fieldId = req.params.id;
+	const fieldId = +req.params.id;
 	const result = await fieldService.getFieldById(fieldId);
 	res.status(httpStatus.OK).json(result);
 });
 
-// contoroller to update field by ID
+// Controller to update field by ID
 const updateFieldById = catchAsync(async (req: Request, res: Response) => {
-	const fieldId = req.params.id;
+	const fieldId = +req.params.id;
 	const data = req.body;
-
 	const result = await fieldService.updateFieldById(data, fieldId);
 	res.status(httpStatus.OK).json(result);
 });
-// contoroller to get fieldList
-const getFieldList = catchAsync(async (req: Request, res: Response) => {
-	const fieldData = await fieldService.getFieldList();
+// Controller to get fieldList
+const getAllFields = catchAsync(async (req: Request, res: Response) => {
+	const fieldData = await fieldService.getAllFields();
 	res.status(httpStatus.OK).json({ result: fieldData });
 });
 
-// contoroller to delete field by ID
+// Controller to delete field by ID
 const deleteField = catchAsync(async (req: Request, res: Response) => {
 	const fieldId = req.params.id;
 	const result = await fieldService.deleteField(fieldId);
@@ -33,15 +32,16 @@ const deleteField = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createField = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
 	const data = req.body;
-	const result = await fieldService.createField(data);
-	res.status(httpStatus.OK).json({ result: result });
+	const result = await fieldService.createField(userId, data);
+	res.status(httpStatus.OK).json(result);
 });
 
 export default {
 	getFieldById,
 	updateFieldById,
 	deleteField,
-	getFieldList,
+	getAllFields,
 	createField,
 };
