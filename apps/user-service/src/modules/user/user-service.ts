@@ -230,6 +230,9 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 					fullName: `${firstName} ${lastName}`,
 					role: 'GROWER',
 				},
+				omit: {
+					password: true,
+				},
 			});
 
 			await prisma.applicatorGrower.create({

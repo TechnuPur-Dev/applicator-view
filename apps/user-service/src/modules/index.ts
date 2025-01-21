@@ -3,6 +3,7 @@ import auth from './auth/auth-routes';
 import user from './user/user-routes';
 import field from './field/field-routes';
 import farm from './farm/farm-routes'
+import table from './tableView/table-view-routes'
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -24,6 +25,10 @@ const defaultRoutes = [
   {
 		path: '/farm', // Path for the farms routes
 		route: farm,
+	},
+	{
+		path: '/table', // Path for the farms routes
+		route: table,
 	},
 ];
 
