@@ -3,15 +3,40 @@ import viiewController from './table-view-controller';
 import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import viewValidation from './table-view-validation';
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware';
-// import { verifyToken } from '../../../middlewares/auth.middleware'; // Uncomment and add correct path for TypeScript support if needed
 
 const router: Router = express.Router();
 
 // Define routes
-router.route('/create-view').post(verifyToken ,  validateSchema(viewValidation.viewSchema), viiewController.createView);
-router.route('/all-views').get(verifyToken, viiewController.getAllViews)
-router.route('/get-view/:viewId').get(verifyToken, validateSchema(viewValidation.paramsSchema), viiewController.getViewById)
-router.route('/delete-view/:viewId').delete(verifyToken,  validateSchema(viewValidation.paramsSchema), viiewController.deleteView)
- router.route('/update-view/:viewId').put(verifyToken , validateSchema(viewValidation.viewSchema),  viiewController.updateView)
+router
+	.route('/create-view')
+	.post(
+		verifyToken,
+		validateSchema(viewValidation.viewSchema),
+		viiewController.createView,
+	);
+router
+	.route('/all-views/:tableName')
+	.get(verifyToken, viiewController.getAllViews);
+router
+	.route('/get-view/:viewId')
+	.get(
+		verifyToken,
+		validateSchema(viewValidation.paramsSchema),
+		viiewController.getViewById,
+	);
+router
+	.route('/delete-view/:viewId')
+	.delete(
+		verifyToken,
+		validateSchema(viewValidation.paramsSchema),
+		viiewController.deleteView,
+	);
+router
+	.route('/update-view/:viewId')
+	.put(
+		verifyToken,
+		validateSchema(viewValidation.viewSchema),
+		viiewController.updateView,
+	);
 
 export default router;
