@@ -26,7 +26,7 @@ router
 	.delete(verifyToken,validateSchema(userValidation.paramsSchema), userController.deleteGrower);
 router
 	.route('/update/invite-status')
-	.put(verifyToken, userController.updateInviteStatus);
+	.put(verifyToken, validateSchema(userValidation.updateInviteStatus),  userController.updateInviteStatus);
 router
 	.route('/invites/pending')
 	.get(verifyToken, userController.getPendingInvites);

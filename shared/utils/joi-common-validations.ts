@@ -28,8 +28,8 @@ const paginationSchema = Joi.object({
 });
 
 // Status and Role Schemas
-const statusSchema: Schema = Joi.string()
-	.valid('accepted', 'rejected')
+const inviteStatusSchema: Schema = Joi.string()
+	.valid('NOT_SENT', 'PENDING', 'ACCEPTED', 'REJECTED')
 	.required();
 const userRoleSchema: Schema = Joi.string()
 	.valid('GROWER', 'APPLICATOR', 'WORKER')
@@ -42,7 +42,7 @@ export {
 	passwordSchema,
 	paginationSchema,
 	idSchema,
-	statusSchema,
+	inviteStatusSchema,
 	arrayOfIds,
 	userRoleSchema,
 };

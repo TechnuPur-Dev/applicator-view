@@ -1,5 +1,5 @@
 import Joi, { Schema } from 'joi';
-import { phoneNumberSchema } from '../../../../../shared/utils/joi-common-validations';
+import { phoneNumberSchema,inviteStatusSchema } from '../../../../../shared/utils/joi-common-validations';
 
 const createGrowerSchema: Schema = Joi.object({
 	body: Joi.object({
@@ -38,4 +38,12 @@ const verifyEmailSchema: Schema = Joi.object({
 		email: Joi.string().email().required(),
 	}).required(),
 });
-export default { createGrowerSchema,paramsSchema ,verifyEmailSchema};
+
+const updateInviteStatus: Schema = Joi.object({
+	body: Joi.object({
+		status: inviteStatusSchema.required(), 
+		applicatorId:  Joi.number().integer().positive().required(),
+		growerId: Joi.number().integer().positive().required(), 
+			}).required(),
+});
+export default { createGrowerSchema,paramsSchema ,verifyEmailSchema ,updateInviteStatus};
