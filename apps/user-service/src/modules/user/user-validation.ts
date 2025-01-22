@@ -1,5 +1,8 @@
 import Joi, { Schema } from 'joi';
-import { phoneNumberSchema,inviteStatusSchema } from '../../../../../shared/utils/joi-common-validations';
+import {
+	phoneNumberSchema,
+	inviteStatusSchema,
+} from '../../../../../shared/utils/joi-common-validations';
 
 const createGrowerSchema: Schema = Joi.object({
 	body: Joi.object({
@@ -22,18 +25,16 @@ const createGrowerSchema: Schema = Joi.object({
 	}).required(),
 });
 
-
-
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
 		id: Joi.number().integer().positive(),
 		growerId: Joi.number().integer().positive(),
 	})
-	.or('id', 'growerId') // At least one must be present
-	.required(),
+		.or('id', 'growerId') // At least one must be present
+		.required(),
 });
 
-const verifyEmailSchema: Schema = Joi.object({
+const verifyEmailAndSendOTPSchema: Schema = Joi.object({
 	params: Joi.object({
 		email: Joi.string().email().required(),
 	}).required(),
@@ -41,9 +42,14 @@ const verifyEmailSchema: Schema = Joi.object({
 
 const updateInviteStatus: Schema = Joi.object({
 	body: Joi.object({
-		status: inviteStatusSchema.required(), 
-		applicatorId:  Joi.number().integer().positive().required(),
-		growerId: Joi.number().integer().positive().required(), 
-			}).required(),
+		status: inviteStatusSchema.required(),
+		applicatorId: Joi.number().integer().positive().required(),
+		growerId: Joi.number().integer().positive().required(),
+	}).required(),
 });
-export default { createGrowerSchema,paramsSchema ,verifyEmailSchema ,updateInviteStatus};
+export default {
+	createGrowerSchema,
+	paramsSchema,
+	verifyEmailAndSendOTPSchema,
+	updateInviteStatus,
+};

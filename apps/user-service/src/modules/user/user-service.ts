@@ -90,7 +90,10 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 			where: {
 				id: userId,
 			},
-			data,
+			data: {
+				...data,
+				profileStatus: 'COMPLETE',
+			},
 		});
 		return udpatedUser;
 	} catch (error) {
@@ -277,7 +280,7 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 				growerFirstName: true,
 				growerLastName: true,
 				inviteStatus: true,
-				isArchived: true,
+				isArchivedByApplicator: true,
 				grower: {
 					include: {
 						farms: {
@@ -356,7 +359,7 @@ const getAllApplicatorByGrower = async (growerId: number) => {
 				growerFirstName: true,
 				growerLastName: true,
 				inviteStatus: true,
-				isArchived: true,
+				isArchivedByGrower: true,
 				applicator: {
 					omit: {
 						password: true, // Exclude sensitive data

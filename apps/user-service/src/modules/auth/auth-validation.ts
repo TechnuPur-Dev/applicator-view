@@ -3,6 +3,7 @@ import {
 	phoneNumberSchema,
 	passwordSchema,
 	userRoleSchema,
+	otpSchema,
 } from '../../../../../shared/utils/joi-common-validations';
 
 const registerUserSchema: Schema = Joi.object({
@@ -30,9 +31,17 @@ const registerUserSchema: Schema = Joi.object({
 	}).required(),
 });
 
-const verifyEmailSchema: Schema = Joi.object({
+const verifyEmailAndSendOTPSchema: Schema = Joi.object({
 	body: Joi.object({
 		email: Joi.string().email().required(),
+	}).required(),
+});
+
+const verifyOTPAndRegisterEmailSchema = Joi.object({
+	body: Joi.object({
+		email: Joi.string().email().required(),
+		otp: otpSchema.required(),
+		role: userRoleSchema.required(),
 	}).required(),
 });
 
@@ -43,4 +52,9 @@ const loginSchema: Schema = Joi.object({
 	}).required(),
 });
 
-export default { registerUserSchema, verifyEmailSchema, loginSchema };
+export default {
+	registerUserSchema,
+	verifyEmailAndSendOTPSchema,
+	verifyOTPAndRegisterEmailSchema,
+	loginSchema,
+};

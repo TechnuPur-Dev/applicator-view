@@ -20,6 +20,14 @@ const envVarsSchema = Joi.object({
 	AZURE_CONTAINER_NAME: Joi.string()
 		.required()
 		.description('Azure Container Name'),
+	SMTP_HOST: Joi.string().description('server that will send the emails'),
+	SMTP_PORT: Joi.number().description('port to connect to the email server'),
+	SMTP_USERNAME: Joi.string().description('username for email server'),
+	SMTP_PASSWORD: Joi.string().description('password for email server'),
+	EMAIL_FROM: Joi.string().description(
+		'the from field in the emails sent by the app',
+	),
+	EMAIL_SERVICE: Joi.string().description('Mail Service'),
 }).unknown(true);
 
 // Validate the environment variables
@@ -33,6 +41,7 @@ if (error) {
 
 // Configuration object
 const config = {
+	env: envVars.NODE_ENV,
 	jwt: {
 		accessSecret: envVars.ACCESS_TOKEN_SECRET as string,
 		accessExpirationMinutes:
@@ -40,6 +49,18 @@ const config = {
 	},
 	azureStorageUrl: envVars.AZURE_STORAGE_URL,
 	azureContainerName: envVars.AZURE_CONTAINER_NAME,
+	email: {
+		service: envVars.EMAIL_SERVICE,
+		smtp: {
+			auth: {
+				user: envVars.SMTP_USERNAME,
+				pass: envVars.SMTP_PASSWORD,
+			},
+			host: envVars.SMTP_HOST,
+			port: envVars.SMTP_PORT,
+		},
+		from: envVars.EMAIL_FROM,
+	},
 };
 
 export default config; // Default export

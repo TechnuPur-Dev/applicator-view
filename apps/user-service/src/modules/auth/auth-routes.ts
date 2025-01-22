@@ -7,16 +7,22 @@ const router: Router = express.Router();
 
 // Define routes
 router
+	.route('/verify-email')
+	.post(
+		validateSchema(authValidation.verifyEmailAndSendOTPSchema),
+		authController.verifyEmailAndSendOTP,
+	);
+router
+	.route('/verify-otp')
+	.post(
+		validateSchema(authValidation.verifyOTPAndRegisterEmailSchema),
+		authController.verifyOTPAndRegisterEmail,
+	);
+router
 	.route('/register')
 	.post(
 		validateSchema(authValidation.registerUserSchema),
 		authController.registerUser,
-	);
-router
-	.route('/verify-email')
-	.post(
-		validateSchema(authValidation.verifyEmailSchema),
-		authController.verifyEmail,
 	);
 router
 	.route('/login')

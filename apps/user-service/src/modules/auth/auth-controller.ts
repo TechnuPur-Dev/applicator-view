@@ -5,53 +5,22 @@ import authService from './auth-service';
 
 // Controller for verifying phone and sending OTP
 const registerUser = catchAsync(async (req: Request, res: Response) => {
-	const {
-		profileImage,
-		thumbnailProfileImage,
-		firstName,
-		lastName,
-		email,
-		phoneNumber,
-		password,
-		role,
-		businessName,
-		experience,
-		address1,
-		address2,
-		state,
-		county,
-		township,
-		zipCode,
-		bio,
-		additionalInfo,
-	} = req.body; // Destructure body
-	const result = await authService.registerUser({
-		profileImage,
-		thumbnailProfileImage,
-		firstName,
-		lastName,
-		email,
-		phoneNumber,
-		password,
-		role,
-		businessName,
-		experience,
-		address1,
-		address2,
-		state,
-		county,
-		township,
-		zipCode,
-		bio,
-		additionalInfo,
-	});
+	const result = await authService.registerUser(req.body);
 	res.status(httpStatus.OK).json(result);
 });
-const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-	const { email } = req.body; // Destructure body
-	const result = await authService.verifyEmail(email);
-	res.status(httpStatus.OK).json(result);
+const verifyEmailAndSendOTP = catchAsync(
+	async (req: Request, res: Response) => {
+		const { email } = req.body; // Destructure body
+		const result = await authService.verifyEmailAndSendOTP(email);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+
+const verifyOTPAndRegisterEmail = catchAsync(async (req, res) => {
+	const result = await authService.verifyOTPAndRegisterEmail(req.body);
+	res.status(httpStatus.CREATED).json(result);
 });
+
 const loginUser = catchAsync(async (req: Request, res: Response) => {
 	const { email, password } = req.body; // Destructure body
 	const result = await authService.loginUser({
@@ -62,6 +31,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 });
 export default {
 	registerUser,
-	verifyEmail,
+	verifyEmailAndSendOTP,
+	verifyOTPAndRegisterEmail,
 	loginUser,
 };

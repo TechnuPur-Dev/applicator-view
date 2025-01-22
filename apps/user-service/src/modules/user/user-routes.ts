@@ -11,25 +11,55 @@ router
 	.route('/upload/profile-image')
 	.post(upload, userController.uploadProfileImage);
 router.route('/profile/update').put(verifyToken, userController.updateProfile);
-router.route('/:id').get(verifyToken,validateSchema(userValidation.paramsSchema), userController.getUserById);
-router.route('/:id').delete(verifyToken,validateSchema(userValidation.paramsSchema), userController.deleteUser);
+router
+	.route('/:id')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.getUserById,
+	);
+router
+	.route('/:id')
+	.delete(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.deleteUser,
+	);
 router.route('/all-users').get(verifyToken, userController.getAllUsers);
 router
 	.route('/grower/email/:email')
-	.get(verifyToken,validateSchema(userValidation.verifyEmailSchema), userController.getGrowerByEmail);
-router.route('/grower/create').post(verifyToken, validateSchema(userValidation.createGrowerSchema), userController.createGrower);
+	.get(
+		verifyToken,
+		validateSchema(userValidation.verifyEmailAndSendOTPSchema),
+		userController.getGrowerByEmail,
+	);
+router
+	.route('/grower/create')
+	.post(
+		verifyToken,
+		validateSchema(userValidation.createGrowerSchema),
+		userController.createGrower,
+	);
 router
 	.route('/applicator/by-grower')
 	.get(verifyToken, userController.getAllApplicatorByGrower);
-	router
+router
 	.route('/growers/by-applicator')
 	.get(verifyToken, userController.getAllGrowersByApplicator);
 router
 	.route('/grower/by-applicator/:growerId')
-	.delete(verifyToken,validateSchema(userValidation.paramsSchema), userController.deleteGrower);
+	.delete(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.deleteGrower,
+	);
 router
 	.route('/update/invite-status')
-	.put(verifyToken, validateSchema(userValidation.updateInviteStatus),  userController.updateInviteStatus);
+	.put(
+		verifyToken,
+		validateSchema(userValidation.updateInviteStatus),
+		userController.updateInviteStatus,
+	);
 router
 	.route('/invites/pending')
 	.get(verifyToken, userController.getPendingInvites);

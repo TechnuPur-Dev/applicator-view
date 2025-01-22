@@ -9,14 +9,27 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  otp       Int
+  createdAt DateTime @default(now())
+  expiredAt DateTime
+}
+
+enum ProfileStatus {
+  INCOMPLETE
+  COMPLETE
+}
+
 model User {
-  id                    Int      @id @default(autoincrement())
+  id                    Int           @id @default(autoincrement())
   profileImage          String?
   thumbnailProfileImage String?
   firstName             String?
   lastName              String?
-  fullName              String?  @default("")
-  email                 String?  @unique
+  fullName              String?       @default("")
+  email                 String?       @unique
   phoneNumber           String?
   password              String?
   role                  UserRole
@@ -30,6 +43,7 @@ model User {
   zipCode               String?
   bio                   String?
   additionalInfo        String?
+  profileStatus         ProfileStatus @default(INCOMPLETE)
 
   applicators   ApplicatorGrower[] @relation("Applcators")
   growers       ApplicatorGrower[] @relation("Growers")
@@ -44,15 +58,17 @@ model User {
 }
 
 model ApplicatorGrower {
-  id                  Int          @id @default(autoincrement())
-  applicatorId        Int
-  growerId            Int
-  applicatorFirstName String?
-  applicatorLastName  String?
-  growerFirstName     String?
-  growerLastName      String?
-  inviteStatus        InviteStatus @default(NOT_SENT)
-  isArchived          Boolean      @default(false)
+  id                     Int          @id @default(autoincrement())
+  applicatorId           Int
+  growerId               Int
+  applicatorFirstName    String?
+  applicatorLastName     String?
+  growerFirstName        String?
+  growerLastName         String?
+  inviteStatus           InviteStatus @default(NOT_SENT)
+  isArchivedByApplicator Boolean      @default(false)
+  isArchivedByGrower     Boolean      @default(false)
+  canManageFarms         Boolean      @default(false) // New field for permissions
 
   applicator User @relation("Applcators", fields: [applicatorId], references: [id])
   grower     User @relation("Growers", fields: [growerId], references: [id])
@@ -126,6 +142,44 @@ model TableView {
   user User @relation(fields: [createdById], references: [id])
 }
 
+// model Job {
+//   id                    Int      @id @default(autoincrement())
+//   title          String?
+//   type JobType?
+//   status    JobStatus?
+//   growerId Int
+
+//   startDate             DateTime?
+//   endDate              DateTime?
+//   descrition              String?  
+//   email                 String?  @unique
+//   phoneNumber           String?
+//   password              String?
+//   role                  UserRole
+//   businessName          String?
+//   experience            Decimal?
+//   address1              String?
+//   address2              String?
+//   state                 String?
+//   county                String?
+//   township              String?
+//   zipCode               String?
+//   bio                   String?
+//   additionalInfo        String?
+
+//   grower User @relation(fields: [growerId], references: [id])
+
+//   applicators   ApplicatorGrower[] @relation("Applcators")
+//   growers       ApplicatorGrower[] @relation("Growers")
+//   farmsCreated  Farm[]             @relation("FarmCreator")
+//   farms         Farm[]             @relation("FarmGrower")
+//   fieldsCreated Field[]            @relation("FieldCreator")
+//   tableViews    TableView[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
 enum UserRole {
   GROWER
   APPLICATOR
@@ -142,4 +196,14 @@ enum InviteStatus {
 enum ViewTable {
   GROWER
   Job
+}
+
+enum JobType {
+  Aerial
+  Ground
+}
+
+enum JobStatus {
+  Aerial
+  Ground
 }
