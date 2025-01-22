@@ -19,6 +19,9 @@ router
 	.get(verifyToken, userController.getGrowerByEmail);
 router.route('/grower/create').post(verifyToken, validateSchema(userValidation.createGrowerSchema), userController.createGrower);
 router
+	.route('/applicator/by-grower')
+	.get(verifyToken, userController.getAllApplicatorByGrower);
+	router
 	.route('/growers/by-applicator')
 	.get(verifyToken, userController.getAllGrowersByApplicator);
 router
