@@ -34,6 +34,7 @@ const inviteStatusSchema: Schema = Joi.string()
 const userRoleSchema: Schema = Joi.string()
 	.valid('GROWER', 'APPLICATOR', 'WORKER')
 	.required();
+const otpSchema = Joi.number().integer().positive().min(100000).max(999999);
 
 // Export Schemas
 export {
@@ -45,4 +46,5 @@ export {
 	inviteStatusSchema,
 	arrayOfIds,
 	userRoleSchema,
+	otpSchema,
 };

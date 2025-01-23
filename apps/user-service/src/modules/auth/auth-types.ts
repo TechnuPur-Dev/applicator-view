@@ -20,10 +20,14 @@ interface RegisterUser {
 	bio?: string;
 	additionalInfo?: string;
 }
-interface LoginUser{
+interface LoginUser {
 	email: string;
 	password: string;
-
+}
+interface verifyOTPAndRegisterEmail {
+	email: string;
+	otp: number;
+	role: UserRole;
 }
 
-export { RegisterUser ,LoginUser };
+export { RegisterUser, LoginUser, verifyOTPAndRegisterEmail };

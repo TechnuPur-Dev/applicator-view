@@ -2,50 +2,44 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import viewService from './table-view-service';
-
+import { ViewTable } from '@prisma/client';
 
 const createView = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const data = req.body; // Destructure body
-	const result = await viewService.createView(data,userId);
-	res.status(httpStatus.OK).json({
-		result,
-		message: 'View created successfully.',
-	});
+	const result = await viewService.createView(data, userId);
+	res.status(httpStatus.CREATED).json(result);
 });
 // get all Views
 const getAllViews = catchAsync(async (req: Request, res: Response) => {
+	const tableName = req.params.tableName as ViewTable;
 	const userId = req.payload.id;
-	const userData = await viewService.getAllViews(userId);
+	const userData = await viewService.getAllViews(userId, tableName);
 	res.status(httpStatus.OK).json({ result: userData });
 });
 const getViewById = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.viewId;
-	const result = await viewService.getViewById(Id);
+	const id = +req.params.viewId;
+	const result = await viewService.getViewById(id);
 	res.status(httpStatus.OK).json(result);
 });
 
 // controller to delete view by ID
 const deleteView = catchAsync(async (req: Request, res: Response) => {
-	const ViewId = +req.params.viewId;
+	const viewId = +req.params.viewId;
 	// const createdById = +req.payload.id
-	 await viewService.deleteView(ViewId);
+	await viewService.deleteView(viewId);
 	res.status(httpStatus.OK).json({
-		message:"view deleted successfully"
+		message: 'View deleted successfully.',
 	});
 });
 
 // // controler to update View
 const updateView = catchAsync(async (req: Request, res: Response) => {
-	const ViewID = +req.params.viewId;
+	const viewId = +req.params.viewId;
 	// const updatedById = req.payload.id;
 	const data = req.body;
-
-	const result = await viewService.updateView(ViewID, data,);
-	res.status(httpStatus.OK).json({
-		result,
-		message: 'View Updated successfully',
-	});
+	const result = await viewService.updateView(viewId, data);
+	res.status(httpStatus.OK).json(result);
 });
 export default {
 	createView,

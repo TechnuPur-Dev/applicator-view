@@ -2,7 +2,9 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
+import { Prisma } from '@prisma/client';
 import { CreateViewParams } from './table-view-types';
+import { ViewTable } from '@prisma/client';
 
 const createView = async (data: CreateViewParams, createdById: number) => {
 	try {
@@ -10,7 +12,6 @@ const createView = async (data: CreateViewParams, createdById: number) => {
 		const result = await prisma.tableView.create({
 			data: {
 				...data,
-				config: JSON.stringify(data.config), // Ensure config is in JSON format
 				createdById,
 			},
 		});
@@ -24,12 +25,13 @@ const createView = async (data: CreateViewParams, createdById: number) => {
 	}
 };
 
-const getAllViews = async (userId:number) => {
+const getAllViews = async (userId: number, tableName: ViewTable) => {
 	try {
 		const result = await prisma.tableView.findMany({
-			where:{
-				createdById:userId
-			}
+			where: {
+				tableName,
+				createdById: userId,
+			},
 		}); // Fetch all users
 		return result;
 	} catch (error) {
@@ -41,17 +43,17 @@ const getAllViews = async (userId:number) => {
 		}
 	}
 };
-const getViewById = async (Id: number) => {
+const getViewById = async (id: number) => {
 	try {
-		const View = await prisma.tableView.findUnique({
+		const view = await prisma.tableView.findUnique({
 			where: {
-				id: Id,
+				id,
 			},
 		}); // Fetch all users
-		if (!View) {
+		if (!view) {
 			throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid table view Id');
 		}
-		return View;
+		return view;
 	} catch (error) {
 		if (error instanceof ApiError) {
 			throw new ApiError(error.statusCode, error.message);
@@ -67,22 +69,21 @@ const getViewById = async (Id: number) => {
 
 const deleteView = async (Id: number) => {
 	try {
-		const View = await prisma.tableView.findUnique({
-			where: {
-				id: Id,
-			},
-		}); // Fetch all users
-		if (!View) {
-			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid table view Id');
-		}
-
-		const result = await prisma.tableView.delete({
+		await prisma.tableView.delete({
 			where: {
 				id: Id,
 			},
 		});
-		return result ;
 	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A record to delete with this id does not exist.',
+				);
+			}
+		}
 		if (error instanceof ApiError) {
 			// Handle generic errors
 			throw new ApiError(error.statusCode, error.message);
@@ -97,38 +98,29 @@ const deleteView = async (Id: number) => {
 		}
 	}
 };
-const updateView = async (
-	ViewId: number,
-	data: CreateViewParams,
-	// updatedById: number,
-) => {
-	console.log(data,"data")
+const updateView = async (viewId: number, data: CreateViewParams) => {
 	try {
-		// Validate View existence
-		const View = await prisma.tableView.findUnique({
-			where: {
-				id: ViewId,
-			},
-		}); // Fetch all users
-		if (!View) {
-			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid table view Id');
-		}
 		// Update View
 		const updatedView = await prisma.tableView.update({
-			where: { id: ViewId },
-			data: {
-				...data,
-				config: JSON.stringify(data.config), // Ensure config is in JSON format
-			},
+			where: { id: viewId },
+			data,
 		});
 
 		return updatedView;
 	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A record to update with this id does not exist.',
+				);
+			}
+		}
 		if (error instanceof ApiError) {
 			throw new ApiError(error.statusCode, error.message);
 		}
 		if (error instanceof Error) {
-			console.log(error,"actual error")
 			throw new ApiError(
 				httpStatus.INTERNAL_SERVER_ERROR,
 				'An error occurred.',
