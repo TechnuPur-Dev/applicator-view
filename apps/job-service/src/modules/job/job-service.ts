@@ -136,10 +136,44 @@ const updateJobById = async (data: CreateJob, jobId: number) => {
 	}
 };
 
+// get jobs by applicator
+
+const getJobsByApplicator = async () => {
+	try {
+		const users = await prisma.user.findMany(); // Fetch all users
+		return users;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving all jobs list.',
+			);
+		}
+	}
+};
+
+
+const getJobsByGrower = async () => {
+	try {
+		const users = await prisma.user.findMany(); // Fetch all users
+		return users;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving all jobs list.',
+			);
+		}
+	}
+};
 export default {
 	createJob,
 	getAllJobs,
 	getJobById,
 	deleteJob,
 	updateJobById,
+	getJobsByApplicator,
+	getJobsByGrower
 };

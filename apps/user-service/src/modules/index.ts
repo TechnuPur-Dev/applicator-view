@@ -30,10 +30,7 @@ const defaultRoutes = [
 		path: '/table', // Path for the farms routes
 		route: table,
 	},
-	{
-		path: '/job', // Path for the farms routes
-		route: table,
-	},
+	
 ];
 
 // Dynamically add routes to the main router

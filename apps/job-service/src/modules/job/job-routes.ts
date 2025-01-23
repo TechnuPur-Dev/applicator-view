@@ -14,12 +14,12 @@ router.route('/create-job').post(verifyToken,jobController.createJob);
 router.route('/get-job:jobId').get(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.getJobById);
 router.route('/update/:jobId').put(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.updateJobById);
 router.route('/delete/:jobId').delete(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.deleteJob);
-// router
-// 	.route('/job/by-applicator')
-// 	.get(verifyToken, jobController.getAllGrowersByApplicator);
-// router
-// 	.route('/job/by-grower')
-// 	.delete(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.deleteGrower);
+router
+	.route('/job/by-applicator')
+	.get(verifyToken, jobController.getJobsByApplicator);
+router
+	.route('/job/by-grower')
+	.delete(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.getJobsByGrower);
 
 
 export default router;

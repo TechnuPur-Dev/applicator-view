@@ -36,6 +36,17 @@ const updateJobById = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
+const getJobsByApplicator = catchAsync(async(req: Request, res: Response)=>{
+	// const Id = +req.params.jobId;
+	const result = await jobService.getJobsByApplicator();
+	res.status(httpStatus.OK).json(result);
+})
+const getJobsByGrower = catchAsync(async(req: Request, res: Response)=>{
+	// const Id = +req.params.jobId;
+	const result = await jobService.getJobsByApplicator();
+	res.status(httpStatus.OK).json(result);
+})
+
 
 
 
@@ -48,5 +59,7 @@ export default {
 	getAllJobs,
 	getJobById,
 	deleteJob,
-	updateJobById
+	updateJobById,
+	getJobsByApplicator,
+	getJobsByGrower
 };
