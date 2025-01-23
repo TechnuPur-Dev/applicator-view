@@ -17,9 +17,9 @@ router
 router
 	.route('/all/by-grower')
 	.get(verifyToken, farmController.getAllFarmsByGrower);
-router.route('/:farmId').get(verifyToken, farmController.getFarmById);
-router.route('/delete/:farmId').delete(verifyToken, farmController.deleteFarm);
-router.route('/update/:farmId').put(verifyToken, farmController.updateFarm);
+router.route('/get-farm/:farmId').get(verifyToken,validateSchema(farmValidation.paramsSchema), farmController.getFarmById);
+router.route('/delete/:farmId').delete(verifyToken,validateSchema(farmValidation.paramsSchema), farmController.deleteFarm);
+router.route('/update/:farmId').put(verifyToken,validateSchema(farmValidation.farmUpdateSchema), farmController.updateFarm);
 router
 	.route('/permission/assign')
 	.post(verifyToken, farmController.assignFarmPermission);
