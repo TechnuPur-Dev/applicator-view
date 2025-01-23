@@ -5,13 +5,12 @@ import userService from './user-service';
 
 // Controller to get userList
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
 	const file = req.file;
-
 	if (!file) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
-
-	const result = await userService.uploadProfileImage(file);
+	const result = await userService.uploadProfileImage(userId, file);
 	res.status(httpStatus.OK).json(result);
 });
 

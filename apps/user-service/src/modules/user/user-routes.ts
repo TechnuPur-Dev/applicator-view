@@ -9,7 +9,7 @@ const router: Router = express.Router();
 
 router
 	.route('/upload/profile-image')
-	.post(upload, userController.uploadProfileImage);
+	.post(verifyToken, upload, userController.uploadProfileImage);
 router.route('/profile/update').put(verifyToken, userController.updateProfile);
 router
 	.route('/:id')
