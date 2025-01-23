@@ -81,11 +81,10 @@ const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.deleteGrower(growerId, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
-const getAllApplicatorByGrower=catchAsync(
+const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
 		const growerId = req.payload.id;
-		const result =
-			await userService.getAllApplicatorByGrower(growerId);
+		const result = await userService.getAllApplicatorsByGrower(growerId);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
@@ -102,5 +101,5 @@ export default {
 	updateInviteStatus,
 	getPendingInvites,
 	deleteGrower,
-	getAllApplicatorByGrower
+	getAllApplicatorsByGrower,
 };

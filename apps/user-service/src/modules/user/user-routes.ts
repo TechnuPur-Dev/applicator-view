@@ -41,8 +41,8 @@ router
 		userController.createGrower,
 	);
 router
-	.route('/applicator/by-grower')
-	.get(verifyToken, userController.getAllApplicatorByGrower);
+	.route('/applicators/by-grower')
+	.get(verifyToken, userController.getAllApplicatorsByGrower);
 router
 	.route('/growers/by-applicator')
 	.get(verifyToken, userController.getAllGrowersByApplicator);
