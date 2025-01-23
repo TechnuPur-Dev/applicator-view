@@ -45,12 +45,15 @@ model User {
   additionalInfo        String?
   profileStatus         ProfileStatus @default(INCOMPLETE)
 
-  applicators   ApplicatorGrower[] @relation("Applcators")
-  growers       ApplicatorGrower[] @relation("Growers")
-  farmsCreated  Farm[]             @relation("FarmCreator")
-  farms         Farm[]             @relation("FarmGrower")
-  fieldsCreated Field[]            @relation("FieldCreator")
-  tableViews    TableView[]
+  applicators     ApplicatorGrower[] @relation("Applicators")
+  growers         ApplicatorGrower[] @relation("Growers")
+  farmsCreated    Farm[]             @relation("FarmCreator")
+  farms           Farm[]             @relation("FarmGrower")
+  fieldsCreated   Field[]            @relation("FieldCreator")
+  tableViews      TableView[]
+  applicatorJobs  Job[]              @relation("ApplicatorJob")
+  growerJobs      Job[]              @relation("GrowerJob")
+  fieldWorkerJobs Job[]              @relation("FieldWorkerJob")
 
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -68,10 +71,10 @@ model ApplicatorGrower {
   inviteStatus           InviteStatus @default(NOT_SENT)
   isArchivedByApplicator Boolean      @default(false)
   isArchivedByGrower     Boolean      @default(false)
-  canManageFarms         Boolean      @default(false) // New field for permissions
+  canManageFarms         Boolean      @default(false)
 
-  applicator User @relation("Applcators", fields: [applicatorId], references: [id])
-  grower     User @relation("Growers", fields: [growerId], references: [id])
+  applicator User @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  grower     User @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -90,9 +93,10 @@ model Farm {
   zipCode     String?
   isActive    Boolean
   permissions FarmPermission[]
+  jobs        Job[]
 
-  grower    User    @relation("FarmGrower", fields: [growerId], references: [id])
-  createdBy User    @relation("FarmCreator", fields: [createdById], references: [id])
+  grower    User    @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdBy User    @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
   fields    Field[]
 
   createdAt DateTime @default(now())
@@ -106,8 +110,8 @@ model FarmPermission {
   canView      Boolean @default(true)
   canEdit      Boolean
 
-  farm       Farm @relation(fields: [farmId], references: [id])
-  applicator User @relation(fields: [applicatorId], references: [id])
+  farm       Farm @relation(fields: [farmId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  applicator User @relation(fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -124,8 +128,9 @@ model Field {
   createdById Int
   farmId      Int
 
-  createdBy User @relation("FieldCreator", fields: [createdById], references: [id])
-  farm      Farm @relation(fields: [farmId], references: [id])
+  createdBy User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  farm      Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  jobs      FieldJob[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -135,50 +140,82 @@ model TableView {
   id          Int       @id @default(autoincrement())
   createdById Int
   tableName   ViewTable
-  config      Json // Store the view configuration as JSON
+  config      Json
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  user User @relation(fields: [createdById], references: [id])
+  user User @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
-// model Job {
-//   id                    Int      @id @default(autoincrement())
-//   title          String?
-//   type JobType?
-//   status    JobStatus?
-//   growerId Int
+model Job {
+  id                  Int                 @id @default(autoincrement())
+  title               String
+  type                JobType
+  source              JobSource
+  status              JobStatus           @default(TO_BE_MAPPED)
+  growerId            Int?
+  applicatorId        Int?
+  fieldWorkerId       Int?
+  startDate           DateTime?
+  endDate             DateTime?
+  description         String?
+  farmId              Int
+  fields              FieldJob[]
+  sensitiveAreas      String?
+  adjacentCrops       String?
+  products            JobProduct[]
+  applicationFees     JobApplicationFee[]
+  specialInstructions String?
+  attachments         Json?
 
-//   startDate             DateTime?
-//   endDate              DateTime?
-//   descrition              String?  
-//   email                 String?  @unique
-//   phoneNumber           String?
-//   password              String?
-//   role                  UserRole
-//   businessName          String?
-//   experience            Decimal?
-//   address1              String?
-//   address2              String?
-//   state                 String?
-//   county                String?
-//   township              String?
-//   zipCode               String?
-//   bio                   String?
-//   additionalInfo        String?
+  grower      User?  @relation("GrowerJob", fields: [growerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  applicator  User? @relation("ApplicatorJob", fields: [applicatorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  fieldWorker User? @relation("FieldWorkerJob", fields: [fieldWorkerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  farm        Farm  @relation(fields: [farmId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-//   grower User @relation(fields: [growerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
-//   applicators   ApplicatorGrower[] @relation("Applcators")
-//   growers       ApplicatorGrower[] @relation("Growers")
-//   farmsCreated  Farm[]             @relation("FarmCreator")
-//   farms         Farm[]             @relation("FarmGrower")
-//   fieldsCreated Field[]            @relation("FieldCreator")
-//   tableViews    TableView[]
+model FieldJob {
+  id          Int  @id @default(autoincrement())
+  fieldId     Int
+  jobId       Int
+  actualAcres Int?
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+  field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fieldId, jobId])
+}
+
+model JobProduct {
+  id          Int     @id @default(autoincrement())
+  jobId       Int
+  name        String
+  ratePerAcre Decimal
+  totalAcres  Decimal
+  price       Decimal
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([jobId])
+}
+
+model JobApplicationFee {
+  id          Int     @id @default(autoincrement())
+  jobId       Int
+  description String
+  rateUoM     Decimal
+  perAcre     Boolean
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([jobId]) // Explicit index for performance
+}
 
 enum UserRole {
   GROWER
@@ -199,11 +236,20 @@ enum ViewTable {
 }
 
 enum JobType {
-  Aerial
-  Ground
+  AERIAL
+  GROUND
+}
+
+enum JobSource {
+  GROWER
+  APPLICATOR
+  BIDDING
 }
 
 enum JobStatus {
-  Aerial
-  Ground
+  TO_BE_MAPPED
+  READY_TO_SPRAY
+  SPRAYED
+  INVOICED
+  PAID
 }
