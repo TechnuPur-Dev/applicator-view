@@ -8,7 +8,10 @@ import { UpdateUser, UpdateStatus, UpdateArchiveStatus } from './user-types';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 
-const uploadProfileImage = async (file: Express.Multer.File) => {
+const uploadProfileImage = async (
+	userId: number,
+	file: Express.Multer.File,
+) => {
 	try {
 		const storageUrl = config.azureStorageUrl;
 		const containerName = config.azureContainerName;
@@ -17,9 +20,10 @@ const uploadProfileImage = async (file: Express.Multer.File) => {
 			BlobServiceClient.fromConnectionString(storageUrl);
 		const containerClient: ContainerClient =
 			blobServiceClient.getContainerClient(containerName);
+
 		// Generate unique blob names
-		const blobName = `users/profiles/${uuidv4()}_${file.originalname}`;
-		const thumbnailBlobName = `users/profiles/thumbnail_${uuidv4()}_${file.originalname}`;
+		const blobName = `users/${userId}/profile/${uuidv4()}_${file.originalname}`;
+		const thumbnailBlobName = `users/${userId}/profile/thumbnail_${uuidv4()}_${file.originalname}`;
 
 		// Get original image dimensions
 		const imageMetadata = await sharp(file.buffer).metadata();
@@ -348,41 +352,33 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 		}
 	}
 };
-const getAllApplicatorByGrower = async (growerId: number) => {
+const getAllApplicatorsByGrower = async (growerId: number) => {
 	try {
 		// Fetch applicators
-		const applicator = await prisma.applicatorGrower.findMany({
+		const applicators = await prisma.applicatorGrower.findMany({
 			where: {
 				growerId,
 			},
 			select: {
-				growerFirstName: true,
-				growerLastName: true,
+				applicatorFirstName: true,
+				applicatorLastName: true,
 				inviteStatus: true,
 				isArchivedByGrower: true,
+				canManageFarms: true,
 				applicator: {
 					omit: {
 						password: true, // Exclude sensitive data
-						businessName: true,
-						experience: true,
 					},
 				},
 			},
 		});
 
-		// Calculate total acres for each grower and each farm
-		const enrichedGrowers = applicator.map((applicator) => {
-			return {
-				...applicator,
-			};
-		});
-
-		return enrichedGrowers;
+		return applicators;
 	} catch (error) {
 		if (error instanceof Error) {
 			throw new ApiError(
 				httpStatus.NOT_FOUND,
-				'Error while retrieving applicator.',
+				'Error while retrieving applicators.',
 			);
 		}
 	}
@@ -604,7 +600,7 @@ export default {
 	getGrowerByEmail,
 	createGrower,
 	getAllGrowersByApplicator,
-	getAllApplicatorByGrower,
+	getAllApplicatorsByGrower,
 	updateInviteStatus,
 	getPendingInvites,
 	deleteGrower,

@@ -5,13 +5,12 @@ import userService from './user-service';
 
 // Controller to get userList
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
 	const file = req.file;
-
 	if (!file) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
-
-	const result = await userService.uploadProfileImage(file);
+	const result = await userService.uploadProfileImage(userId, file);
 	res.status(httpStatus.OK).json(result);
 });
 
@@ -81,11 +80,10 @@ const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.deleteGrower(growerId, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
-const getAllApplicatorByGrower=catchAsync(
+const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
 		const growerId = req.payload.id;
-		const result =
-			await userService.getAllApplicatorByGrower(growerId);
+		const result = await userService.getAllApplicatorsByGrower(growerId);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
@@ -109,6 +107,6 @@ export default {
 	updateInviteStatus,
 	getPendingInvites,
 	deleteGrower,
-	getAllApplicatorByGrower,
-	updateArchivedStatus
+	updateArchivedStatus,
+	getAllApplicatorsByGrower,
 };
