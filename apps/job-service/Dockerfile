@@ -23,7 +23,7 @@ COPY --chown=node:node . .
 RUN npx prisma generate
 
 # Build application
-RUN npm run build:user-service
+RUN npm run build:job-service
 
 # Switch to non-root user
 USER node
@@ -32,4 +32,4 @@ USER node
 EXPOSE 3000
 
 # Application startup
-CMD ["node", "./apps/user-service/build/index.js"]
+CMD ["node", "./apps/job-service/build/index.js"]

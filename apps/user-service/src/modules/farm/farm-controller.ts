@@ -70,6 +70,11 @@ const deleteFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	const result = await farmService.deleteFarmPermission(permissionId);
 	res.status(httpStatus.OK).json(result);
 });
+const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const { email } = req.body; // Destructure body
+	const result = await farmService.askFarmPermission(email);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -79,4 +84,5 @@ export default {
 	assignFarmPermission,
 	updateFarmPermission,
 	deleteFarmPermission,
+	askFarmPermission
 };

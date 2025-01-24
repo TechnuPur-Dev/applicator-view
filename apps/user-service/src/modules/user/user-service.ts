@@ -4,7 +4,7 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
-import { UpdateUser, UpdateStatus } from './user-types';
+import { UpdateUser, UpdateStatus, UpdateArchiveStatus } from './user-types';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 
@@ -518,6 +518,83 @@ const getPendingInvites = async (userId: number) => {
 		}
 	}
 };
+
+const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
+	try {
+		// Destructure
+		const { userId, role, archiveStatus, canManageFarmsStauts } = data;
+		// Applicator updating Grower
+		if (role === 'APPLICATOR') {
+			const userExist = await prisma.applicatorGrower.findFirst({
+				where: {
+					applicatorId: Id,
+					growerId: userId, //grower id get from frontend
+				},
+			});
+
+			if (!userExist) {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'User relation not found.',
+				);
+			}
+			await prisma.applicatorGrower.update({
+				where: {
+					id: userExist.id,
+				},
+				data: {
+					isArchivedByApplicator: archiveStatus, // Only updating the inviteStatus field
+				},
+			});
+			return {
+				message: 'Archived status Updated Successfully',
+			};
+		}
+		//grower update applicator
+		else {
+			{
+				const userExist = await prisma.applicatorGrower.findFirst({
+					where: {
+						applicatorId: userId, //now applicator id get from frontend
+						growerId: Id,
+					},
+				});
+
+				if (!userExist) {
+					throw new ApiError(
+						httpStatus.NOT_FOUND,
+						'User relation not found.',
+					);
+				}
+				console.log(userExist, 'userExist');
+				await prisma.applicatorGrower.update({
+					where: {
+						id: userExist.id,
+					},
+					data: {
+						isArchivedByGrower: archiveStatus, // Only updating the isArchivedByGrower field
+						canManageFarms: canManageFarmsStauts,
+					},
+				});
+
+				return {
+					message: 'Archived status Updated Successfully',
+				};
+			}
+		}
+	} catch (error) {
+		if (error instanceof ApiError) {
+			// Handle generic errors
+			throw new ApiError(error.statusCode, error.message);
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
+
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -531,4 +608,5 @@ export default {
 	updateInviteStatus,
 	getPendingInvites,
 	deleteGrower,
+	updateArchivedStatus,
 };

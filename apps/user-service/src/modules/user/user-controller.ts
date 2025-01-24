@@ -90,6 +90,13 @@ const getAllApplicatorByGrower=catchAsync(
 	},
 );
 
+const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
+	const Id = +req.payload.id
+	const data = req.body;
+	const result = await userService.updateArchivedStatus(data,Id);
+	
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -102,5 +109,6 @@ export default {
 	updateInviteStatus,
 	getPendingInvites,
 	deleteGrower,
-	getAllApplicatorByGrower
+	getAllApplicatorByGrower,
+	updateArchivedStatus
 };

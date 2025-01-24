@@ -2,6 +2,7 @@ import Joi, { Schema } from 'joi';
 import {
 	phoneNumberSchema,
 	inviteStatusSchema,
+	userRoleSchema
 } from '../../../../../shared/utils/joi-common-validations';
 
 const createGrowerSchema: Schema = Joi.object({
@@ -47,9 +48,19 @@ const updateInviteStatus: Schema = Joi.object({
 		growerId: Joi.number().integer().positive().required(),
 	}).required(),
 });
+
+const updateArchiveStatus: Schema = Joi.object({
+	body: Joi.object({
+		userId:Joi.number().integer().positive().required(),
+		role: userRoleSchema.required(),
+		archiveStatus: Joi.boolean().optional(),
+		canManageFarmsStauts: Joi.boolean().optional(),
+	}).required(),
+});
 export default {
 	createGrowerSchema,
 	paramsSchema,
 	verifyEmailAndSendOTPSchema,
 	updateInviteStatus,
+	updateArchiveStatus
 };

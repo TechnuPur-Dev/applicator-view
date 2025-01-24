@@ -29,5 +29,7 @@ router
 router
 	.route('/permission/delete/:permissionId')
 	.delete(verifyToken, farmController.deleteFarmPermission);
-
+	router
+	.route('/permission/requestByEmail')
+	.post(verifyToken, farmController.askFarmPermission);
 export default router;
