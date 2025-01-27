@@ -7,6 +7,7 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { UpdateUser, UpdateStatus } from './user-types';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
+import { hashPassword } from '../../helper/bcrypt';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -90,13 +91,25 @@ const uploadProfileImage = async (
 // to update user profile
 const updateProfile = async (data: UpdateUser, userId: number) => {
 	try {
+		let { password } = data;
+		// hash the password only if it is provided
+		if (password) {
+			const hashedPassword = await hashPassword(data.password);
+			password = hashedPassword;
+		}
+		console.log(password);
+
 		const udpatedUser = await prisma.user.update({
 			where: {
 				id: userId,
 			},
 			data: {
 				...data,
+				password,
 				profileStatus: 'COMPLETE',
+			},
+			omit: {
+				password: true,
 			},
 		});
 		return udpatedUser;
