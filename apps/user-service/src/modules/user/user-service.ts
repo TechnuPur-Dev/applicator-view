@@ -7,6 +7,8 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { UpdateUser, UpdateStatus } from './user-types';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
+import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
+import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -360,8 +362,8 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 				growerId,
 			},
 			select: {
-				applicatorFirstName: true,
-				applicatorLastName: true,
+				growerFirstName: true,
+				growerLastName: true,
 				inviteStatus: true,
 				isArchivedByGrower: true,
 				canManageFarms: true,
@@ -389,20 +391,52 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		const { status, applicatorId, growerId } = data;
 		if (status === 'PENDING') {
 			// Update the inviteStatus field
-			await prisma.applicatorGrower.update({
+			const user = await prisma.applicatorGrower.update({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
 						growerId,
 					},
 				},
+				include: {
+					// Move include here
+					grower: {
+						select: {
+							email: true,
+						},
+					},
+				},
 				data: {
 					inviteStatus: status, // Only updating the inviteStatus field
 				},
 			});
-			return {
-				message: 'Invite sent successfully.',
-			};
+
+			const subject = 'Email Invitation';
+			const message = `
+  You are invited to join our platform!<br><br>
+  If you did not expect this invitation, please ignore this email.
+`;
+			if (user) {
+				const email = user?.grower?.email;
+
+				if (!email) {
+					throw new Error(
+						'Email address is not available for the grower.',
+					);
+				}
+
+				const html = await mailHtmlTemplate(subject, message);
+
+				await sendEmail({
+					emailTo: email,
+					subject,
+					text: 'Request Invitation',
+					html,
+				});
+				return {
+					message: 'Invite sent successfully.',
+				};
+			}
 		}
 		if (status === 'ACCEPTED') {
 			// Update the inviteStatus field
@@ -434,6 +468,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 					inviteStatus: status, // Only updating the inviteStatus field
 				},
 			});
+
 			return {
 				message: 'Invite rejected successfully.',
 			};
@@ -514,6 +549,43 @@ const getPendingInvites = async (userId: number) => {
 		}
 	}
 };
+const sentInviteToApplicator = async (email: string) => {
+	try {
+		const subject = 'Email Invitation';
+		const message = `
+  You are invited to join our platform!<br><br>
+ If you did not expect this invitation, please ignore this email.
+`;
+
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+		return {
+			message: 'Invite sent successfully.',
+		};
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A user with this id does not exist.',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
+
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -527,4 +599,5 @@ export default {
 	updateInviteStatus,
 	getPendingInvites,
 	deleteGrower,
+	sentInviteToApplicator,
 };

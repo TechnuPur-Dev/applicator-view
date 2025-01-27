@@ -11,6 +11,8 @@ router
 	.route('/upload/profile-image')
 	.post(verifyToken, upload, userController.uploadProfileImage);
 router.route('/profile/update').put(verifyToken, userController.updateProfile);
+router.route('/all-users').get(verifyToken, userController.getAllUsers);
+
 router
 	.route('/:id')
 	.get(
@@ -25,7 +27,6 @@ router
 		validateSchema(userValidation.paramsSchema),
 		userController.deleteUser,
 	);
-router.route('/all-users').get(verifyToken, userController.getAllUsers);
 router
 	.route('/grower/email/:email')
 	.get(
@@ -57,11 +58,18 @@ router
 	.route('/update/invite-status')
 	.put(
 		verifyToken,
-		validateSchema(userValidation.updateInviteStatus),
+		validateSchema(userValidation.updateInviteStatusSchema),
 		userController.updateInviteStatus,
 	);
 router
 	.route('/invites/pending')
 	.get(verifyToken, userController.getPendingInvites);
+router
+	.route('/applicator/invite')
+	.put(
+		verifyToken,
+		validateSchema(userValidation.sentInviteToApplicatorSchema),
+		userController.sentInviteToApplicator,
+	);
 
 export default router;
