@@ -66,11 +66,18 @@ router
 	.route('/invites/pending')
 	.get(verifyToken, userController.getPendingInvites);
 router
-	.route('/applicator/invite')
+	.route('/applicator/invite/:applicatorId')
 	.put(
 		verifyToken,
-		validateSchema(userValidation.sendInviteToApplicatorSchema),
+		validateSchema(userValidation.sendInviteSchema),
 		userController.sendInviteToApplicator,
+	);
+	router
+	.route('/grower/invite/:growerId')
+	.put(
+		verifyToken,
+		validateSchema(userValidation.sendInviteSchema),
+		userController.sendInviteToGrower,
 	);
 
 router
