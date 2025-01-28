@@ -7,6 +7,9 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { UpdateUser, UpdateStatus, UpdateArchiveStatus } from './user-types';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
+import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
+import { sendEmail } from '../../../../../shared/helpers/node-mailer';
+import { hashPassword } from '../../helper/bcrypt';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -90,13 +93,25 @@ const uploadProfileImage = async (
 // to update user profile
 const updateProfile = async (data: UpdateUser, userId: number) => {
 	try {
+		let { password } = data;
+		// hash the password only if it is provided
+		if (password) {
+			const hashedPassword = await hashPassword(data.password);
+			password = hashedPassword;
+		}
+		console.log(password);
+
 		const udpatedUser = await prisma.user.update({
 			where: {
 				id: userId,
 			},
 			data: {
 				...data,
+				password,
 				profileStatus: 'COMPLETE',
+			},
+			omit: {
+				password: true,
 			},
 		});
 		return udpatedUser;
@@ -360,8 +375,8 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 				growerId,
 			},
 			select: {
-				applicatorFirstName: true,
-				applicatorLastName: true,
+				growerFirstName: true,
+				growerLastName: true,
 				inviteStatus: true,
 				isArchivedByGrower: true,
 				canManageFarms: true,
@@ -389,20 +404,52 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 		const { status, applicatorId, growerId } = data;
 		if (status === 'PENDING') {
 			// Update the inviteStatus field
-			await prisma.applicatorGrower.update({
+			const user = await prisma.applicatorGrower.update({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
 						growerId,
 					},
 				},
+				include: {
+					// Move include here
+					grower: {
+						select: {
+							email: true,
+						},
+					},
+				},
 				data: {
 					inviteStatus: status, // Only updating the inviteStatus field
 				},
 			});
-			return {
-				message: 'Invite sent successfully.',
-			};
+
+			const subject = 'Email Invitation';
+			const message = `
+  You are invited to join our platform!<br><br>
+  If you did not expect this invitation, please ignore this email.
+`;
+			if (user) {
+				const email = user?.grower?.email;
+
+				if (!email) {
+					throw new Error(
+						'Email address is not available for the grower.',
+					);
+				}
+
+				const html = await mailHtmlTemplate(subject, message);
+
+				await sendEmail({
+					emailTo: email,
+					subject,
+					text: 'Request Invitation',
+					html,
+				});
+				return {
+					message: 'Invite sent successfully.',
+				};
+			}
 		}
 		if (status === 'ACCEPTED') {
 			// Update the inviteStatus field
@@ -434,6 +481,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 					inviteStatus: status, // Only updating the inviteStatus field
 				},
 			});
+
 			return {
 				message: 'Invite rejected successfully.',
 			};
@@ -515,6 +563,7 @@ const getPendingInvites = async (userId: number) => {
 	}
 };
 
+
 const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
 	try {
 		// Destructure
@@ -582,6 +631,38 @@ const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
 		if (error instanceof ApiError) {
 			// Handle generic errors
 			throw new ApiError(error.statusCode, error.message);
+      	}
+	}
+};
+
+const sentInviteToApplicator = async (email: string) => {
+	try {
+		const subject = 'Email Invitation';
+		const message = `
+  You are invited to join our platform!<br><br>
+ If you did not expect this invitation, please ignore this email.
+`;
+
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+		return {
+			message: 'Invite sent successfully.',
+		};
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A user with this id does not exist.',
+				);
+			}
 		}
 
 		if (error instanceof Error) {
@@ -605,4 +686,6 @@ export default {
 	getPendingInvites,
 	deleteGrower,
 	updateArchivedStatus,
+	sentInviteToApplicator,
+
 };

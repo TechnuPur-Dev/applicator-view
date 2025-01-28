@@ -93,6 +93,9 @@ const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
 	const data = req.body;
 	const result = await userService.updateArchivedStatus(data,Id);
 	
+const sentInviteToApplicator= catchAsync(async (req: Request, res: Response) => {
+	const { email } = req.body;
+	const result = await userService.sentInviteToApplicator(email);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -109,4 +112,5 @@ export default {
 	deleteGrower,
 	updateArchivedStatus,
 	getAllApplicatorsByGrower,
+	sentInviteToApplicator
 };
