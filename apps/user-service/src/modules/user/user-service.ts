@@ -375,8 +375,8 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 				growerId,
 			},
 			select: {
-				growerFirstName: true,
-				growerLastName: true,
+				applicatorFirstName: true,
+				applicatorLastName: true,
 				inviteStatus: true,
 				isArchivedByGrower: true,
 				canManageFarms: true,
