@@ -563,7 +563,6 @@ const getPendingInvites = async (userId: number) => {
 	}
 };
 
-
 const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
 	try {
 		// Destructure
@@ -631,11 +630,11 @@ const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
 		if (error instanceof ApiError) {
 			// Handle generic errors
 			throw new ApiError(error.statusCode, error.message);
-      	}
+		}
 	}
 };
 
-const sentInviteToApplicator = async (email: string) => {
+const sendInviteToApplicator = async (email: string) => {
 	try {
 		const subject = 'Email Invitation';
 		const message = `
@@ -686,6 +685,5 @@ export default {
 	getPendingInvites,
 	deleteGrower,
 	updateArchivedStatus,
-	sentInviteToApplicator,
-
+	sendInviteToApplicator,
 };

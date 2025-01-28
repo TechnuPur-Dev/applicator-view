@@ -69,8 +69,8 @@ router
 	.route('/applicator/invite')
 	.put(
 		verifyToken,
-		validateSchema(userValidation.sentInviteToApplicatorSchema),
-		userController.sentInviteToApplicator,
+		validateSchema(userValidation.sendInviteToApplicatorSchema),
+		userController.sendInviteToApplicator,
 	);
 
 router
