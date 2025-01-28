@@ -347,7 +347,7 @@ const askFarmPermission = async (email: string) => {
 	  `;
 		const html = await mailHtmlTemplate(subject, message);
 		await sendEmail({
-			emailTo: 'tehreemiqbal91@gmail.com',
+			emailTo: email,
 			subject,
 			text: 'Request Verification',
 			html,

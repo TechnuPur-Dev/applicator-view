@@ -7,19 +7,51 @@ import validateSchema from '../../../../../shared/middlewares/validation-middlew
 import jobValidation from './job-validation';
 const router: Router = express.Router();
 
-
-
-router.route('/all-jobs').get(verifyToken, jobController.getAllJobs);
-router.route('/create-job').post(verifyToken,jobController.createJob);
-router.route('/get-job:jobId').get(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.getJobById);
-router.route('/update/:jobId').put(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.updateJobById);
-router.route('/delete/:jobId').delete(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.deleteJob);
+// Get all jobs for applicator by applicatorId (My Jobs Screen)
 router
-	.route('/job/by-applicator')
-	.get(verifyToken, jobController.getJobsByApplicator);
+	.route('/allJobsByApplicator/:applicatorId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getAllJobsByApplicator,
+	);
+// Create job
 router
-	.route('/job/by-grower')
-	.delete(verifyToken,validateSchema(jobValidation.paramsSchema), jobController.getJobsByGrower);
+	.route('/create-job')
+	.post(
+		verifyToken,
+		validateSchema(jobValidation.createJobSchema),
+		jobController.createJob,
+	);
+// get Job by Id
+router
+	.route('/get-job/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getJobById,
+	);
+// Update Job by applicator (to update job status and assign a pilot)
+router
+	.route('/update/:jobId')
+	.put(
+		verifyToken,
+		validateSchema(jobValidation.updateJobSchema),
+		jobController.updateJobByApplicator,
+	);
+router
+	.route('/delete/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.deleteJob,
+	);
 
-
+	// router
+	// .route('/all-pilots')
+	// .get(
+	// 	verifyToken,
+	// 	validateSchema(jobValidation.paramsSchema),
+	// 	jobController.getAllPilotsByApplicator,
+	// );
 export default router;

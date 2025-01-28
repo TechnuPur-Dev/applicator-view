@@ -1,33 +1,25 @@
-import { UserRole } from '@prisma/client';
-import { InviteStatus } from '@prisma/client';
+import { JobType, JobSource,JobStatus} from '@prisma/client';
 
-interface UploadProfileImage {
-	statusCode: number;
-	body: Record<string, unknown>;
-}
+
 interface CreateJob {
-	profileImage?: string;
-	thumbnailProfileImage?: string;
-	firstName: string;
-	lastName: string;
-	email: string;
-	phoneNumber?: string;
-	password: string;
-	role: UserRole;
-	businessName?: string;
-	experience?: number; // Convert Decimal to number for the DTO
-	address1?: string;
-	address2?: string;
-	state?: string;
-	county?: string;
-	township?: string;
-	zipCode?: string;
-	bio?: string;
-	additionalInfo?: string;
-}
-interface UpdateStatus{
-	 status: InviteStatus,
-	 growerId: number,
-	 applicatorId :number
-	}
-export { UploadProfileImage, CreateJob,UpdateStatus };
+	title: string; // Job title (Required)
+	type: JobType; // Enum for job type (Required)
+	source: JobSource; // Enum for job source (Required)
+	status?: JobStatus; // Enum for job status (Default: TO_BE_MAPPED)
+	growerId?: number; // Nullable grower ID
+	applicatorId?: number; // Nullable applicator ID
+	fieldWorkerId?: number; // Nullable field worker ID
+	startDate?: Date; // Optional start date
+	endDate?: Date; // Optional end date
+	description?: string; // Optional job description
+	farmId: number; // Required farm ID
+	fields: { fieldId: number; actualAcres?: number }[]; // List of fields (Required)
+	sensitiveAreas?: string; // Optional sensitive areas info
+	adjacentCrops?: string; // Optional adjacent crops info
+	products: { name: string; ratePerAcre: number; totalAcres: number; price: number }[]; // Job products (Required)
+	applicationFees?: { description: string; rateUoM: number; perAcre: boolean }[]; // Application fees (Optional)
+	specialInstructions?: string; // Optional special instructions
+	attachments?: object; // JSON object (Optional)
+};
+
+export { CreateJob };
