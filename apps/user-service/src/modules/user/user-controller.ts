@@ -87,7 +87,11 @@ const getAllApplicatorsByGrower = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
-
+const sentInviteToApplicator= catchAsync(async (req: Request, res: Response) => {
+	const { email } = req.body;
+	const result = await userService.sentInviteToApplicator(email);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -101,4 +105,5 @@ export default {
 	getPendingInvites,
 	deleteGrower,
 	getAllApplicatorsByGrower,
+	sentInviteToApplicator
 };
