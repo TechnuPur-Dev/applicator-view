@@ -31,4 +31,10 @@ interface UpdateStatus {
 	growerId: number;
 	applicatorId: number;
 }
-export { UploadProfileImage, UpdateUser, UpdateStatus };
+interface UpdateArchiveStatus {
+	userId:number,
+	role:UserRole,
+	archiveStatus: boolean;
+	canManageFarmsStauts: boolean;
+}
+export { UploadProfileImage, UpdateUser, UpdateStatus,UpdateArchiveStatus };

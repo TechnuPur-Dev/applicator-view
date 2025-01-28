@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { CreateFarmParams, AssignFarmPermission } from './farm-types';
-
+import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
+import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 const createFarm = async (
 	data: CreateFarmParams,
 	createdById: number,
@@ -314,7 +315,53 @@ const deleteFarmPermission = async (permissionId: number) => {
 		}
 	}
 };
+const askFarmPermission = async (email: string) => {
+	console.log(email,"req.body")
+	try {
+		const isEmailExist = await prisma.user.findFirst({
+			where: {
+				email: {
+					equals: email,
+					mode: 'insensitive',
+				},
+				profileStatus: 'COMPLETE',
+			},
+			select: {
+				id: true, // Omit password from the response to prevent exposing it to clients
+			},
+		});
 
+		if (!isEmailExist) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'An account with this email not exists.',
+			);
+		}
+	
+		const subject = 'Request For Farm Permissions';
+		const message = `
+		You have received a request for farm access permissions.<br><br>
+		To grant access, please review and approve the request.<br><br>
+		If you did not initiate this request, please ignore this email.<br><br>
+		Thank you.
+	  `;
+		const html = await mailHtmlTemplate(subject, message);
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Request Verification',
+			html,
+		});
+		return {
+			message:"Request email for permission has been sent to the user Succesfully",
+		};
+
+	} catch (error) {
+		if (error instanceof ApiError) {
+			throw new ApiError(error.statusCode, error.message);
+		}
+	}
+};
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -324,4 +371,5 @@ export default {
 	assignFarmPermission,
 	updateFarmPermission,
 	deleteFarmPermission,
+	askFarmPermission
 };

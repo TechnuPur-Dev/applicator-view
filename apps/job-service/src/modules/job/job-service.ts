@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
+import { JobStatus } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateJob } from './job-types';
@@ -9,29 +10,103 @@ import { CreateJob } from './job-types';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 
 // create grower
-const createJob = async (data: CreateJob, userId: number) => {
-	const createdById = userId;
+const createJob = async (data: CreateJob) => {
 	try {
-		// const { firstName, lastName } = data;
+		const {
+			title,
+			type,
+			source,
+			status,
+			growerId,
+			applicatorId,
+			fieldWorkerId,
+			startDate,
+			endDate,
+			description,
+			farmId,
+			sensitiveAreas,
+			adjacentCrops,
+			specialInstructions,
+			attachments,
+			fields, // Array of { fieldId, actualAcres }
+			products, // Array of { name, ratePerAcre, totalAcres, price }
+			applicationFees, // Array of { description, rateUoM, perAcre }
+		} = data;
 
-		const job = await prisma.user.create({
-			data: {
-				...data,
-			},
+		const [newJob] = await prisma.$transaction(async (prisma) => {
+			const newJob = await prisma.job.create({
+				data: {
+					title,
+					type,
+					source,
+					status,
+					growerId,
+					applicatorId,
+					fieldWorkerId,
+					startDate,
+					endDate,
+					description,
+					farmId,
+					sensitiveAreas,
+					adjacentCrops,
+					specialInstructions,
+					attachments,
+				},
+			});
+			if (fields && fields.length > 0) {
+				await prisma.fieldJob.createMany({
+					data: fields.map(
+						(field: { fieldId: number; actualAcres?: number }) => ({
+							fieldId: field.fieldId,
+							jobId: newJob.id,
+							actualAcres: field.actualAcres,
+						}),
+					),
+				});
+			}
+
+			// Add Products
+			if (products && products.length > 0) {
+				await prisma.jobProduct.createMany({
+					data: products.map(
+						(product: {
+							name: string;
+							ratePerAcre: number;
+							totalAcres: number;
+							price: number;
+						}) => ({
+							jobId: newJob.id,
+							name: product.name,
+							ratePerAcre: product.ratePerAcre,
+							totalAcres: product.totalAcres,
+							price: product.price,
+						}),
+					),
+				});
+			}
+
+			// Add Application Fees
+			if (applicationFees && applicationFees.length > 0) {
+				await prisma.jobApplicationFee.createMany({
+					data: applicationFees.map(
+						(fee: {
+							description: string;
+							rateUoM: number;
+							perAcre: boolean;
+						}) => ({
+							jobId: newJob.id,
+							description: fee.description,
+							rateUoM: fee.rateUoM,
+							perAcre: fee.perAcre,
+						}),
+					),
+				});
+			}
+			return [newJob];
 		});
 
-		return job;
+		return newJob;
 	} catch (error) {
-		// if (error instanceof Prisma.PrismaClientKnownRequestError) {
-		// 	// Handle Prisma-specific error codes
-		// 	if (error.code === 'P2002') {
-		// 		throw new ApiError(
-		// 			httpStatus.CONFLICT,
-		// 			'A user with this email already exists.',
-		// 		);
-		// 	}
-		// }
-
 		if (error instanceof Error) {
 			// Handle generic errors
 			throw new ApiError(httpStatus.CONFLICT, error.message);
@@ -39,11 +114,20 @@ const createJob = async (data: CreateJob, userId: number) => {
 	}
 };
 
-// get job List
-const getAllJobs = async () => {
+// get job List by applicator
+const getAllJobsByApplicator = async (applicatorId:number) => {
 	try {
-		const users = await prisma.user.findMany(); // Fetch all users
-		return users;
+		const jobs = await prisma.job.findMany({
+			where:{
+				applicatorId
+			},
+			include:{
+				fields:true,
+				products:true,
+				applicationFees:true
+			}
+		}); // Fetch all users
+		return jobs;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
@@ -58,20 +142,30 @@ const getAllJobs = async () => {
 // service for Job
 const getJobById = async (jobId: number) => {
 	try {
-		const user = await prisma.user.findUnique({
+		const job = await prisma.job.findUnique({
 			where: {
 				id: jobId,
 			},
-			
+			include: {
+				fields: true,
+				products: true,
+				applicationFees: true,
+			},
+			omit: {
+				applicatorId: true,
+				growerId: true,
+				fieldWorkerId: true,
+				farmId:true,
+			},
 		});
 		// Check if user is null
-		if (!user) {
+		if (!job) {
 			throw new ApiError(
 				httpStatus.NOT_FOUND,
-				'A job with this id does not exist.',
+				'No job found for the given job Id.',
 			);
 		}
-		return user;
+		return job;
 	} catch (error) {
 		if (error instanceof ApiError) {
 			throw new ApiError(error.statusCode, error.message);
@@ -80,7 +174,7 @@ const getJobById = async (jobId: number) => {
 			// Handle generic errors or unexpected errors
 			throw new ApiError(
 				httpStatus.CONFLICT,
-				'Error while retrieving user with this id.',
+				'Error while retrieving JOB with this id.',
 			);
 		}
 	}
@@ -89,39 +183,14 @@ const getJobById = async (jobId: number) => {
 // to delete job
 const deleteJob = async (jobId: number) => {
 	try {
-		await prisma.user.delete({
+		await prisma.job.delete({
 			where: {
 				id: jobId,
 			},
 		});
 
 		return {
-			message: 'User deleted successfully.',
-		};
-	} catch (error) {
-		if (error instanceof ApiError) {
-			throw new ApiError(error.statusCode, error.message);
-		}
-		if (error instanceof Error) {
-			throw new ApiError(
-				httpStatus.CONFLICT,
-				'Errror while deleting user.',
-			);
-		}
-	}
-};
-
-const updateJobById = async (data: CreateJob, jobId: number) => {
-	try {
-		await prisma.user.update({
-			where: {
-				id: jobId,
-			},
-			data,
-		});
-
-		return {
-			message: 'Job updated successfully.',
+			message: 'job deleted successfully.',
 		};
 	} catch (error) {
 		if (error instanceof ApiError) {
@@ -136,44 +205,74 @@ const updateJobById = async (data: CreateJob, jobId: number) => {
 	}
 };
 
-// get jobs by applicator
-
-const getJobsByApplicator = async () => {
+const updateJobByApplicator = async (data:{status:JobStatus, fieldWorkerId:number}, jobId: number) => {
 	try {
-		const users = await prisma.user.findMany(); // Fetch all users
-		return users;
-	} catch (error) {
-		if (error instanceof Error) {
-			// Handle generic errors
+		const job = await prisma.job.update({
+			where: { id:jobId },
+			data:{
+				...data,
+				status:data.status,
+				fieldWorkerId:data.fieldWorkerId
+			}
+		});
+           if(!job){
 			throw new ApiError(
-				httpStatus.CONFLICT,
-				'Error while retreiving all jobs list.',
+				httpStatus.NOT_FOUND,
+				'No job found for the given id.',
+			);
+		   }
+
+		return { message: 'Job updated successfully.' };
+	} catch (error) {
+		if (error instanceof ApiError) {
+			throw new ApiError(
+			       error.statusCode, error.message,
 			);
 		}
+		if (error instanceof Error) {
+			throw new ApiError(
+				httpStatus.INTERNAL_SERVER_ERROR,
+				error.message,
+			);
+		}
+		
 	}
 };
 
 
-const getJobsByGrower = async () => {
-	try {
-		const users = await prisma.user.findMany(); // Fetch all users
-		return users;
-	} catch (error) {
-		if (error instanceof Error) {
-			// Handle generic errors
-			throw new ApiError(
-				httpStatus.CONFLICT,
-				'Error while retreiving all jobs list.',
-			);
-		}
-	}
-};
+// get pilots by applicator by Grower
+
+// const getAllPilotsByApplicator = async (applicatorId:number) => {
+// 	try {
+// 		const workers = await prisma.user.findMany({
+// 			where:{
+// 				applicatorId,
+// 				role:'WORKER'
+// 			},
+// 			select:{
+// 				id:true,
+// 				firstName:true,
+// 				lastName:true,
+// 				fullName:true
+// 			}
+// 		}); // Fetch all users
+// 		return workers;
+// 	} catch (error) {
+// 		if (error instanceof Error) {
+// 			// Handle generic errors
+// 			throw new ApiError(
+// 				httpStatus.CONFLICT,
+// 				'Error while retreiving all workers list.',
+// 			);
+// 		}
+// 	}
+// };
 export default {
 	createJob,
-	getAllJobs,
+	getAllJobsByApplicator,
 	getJobById,
 	deleteJob,
-	updateJobById,
-	getJobsByApplicator,
-	getJobsByGrower
+	updateJobByApplicator,
+	// getAllPilotsByApplicator
+	
 };

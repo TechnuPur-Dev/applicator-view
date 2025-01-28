@@ -27,6 +27,7 @@ router
 		validateSchema(userValidation.paramsSchema),
 		userController.deleteUser,
 	);
+
 router
 	.route('/grower/email/:email')
 	.get(
@@ -70,6 +71,14 @@ router
 		verifyToken,
 		validateSchema(userValidation.sentInviteToApplicatorSchema),
 		userController.sentInviteToApplicator,
+	);
+
+router
+	.route('/update/archived-status')
+	.put(
+		verifyToken,
+		validateSchema(userValidation.updateArchiveStatus),
+		userController.updateArchivedStatus,
 	);
 
 export default router;
