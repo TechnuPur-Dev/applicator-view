@@ -2,10 +2,11 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
-import { JobStatus } from '@prisma/client';
+import { JobStatus, JobType } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateJob } from './job-types';
+// import { object } from 'joi';
 // import config from '../../../../../shared/config/env-config';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 
@@ -115,17 +116,17 @@ const createJob = async (data: CreateJob) => {
 };
 
 // get job List by applicator
-const getAllJobsByApplicator = async (applicatorId:number) => {
+const getAllJobsByApplicator = async (applicatorId: number) => {
 	try {
 		const jobs = await prisma.job.findMany({
-			where:{
-				applicatorId
+			where: {
+				applicatorId,
 			},
-			include:{
-				fields:true,
-				products:true,
-				applicationFees:true
-			}
+			include: {
+				fields: true,
+				products: true,
+				applicationFees: true,
+			},
 		}); // Fetch all users
 		return jobs;
 	} catch (error) {
@@ -155,7 +156,7 @@ const getJobById = async (jobId: number) => {
 				applicatorId: true,
 				growerId: true,
 				fieldWorkerId: true,
-				farmId:true,
+				farmId: true,
 			},
 		});
 		// Check if user is null
@@ -205,40 +206,36 @@ const deleteJob = async (jobId: number) => {
 	}
 };
 
-const updateJobByApplicator = async (data:{status:JobStatus, fieldWorkerId:number}, jobId: number) => {
+const updateJobByApplicator = async (
+	data: { status: JobStatus; fieldWorkerId: number },
+	jobId: number,
+) => {
 	try {
 		const job = await prisma.job.update({
-			where: { id:jobId },
-			data:{
+			where: { id: jobId },
+			data: {
 				...data,
-				status:data.status,
-				fieldWorkerId:data.fieldWorkerId
-			}
+				status: data.status,
+				fieldWorkerId: data.fieldWorkerId,
+			},
 		});
-           if(!job){
+		if (!job) {
 			throw new ApiError(
 				httpStatus.NOT_FOUND,
 				'No job found for the given id.',
 			);
-		   }
+		}
 
 		return { message: 'Job updated successfully.' };
 	} catch (error) {
 		if (error instanceof ApiError) {
-			throw new ApiError(
-			       error.statusCode, error.message,
-			);
+			throw new ApiError(error.statusCode, error.message);
 		}
 		if (error instanceof Error) {
-			throw new ApiError(
-				httpStatus.INTERNAL_SERVER_ERROR,
-				error.message,
-			);
+			throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
 		}
-		
 	}
 };
-
 
 // get pilots by applicator by Grower
 
@@ -267,6 +264,153 @@ const updateJobByApplicator = async (data:{status:JobStatus, fieldWorkerId:numbe
 // 		}
 // 	}
 // };
+
+const getAllJobTypes = async () => {
+	try {
+		// Convert JobType enum into an array
+		const jobStatusList = Object.values(JobType).map((type, index) => ({
+			id: index + 1,
+			name: type,
+		}));
+		return jobStatusList;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving  list.',
+			);
+		}
+	}
+};
+
+const getAllJobStatus = async () => {
+	try {
+		const jobStatusList = Object.values(JobStatus).map((status, index) => ({
+			id: index + 1,
+			name: status,
+		}));
+		return jobStatusList;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving  list.',
+			);
+		}
+	}
+};
+
+const getGrowerListForApplicator = async (applicatorId: number) => {
+	try {
+		const growers = await prisma.applicatorGrower.findMany({
+			where: {
+				applicatorId,
+			},
+			select: {
+				grower:{
+					select:{
+						id:true,
+						fullName:true
+					}
+				}
+			
+			},
+		}); // Fetch all growers
+
+		const formatGrowers = growers.map((item)=> item.grower)
+		return formatGrowers;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving  list.',
+			);
+		}
+	}
+};
+const getApplicatorListForGrower = async (growerId: number) => {
+	try {
+		const applicators = await prisma.applicatorGrower.findMany({
+			where: {
+				growerId,
+			},
+			select: {
+				applicator:{
+					select:{
+						id:true,
+						fullName:true
+					}
+				}
+			
+			},
+		}); // Fetch all applicators
+		const formatApplicators= applicators.map((item)=> item.applicator)
+		return formatApplicators;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving all workers list.',
+			);
+		}
+	}
+};
+
+const getFarmListByGrowerID = async (growerId: number) => {
+	try {
+		const farms = await prisma.farm.findMany({
+			where: {
+				growerId,
+			},
+			select:{
+				id:true,
+				name:true,
+				isActive:true,
+				fields:{ 
+					select:{
+						id:true,
+						name:true,
+						acres:true
+					}
+				}
+			},
+			
+			orderBy: {
+				createdAt: 'desc',
+			},
+		}); // Fetch all users
+		// Calculate total acres for each grower and each farm
+		const enrichedFarms = farms.map((farm) => {
+			const totalAcresByFarm = farm.fields.reduce(
+				(totalFarmAcres, field) => {
+					return (
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0')
+					);
+				},
+				0,
+			);
+
+			// Add total acres to the grower object
+			return {
+				...farm,
+				totalAcres: totalAcresByFarm,
+			};
+		});
+		return enrichedFarms;
+	} catch (error) {
+		if (error instanceof Error) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Error while retrieving farms.',
+			);
+		}
+	}
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -274,5 +418,9 @@ export default {
 	deleteJob,
 	updateJobByApplicator,
 	// getAllPilotsByApplicator
-	
+	getAllJobTypes,
+	getAllJobStatus,
+	getGrowerListForApplicator,
+	getApplicatorListForGrower,
+	getFarmListByGrowerID
 };

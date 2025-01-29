@@ -32,13 +32,15 @@ const deleteJob = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-const updateJobByApplicator = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.jobId;
-	const data = req.body;
-	console.log(data, 'data');
-	const result = await jobService.updateJobByApplicator(data, Id);
-	res.status(httpStatus.OK).json(result);
-});
+const updateJobByApplicator = catchAsync(
+	async (req: Request, res: Response) => {
+		const Id = +req.params.jobId;
+		const data = req.body;
+		console.log(data, 'data');
+		const result = await jobService.updateJobByApplicator(data, Id);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 
 // get All pilots by applicator
 // const getAllPilotsByApplicator = catchAsync(
@@ -48,7 +50,32 @@ const updateJobByApplicator = catchAsync(async (req: Request, res: Response) => 
 // 		res.status(httpStatus.OK).json({ result: jobData });
 // 	},
 // );
+const getAllJobTypes = catchAsync(async (req: Request, res: Response) => {
+	const jobData = await jobService.getAllJobTypes();
+	res.status(httpStatus.OK).json({ result: jobData });
+});
 
+const getAllJobStatus = catchAsync(async (req: Request, res: Response) => {
+	const jobData = await jobService.getAllJobStatus();
+	res.status(httpStatus.OK).json({ result: jobData });
+});
+
+const getGrowerListForApplicator = catchAsync(async (req: Request, res: Response) => {
+	const id = + req.payload.id
+	const result = await jobService.getGrowerListForApplicator(id);
+	res.status(httpStatus.OK).json({ result: result });
+});
+
+const getApplicatorListForGrower = catchAsync(async (req: Request, res: Response) => {
+	const id = + req.payload.id
+	const result = await jobService.getApplicatorListForGrower(id);
+	res.status(httpStatus.OK).json({ result: result });
+});
+const getFarmListByGrowerID = catchAsync(async (req: Request, res: Response) => {
+	const growerId = +req.params.growerId;
+	const result = await jobService.getFarmListByGrowerID(growerId);
+	res.status(httpStatus.OK).json({ result: result });
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -56,4 +83,9 @@ export default {
 	deleteJob,
 	updateJobByApplicator,
 	// getAllPilotsByApplicator,
+	getAllJobTypes,
+	getAllJobStatus,
+	getGrowerListForApplicator,
+	getApplicatorListForGrower,
+	getFarmListByGrowerID
 };

@@ -46,12 +46,46 @@ router
 		validateSchema(jobValidation.paramsSchema),
 		jobController.deleteJob,
 	);
+//Required  Drop down for job creation
+// router
+// .route('/all-pilots')
+// .get(
+// 	verifyToken,
+// 	validateSchema(jobValidation.paramsSchema),
+// 	jobController.getAllPilotsByApplicator,
+// );
 
-	// router
-	// .route('/all-pilots')
-	// .get(
-	// 	verifyToken,
-	// 	validateSchema(jobValidation.paramsSchema),
-	// 	jobController.getAllPilotsByApplicator,
-	// );
+//job type
+router
+	.route('/all-jobTypes')
+	.get(
+		verifyToken,
+		jobController.getAllJobTypes,
+	);
+
+// job status
+router
+	.route('/all-jobStatus')
+	.get(
+		verifyToken,
+		jobController.getAllJobStatus,
+	);
+	router
+	.route('/growerList')
+	.get(
+		verifyToken,
+		jobController.getGrowerListForApplicator,
+	);
+	router
+	.route('/applicatorList')
+	.get(
+		verifyToken,
+		jobController.getApplicatorListForGrower,
+	);
+	router
+	.route('/farmList/:growerId')
+	.get(
+		verifyToken,
+		jobController.getFarmListByGrowerID,
+	);
 export default router;
