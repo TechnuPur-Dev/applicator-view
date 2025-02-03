@@ -46,10 +46,10 @@ router
 	.route('/applicators/by-grower')
 	.get(verifyToken, userController.getAllApplicatorsByGrower);
 router
-	.route('/growers/by-applicator')
+	.route('/all-growers/by-applicator')
 	.get(verifyToken, userController.getAllGrowersByApplicator);
 router
-	.route('/grower/by-applicator/:growerId')
+	.route('/delete-grower/by-applicator/:growerId')
 	.delete(
 		verifyToken,
 		validateSchema(userValidation.paramsSchema),

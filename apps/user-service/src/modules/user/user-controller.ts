@@ -89,9 +89,9 @@ const getAllApplicatorsByGrower = catchAsync(
 );
 
 const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.payload.id;
+	const id = +req.payload.id;
 	const data = req.body;
-	const result = await userService.updateArchivedStatus(data, Id);
+	const result = await userService.updateArchivedStatus(data, id);
 	res.status(httpStatus.OK).json({ result });
 });
 
@@ -102,8 +102,7 @@ const sendInviteToApplicator = catchAsync(
 
 		const result = await userService.sendInviteToApplicator(applicatorId,growerId);
 		res.status(httpStatus.OK).json(result);
-	},
-);
+	});
 const sendInviteToGrower = catchAsync(
 	async (req: Request, res: Response) => {
 	
