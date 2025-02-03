@@ -402,55 +402,7 @@ const updateInviteStatus = async (data: UpdateStatus) => {
 	try {
 		// Destructure
 		const { status, applicatorId, growerId } = data;
-		if (status === 'PENDING') {
-			// Update the inviteStatus field
-			const user = await prisma.applicatorGrower.update({
-				where: {
-					applicatorId_growerId: {
-						applicatorId,
-						growerId,
-					},
-				},
-				include: {
-					// Move include here
-					grower: {
-						select: {
-							email: true,
-						},
-					},
-				},
-				data: {
-					inviteStatus: status, // Only updating the inviteStatus field
-				},
-			});
 
-			const subject = 'Email Invitation';
-			const message = `
-  You are invited to join our platform!<br><br>
-  If you did not expect this invitation, please ignore this email.
-`;
-			if (user) {
-				const email = user?.grower?.email;
-
-				if (!email) {
-					throw new Error(
-						'Email address is not available for the grower.',
-					);
-				}
-
-				const html = await mailHtmlTemplate(subject, message);
-
-				await sendEmail({
-					emailTo: email,
-					subject,
-					text: 'Request Invitation',
-					html,
-				});
-				return {
-					message: 'Invite sent successfully.',
-				};
-			}
-		}
 		if (status === 'ACCEPTED') {
 			// Update the inviteStatus field
 			await prisma.applicatorGrower.update({
@@ -634,25 +586,124 @@ const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
 	}
 };
 
-const sendInviteToApplicator = async (email: string) => {
+const sendInviteToApplicator = async (
+	applicatorId: number,
+	growerId: number,
+) => {
 	try {
+		// Update the inviteStatus field
+		const user = await prisma.applicatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					applicatorId,
+					growerId,
+				},
+			},
+			include: {
+				// Move include here
+				applicator: {
+					select: {
+						email: true,
+					},
+				},
+			},
+			data: {
+				inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			},
+		});
+
+		const subject = 'Email Invitation';
+		const message = `
+You are invited to join our platform!<br><br>
+If you did not expect this invitation, please ignore this email.
+`;
+		if (user) {
+			const email = user?.applicator?.email;
+
+			if (!email) {
+				throw new Error(
+					'Email address is not available for the grower.',
+				);
+			}
+
+			const html = await mailHtmlTemplate(subject, message);
+
+			await sendEmail({
+				emailTo: email,
+				subject,
+				text: 'Request Invitation',
+				html,
+			});
+			return {
+				message: 'Invite sent successfully.',
+			};
+		}
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			// Handle Prisma-specific error codes
+			if (error.code === 'P2025') {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'A user with this id does not exist.',
+				);
+			}
+		}
+
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(httpStatus.CONFLICT, error.message);
+		}
+	}
+};
+const sendInviteToGrower = async (applicatorId: number, growerId: number) => {
+	try {
+		// Update the inviteStatus field
+		const user = await prisma.applicatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					applicatorId,
+					growerId,
+				},
+			},
+			include: {
+				// Move include here
+				grower: {
+					select: {
+						email: true,
+					},
+				},
+			},
+			data: {
+				inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			},
+		});
+
 		const subject = 'Email Invitation';
 		const message = `
   You are invited to join our platform!<br><br>
- If you did not expect this invitation, please ignore this email.
+  If you did not expect this invitation, please ignore this email.
 `;
+		if (user) {
+			const email = user?.grower?.email;
 
-		const html = await mailHtmlTemplate(subject, message);
+			if (!email) {
+				throw new Error(
+					'Email address is not available for the grower.',
+				);
+			}
 
-		await sendEmail({
-			emailTo: email,
-			subject,
-			text: 'Request Invitation',
-			html,
-		});
-		return {
-			message: 'Invite sent successfully.',
-		};
+			const html = await mailHtmlTemplate(subject, message);
+
+			await sendEmail({
+				emailTo: email,
+				subject,
+				text: 'Request Invitation',
+				html,
+			});
+			return {
+				message: 'Invite sent successfully.',
+			};
+		}
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError) {
 			// Handle Prisma-specific error codes
@@ -686,4 +737,5 @@ export default {
 	deleteGrower,
 	updateArchivedStatus,
 	sendInviteToApplicator,
+	sendInviteToGrower,
 };

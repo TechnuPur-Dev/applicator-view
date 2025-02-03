@@ -58,10 +58,14 @@ const updateArchiveStatus: Schema = Joi.object({
 	}).required(),
 });
 
-const sendInviteToApplicatorSchema: Schema = Joi.object({
-	body: Joi.object({
-		email: Joi.string().email().required(),
-	}).required(),
+
+const sendInviteSchema: Schema = Joi.object({
+	params: Joi.object({
+		applicatorId: Joi.number().integer().positive(),
+		growerId: Joi.number().integer().positive(),
+	})
+		.or('applicatorId', 'growerId') // At least one must be present
+		.required(),
 });
 export default {
 	createGrowerSchema,
@@ -69,5 +73,5 @@ export default {
 	verifyEmailAndSendOTPSchema,
 	updateArchiveStatus,
 	updateInviteStatusSchema,
-	sendInviteToApplicatorSchema,
+	sendInviteSchema
 };
