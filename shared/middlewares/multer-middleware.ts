@@ -9,7 +9,7 @@ const uploadMiddleware = (
 	next: NextFunction,
 ): void => {
 	// Use the multer upload middleware
-	upload.single('file')(req, res, function (err) {
+	upload.array('file')(req, res, function (err) {
 		if (err instanceof MulterError) {
 			// A Multer error occurred while uploading
 			return res.status(500).json({ error: 'File upload error' });

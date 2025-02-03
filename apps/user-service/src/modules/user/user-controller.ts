@@ -6,7 +6,15 @@ import userService from './user-service';
 // Controller to get userList
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
-	const file = req.file;
+	const files = req.files;
+
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+
+	const file = files[0];
+	console.log('Uploaded file:', file);
+
 	if (!file) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
@@ -97,21 +105,22 @@ const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
 
 const sendInviteToApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-	const growerId = +req.payload.id;
-	const applicatorId = +req.params.applicatorId;
-
-		const result = await userService.sendInviteToApplicator(applicatorId,growerId);
-		res.status(httpStatus.OK).json(result);
-	});
-const sendInviteToGrower = catchAsync(
-	async (req: Request, res: Response) => {
-	
-	const  applicatorId = +req.payload.id;
-	const growerId = +req.params.growerId;
-		const result = await userService.sendInviteToGrower(applicatorId,growerId);
+		const growerId = +req.payload.id;
+		const applicatorId = +req.params.applicatorId;
+		const result = await userService.sendInviteToApplicator(
+			applicatorId,
+			growerId,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
+
+const sendInviteToGrower = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = +req.payload.id;
+	const growerId = +req.params.growerId;
+	const result = await userService.sendInviteToGrower(applicatorId, growerId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -127,5 +136,5 @@ export default {
 	updateArchivedStatus,
 	getAllApplicatorsByGrower,
 	sendInviteToApplicator,
-	sendInviteToGrower
+	sendInviteToGrower,
 };

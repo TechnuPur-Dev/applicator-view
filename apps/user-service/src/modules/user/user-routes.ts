@@ -46,7 +46,7 @@ router
 	.route('/applicators/by-grower')
 	.get(verifyToken, userController.getAllApplicatorsByGrower);
 router
-	.route('/all-growers/by-applicator')
+	.route('/growers/by-applicator')
 	.get(verifyToken, userController.getAllGrowersByApplicator);
 router
 	.route('/delete-grower/by-applicator/:growerId')
@@ -72,7 +72,7 @@ router
 		validateSchema(userValidation.sendInviteSchema),
 		userController.sendInviteToApplicator,
 	);
-	router
+router
 	.route('/grower/invite/:growerId')
 	.put(
 		verifyToken,
