@@ -29,87 +29,64 @@ const createJob = async (data: CreateJob) => {
 			adjacentCrops,
 			specialInstructions,
 			attachments,
-			fields, // Array of { fieldId, actualAcres }
-			products, // Array of { name, ratePerAcre, totalAcres, price }
-			applicationFees, // Array of { description, rateUoM, perAcre }
+			fields = [],
+			products = [],
+			applicationFees = [],
 		} = data;
 
-		const [newJob] = await prisma.$transaction(async (prisma) => {
-			const newJob = await prisma.job.create({
-				data: {
-					title,
-					type,
-					source,
-					status,
-					growerId,
-					applicatorId,
-					fieldWorkerId,
-					startDate,
-					endDate,
-					description,
-					farmId,
-					sensitiveAreas,
-					adjacentCrops,
-					specialInstructions,
-					attachments,
+		const newJob = await prisma.job.create({
+			data: {
+				title,
+				type,
+				source,
+				status,
+				growerId,
+				applicatorId,
+				fieldWorkerId,
+				startDate,
+				endDate,
+				description,
+				farmId,
+				sensitiveAreas,
+				adjacentCrops,
+				specialInstructions,
+				attachments,
+				fields: {
+					create: fields.map(({ fieldId, actualAcres }) => ({
+						fieldId,
+						actualAcres,
+					})),
 				},
-			});
-			if (fields && fields.length > 0) {
-				await prisma.fieldJob.createMany({
-					data: fields.map(
-						(field: { fieldId: number; actualAcres?: number }) => ({
-							fieldId: field.fieldId,
-							jobId: newJob.id,
-							actualAcres: field.actualAcres,
+				products: {
+					create: products.map(
+						({ name, ratePerAcre, totalAcres, price }) => ({
+							name,
+							ratePerAcre,
+							totalAcres,
+							price,
 						}),
 					),
-				});
-			}
-
-			// Add Products
-			if (products && products.length > 0) {
-				await prisma.jobProduct.createMany({
-					data: products.map(
-						(product: {
-							name: string;
-							ratePerAcre: number;
-							totalAcres: number;
-							price: number;
-						}) => ({
-							jobId: newJob.id,
-							name: product.name,
-							ratePerAcre: product.ratePerAcre,
-							totalAcres: product.totalAcres,
-							price: product.price,
+				},
+				applicationFees: {
+					create: applicationFees.map(
+						({ description, rateUoM, perAcre }) => ({
+							description,
+							rateUoM,
+							perAcre,
 						}),
 					),
-				});
-			}
-
-			// Add Application Fees
-			if (applicationFees && applicationFees.length > 0) {
-				await prisma.jobApplicationFee.createMany({
-					data: applicationFees.map(
-						(fee: {
-							description: string;
-							rateUoM: number;
-							perAcre: boolean;
-						}) => ({
-							jobId: newJob.id,
-							description: fee.description,
-							rateUoM: fee.rateUoM,
-							perAcre: fee.perAcre,
-						}),
-					),
-				});
-			}
-			return [newJob];
+				},
+			},
+			include: {
+				fields: true,
+				products: true,
+				applicationFees: true,
+			},
 		});
 
 		return newJob;
 	} catch (error) {
 		if (error instanceof Error) {
-			// Handle generic errors
 			throw new ApiError(httpStatus.CONFLICT, error.message);
 		}
 	}
@@ -123,7 +100,43 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 				applicatorId,
 			},
 			include: {
-				fields: true,
+				grower: {
+					select: {
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+						phoneNumber: true,
+					},
+				},
+				fieldWorker: {
+					select: {
+						fullName: true,
+					},
+				},
+				farm: {
+					select: {
+						name: true,
+						state: true,
+						county: true,
+						township: true,
+						zipCode: true,
+					},
+				},
+				fields: {
+					include: {
+						field: {
+							select: {
+								name: true,
+								acres: true,
+							},
+						},
+					},
+					omit: {
+						createdAt: true,
+						updatedAt: true,
+					},
+				},
 				products: true,
 				applicationFees: true,
 			},
@@ -191,7 +204,7 @@ const deleteJob = async (jobId: number) => {
 		});
 
 		return {
-			message: 'job deleted successfully.',
+			message: 'Job deleted successfully.',
 		};
 	} catch (error) {
 		if (error instanceof ApiError) {
@@ -309,17 +322,16 @@ const getGrowerListForApplicator = async (applicatorId: number) => {
 				applicatorId,
 			},
 			select: {
-				grower:{
-					select:{
-						id:true,
-						fullName:true
-					}
-				}
-			
+				grower: {
+					select: {
+						id: true,
+						fullName: true,
+					},
+				},
 			},
 		}); // Fetch all growers
 
-		const formatGrowers = growers.map((item)=> item.grower)
+		const formatGrowers = growers.map((item) => item.grower);
 		return formatGrowers;
 	} catch (error) {
 		if (error instanceof Error) {
@@ -338,16 +350,15 @@ const getApplicatorListForGrower = async (growerId: number) => {
 				growerId,
 			},
 			select: {
-				applicator:{
-					select:{
-						id:true,
-						fullName:true
-					}
-				}
-			
+				applicator: {
+					select: {
+						id: true,
+						fullName: true,
+					},
+				},
 			},
 		}); // Fetch all applicators
-		const formatApplicators= applicators.map((item)=> item.applicator)
+		const formatApplicators = applicators.map((item) => item.applicator);
 		return formatApplicators;
 	} catch (error) {
 		if (error instanceof Error) {
@@ -360,48 +371,55 @@ const getApplicatorListForGrower = async (growerId: number) => {
 	}
 };
 
-const getFarmListByGrowerID = async (growerId: number) => {
+const getFarmListByGrowerID = async (
+	applicatorId: number,
+	growerId: number,
+) => {
 	try {
 		const farms = await prisma.farm.findMany({
 			where: {
 				growerId,
+				permissions: {
+					some: {
+						applicatorId,
+					},
+				},
 			},
-			select:{
-				id:true,
-				name:true,
-				isActive:true,
-				fields:{ 
-					select:{
-						id:true,
-						name:true,
-						acres:true
-					}
-				}
+			select: {
+				id: true,
+				name: true,
+				// isActive: true,
+				fields: {
+					select: {
+						id: true,
+						name: true,
+						acres: true,
+					},
+				},
 			},
-			
 			orderBy: {
 				createdAt: 'desc',
 			},
 		}); // Fetch all users
-		// Calculate total acres for each grower and each farm
-		const enrichedFarms = farms.map((farm) => {
-			const totalAcresByFarm = farm.fields.reduce(
-				(totalFarmAcres, field) => {
-					return (
-						totalFarmAcres +
-						parseFloat(field.acres?.toString() || '0')
-					);
-				},
-				0,
-			);
+		// // Calculate total acres for each grower and each farm
+		// const enrichedFarms = farms.map((farm) => {
+		// 	const totalAcresByFarm = farm.fields.reduce(
+		// 		(totalFarmAcres, field) => {
+		// 			return (
+		// 				totalFarmAcres +
+		// 				parseFloat(field.acres?.toString() || '0')
+		// 			);
+		// 		},
+		// 		0,
+		// 	);
 
-			// Add total acres to the grower object
-			return {
-				...farm,
-				totalAcres: totalAcresByFarm,
-			};
-		});
-		return enrichedFarms;
+		// 	// Add total acres to the grower object
+		// 	return {
+		// 		...farm,
+		// 		totalAcres: totalAcresByFarm,
+		// 	};
+		// });
+		return farms;
 	} catch (error) {
 		if (error instanceof Error) {
 			throw new ApiError(
@@ -422,5 +440,5 @@ export default {
 	getAllJobStatus,
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
-	getFarmListByGrowerID
+	getFarmListByGrowerID,
 };

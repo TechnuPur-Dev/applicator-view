@@ -8,13 +8,7 @@ import jobValidation from './job-validation';
 const router: Router = express.Router();
 
 // Get all jobs for applicator by applicatorId (My Jobs Screen)
-router
-	.route('/allJobsByApplicator/:applicatorId')
-	.get(
-		verifyToken,
-		validateSchema(jobValidation.paramsSchema),
-		jobController.getAllJobsByApplicator,
-	);
+router.route('/my-jobs').get(verifyToken, jobController.getAllJobsByApplicator);
 // Create job
 router
 	.route('/create-job')
@@ -41,7 +35,7 @@ router
 	);
 router
 	.route('/delete/:jobId')
-	.get(
+	.delete(
 		verifyToken,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.deleteJob,
@@ -56,36 +50,17 @@ router
 // );
 
 //job type
-router
-	.route('/all-jobTypes')
-	.get(
-		verifyToken,
-		jobController.getAllJobTypes,
-	);
+router.route('/all-types').get(verifyToken, jobController.getAllJobTypes);
 
 // job status
+router.route('/all-statuses').get(verifyToken, jobController.getAllJobStatus);
 router
-	.route('/all-jobStatus')
-	.get(
-		verifyToken,
-		jobController.getAllJobStatus,
-	);
-	router
-	.route('/growerList')
-	.get(
-		verifyToken,
-		jobController.getGrowerListForApplicator,
-	);
-	router
-	.route('/applicatorList')
-	.get(
-		verifyToken,
-		jobController.getApplicatorListForGrower,
-	);
-	router
-	.route('/farmList/:growerId')
-	.get(
-		verifyToken,
-		jobController.getFarmListByGrowerID,
-	);
+	.route('/growers-list/by-applicator')
+	.get(verifyToken, jobController.getGrowerListForApplicator);
+router
+	.route('/applicators-list/by-grower')
+	.get(verifyToken, jobController.getApplicatorListForGrower);
+router
+	.route('/farms-list/:growerId')
+	.get(verifyToken, jobController.getFarmListByGrowerID);
 export default router;
