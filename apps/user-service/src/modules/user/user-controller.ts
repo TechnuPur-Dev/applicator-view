@@ -89,17 +89,29 @@ const getAllApplicatorsByGrower = catchAsync(
 );
 
 const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.payload.id
+	const id = +req.payload.id;
 	const data = req.body;
-	const result = await userService.updateArchivedStatus(data,Id);
+	const result = await userService.updateArchivedStatus(data, id);
 	res.status(httpStatus.OK).json({ result });
-
-})	
-const sentInviteToApplicator= catchAsync(async (req: Request, res: Response) => {
-	const { email } = req.body;
-	const result = await userService.sentInviteToApplicator(email);
-	res.status(httpStatus.OK).json(result);
 });
+
+const sendInviteToApplicator = catchAsync(
+	async (req: Request, res: Response) => {
+	const growerId = +req.payload.id;
+	const applicatorId = +req.params.applicatorId;
+
+		const result = await userService.sendInviteToApplicator(applicatorId,growerId);
+		res.status(httpStatus.OK).json(result);
+	});
+const sendInviteToGrower = catchAsync(
+	async (req: Request, res: Response) => {
+	
+	const  applicatorId = +req.payload.id;
+	const growerId = +req.params.growerId;
+		const result = await userService.sendInviteToGrower(applicatorId,growerId);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -114,5 +126,6 @@ export default {
 	deleteGrower,
 	updateArchivedStatus,
 	getAllApplicatorsByGrower,
-	sentInviteToApplicator
+	sendInviteToApplicator,
+	sendInviteToGrower
 };
