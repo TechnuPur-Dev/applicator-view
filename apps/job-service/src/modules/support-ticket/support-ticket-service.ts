@@ -2,50 +2,67 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
-import { JobStatus, JobType } from '@prisma/client';
+import {  TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
 import ApiError from '../../../../../shared/utils/api-error';
 
 
-const getAllJobTypes = async () => {
+const getAllTicketCategories = async () => {
 	try {
-		// Convert JobType enum into an array
-		const jobStatusList = Object.values(JobType).map((type, index) => ({
+		
+		const ticketCategoryList = Object.values(TicketCategory).map((category, index) => ({
 			id: index + 1,
-			name: type,
+			name: category,
 		}));
-		return jobStatusList;
+		return ticketCategoryList;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
 			throw new ApiError(
 				httpStatus.CONFLICT,
-				'Error while retreiving  list.',
+				'Error while retreiving list.',
 			);
 		}
 	}
 };
 
-const getAllJobStatus = async () => {
+const getAllTicketStatuses = async () => {
 	try {
-		const jobStatusList = Object.values(JobStatus).map((status, index) => ({
+		const ticketStatusList = Object.values(TicketStatus).map((status, index) => ({
 			id: index + 1,
 			name: status,
 		}));
-		return jobStatusList;
+		return ticketStatusList;
 	} catch (error) {
 		if (error instanceof Error) {
 			// Handle generic errors
 			throw new ApiError(
 				httpStatus.CONFLICT,
-				'Error while retreiving  list.',
+				'Error while retreiving list.',
 			);
 		}
 	}
 };
-
+const getAllTicketPriorities = async () => {
+	try {
+		const ticketPriorityList = Object.values(TicketPriority).map((priority, index) => ({
+			id: index + 1,
+			name: priority,
+		}));
+		return ticketPriorityList;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving list.',
+			);
+		}
+	}
+};
 export default {
 	
-	getAllJobTypes,
-	getAllJobStatus,
+	getAllTicketCategories,
+	getAllTicketStatuses,
+	getAllTicketPriorities
 	
 };

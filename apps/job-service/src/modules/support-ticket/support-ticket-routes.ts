@@ -8,9 +8,9 @@ const router: Router = express.Router();
 
 
 
-//job type
-router.route('/all-types').get(verifyToken, supportTicketController.getAllJobTypes);
 
-// job status
-router.route('/all-statuses').get(verifyToken, supportTicketController.getAllJobStatus);
+router.route('/all-categories').get(verifyToken, supportTicketController.getAllTicketCategories);
+router.route('/all-statuses').get(verifyToken, supportTicketController.getAllTicketStatuses);
+router.route('/all-priorities').get(verifyToken, supportTicketController.getAllTicketPriorities);
+
 export default router;

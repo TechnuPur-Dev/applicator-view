@@ -4,18 +4,23 @@ import httpStatus from 'http-status';
 import supportTicketService from './support-ticket-service';
 
 
-const getAllJobTypes = catchAsync(async (req: Request, res: Response) => {
-	const jobData = await supportTicketService.getAllJobTypes();
-	res.status(httpStatus.OK).json({ result: jobData });
+const getAllTicketCategories = catchAsync(async (req: Request, res: Response) => {
+	const ticketData = await supportTicketService.getAllTicketCategories();
+	res.status(httpStatus.OK).json({ result: ticketData });
 });
 
-const getAllJobStatus = catchAsync(async (req: Request, res: Response) => {
-	const jobData = await supportTicketService.getAllJobStatus();
-	res.status(httpStatus.OK).json({ result: jobData });
+const getAllTicketStatuses = catchAsync(async (req: Request, res: Response) => {
+	const ticketData = await supportTicketService.getAllTicketStatuses();
+	res.status(httpStatus.OK).json({ result: ticketData });
 });
 
+const getAllTicketPriorities = catchAsync(async (req: Request, res: Response) => {
+	const ticketData = await supportTicketService.getAllTicketPriorities();
+	res.status(httpStatus.OK).json({ result: ticketData });
+});
 export default {
-	getAllJobTypes,
-	getAllJobStatus,
+	getAllTicketCategories,
+	getAllTicketStatuses,
+	getAllTicketPriorities
 	
 };
