@@ -18,9 +18,30 @@ const getAllTicketPriorities = catchAsync(async (req: Request, res: Response) =>
 	const ticketData = await supportTicketService.getAllTicketPriorities();
 	res.status(httpStatus.OK).json({ result: ticketData });
 });
+
+const createSupportTicket = catchAsync(async (req: Request, res: Response) => {
+	const Id = req.payload.id
+	const data = req.body;
+	const ticketData = await supportTicketService.createSupportTicket(Id,data);
+	res.status(httpStatus.OK).json({ result: ticketData ,message:"support ticket created successfully"});
+});
+
+const getAllSupportTicket =  catchAsync(async (req: Request, res: Response) => {
+	const ticketData = await supportTicketService.getAllSupportTicket();
+	res.status(httpStatus.OK).json({ result: ticketData });
+});
+
+const getSupportTicketById = catchAsync(async (req: Request, res: Response) => {
+	const Id = +req.params.ticketId
+	const ticketData = await supportTicketService.getSupportTicketById(Id);
+	res.status(httpStatus.OK).json({ result: ticketData });
+});
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
-	getAllTicketPriorities
+	getAllTicketPriorities,
+	createSupportTicket,
+	getAllSupportTicket,
+	getSupportTicketById
 	
 };
