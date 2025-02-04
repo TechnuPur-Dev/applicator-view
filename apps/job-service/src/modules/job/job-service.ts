@@ -6,6 +6,10 @@ import { JobStatus, JobType } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateJob } from './job-types';
+import { v4 as uuidv4 } from 'uuid';
+import config from '../../../../../shared/config/env-config';
+import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
+
 // import { object } from 'joi';
 // import config from '../../../../../shared/config/env-config';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
@@ -429,6 +433,54 @@ const getFarmListByGrowerID = async (
 		}
 	}
 };
+
+const uploadJobAttachments = async (
+	userId: number,
+	files: Express.Multer.File[],
+) => {
+	try {
+		// make connection with azure storage account for storage access
+		const storageUrl = config.azureStorageUrl;
+		const containerName = config.azureContainerName;
+		console.log(storageUrl, containerName, 'blob');
+		const blobServiceClient =
+			BlobServiceClient.fromConnectionString(storageUrl);
+		const containerClient: ContainerClient =
+			blobServiceClient.getContainerClient(containerName);
+
+		//  upload all file parralled at one by using promis.all
+		const uploadedFiles = await Promise.all(
+			files.map(async (file) => {
+				// Generate unique blob names by using uniue id uuidv4
+				const blobName = `jobs/${uuidv4()}_${file.originalname}`;
+
+				const blockBlobClient =
+					containerClient.getBlockBlobClient(blobName);
+				await blockBlobClient.upload(file.buffer, file.buffer.length, {
+					blobHTTPHeaders: {
+						blobContentType: file.mimetype,
+					},
+				});
+				return `/${containerName}/${blobName}`;
+				// return {
+				// 	jobAttachment: `/${containerName}/${blobName}`,
+				// };
+			}),
+		);
+		return uploadedFiles;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors or unexpected errors
+			console.log(error, 'error');
+
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while uploading attachments.',
+			);
+		}
+	}
+};
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -441,4 +493,5 @@ export default {
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerID,
+	uploadJobAttachments,
 };

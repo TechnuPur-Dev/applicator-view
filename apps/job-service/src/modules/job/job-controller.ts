@@ -84,6 +84,25 @@ const getFarmListByGrowerID = catchAsync(
 		res.status(httpStatus.OK).json({ result: result });
 	},
 );
+const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
+	const files = req.files;
+	console.log('Uploaded file:', files);
+    
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+
+
+	if (!files) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+	const result = await jobService.uploadJobAttachments(userId, files);
+	res.status(httpStatus.OK).json({
+		message:'attachments uploaded successfully',
+		result
+	});
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -96,4 +115,5 @@ export default {
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerID,
+	uploadJobAttachments
 };
