@@ -60,21 +60,47 @@ const getAllJobStatus = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({ result: jobData });
 });
 
-const getGrowerListForApplicator = catchAsync(async (req: Request, res: Response) => {
-	const id = + req.payload.id
-	const result = await jobService.getGrowerListForApplicator(id);
-	res.status(httpStatus.OK).json({ result: result });
-});
+const getGrowerListForApplicator = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.payload.id;
+		const result = await jobService.getGrowerListForApplicator(id);
+		res.status(httpStatus.OK).json({ result: result });
+	},
+);
 
-const getApplicatorListForGrower = catchAsync(async (req: Request, res: Response) => {
-	const id = + req.payload.id
-	const result = await jobService.getApplicatorListForGrower(id);
-	res.status(httpStatus.OK).json({ result: result });
-});
-const getFarmListByGrowerID = catchAsync(async (req: Request, res: Response) => {
-	const growerId = +req.params.growerId;
-	const result = await jobService.getFarmListByGrowerID(growerId);
-	res.status(httpStatus.OK).json({ result: result });
+const getApplicatorListForGrower = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.payload.id;
+		const result = await jobService.getApplicatorListForGrower(id);
+		res.status(httpStatus.OK).json({ result: result });
+	},
+);
+const getFarmListByGrowerID = catchAsync(
+	async (req: Request, res: Response) => {
+		const growerId = +req.params.growerId;
+		const result = await jobService.getFarmListByGrowerID(growerId);
+		res.status(httpStatus.OK).json({ result: result });
+	},
+);
+
+const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
+	const files = req.files;
+	console.log('Uploaded file:', files);
+    
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+
+
+	if (!files) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+	const result = await jobService.uploadJobAttachments(userId, files);
+	res.status(httpStatus.OK).json({
+		message:'attachments uploaded successfully',
+		result
+	});
 });
 export default {
 	createJob,
@@ -87,5 +113,6 @@ export default {
 	getAllJobStatus,
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
-	getFarmListByGrowerID
+	getFarmListByGrowerID,
+	uploadJobAttachments,
 };
