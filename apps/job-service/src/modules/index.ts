@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import job from './job/job-routes'
+import job from './job/job-routes';
 
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
@@ -11,8 +11,6 @@ const defaultRoutes = [
 		path: '/job', // Path for the job routes
 		route: job,
 	},
-	
-	
 ];
 
 // Dynamically add routes to the main router

@@ -17,7 +17,6 @@ const createJobSchema = Joi.object({
 		title: Joi.string().min(3).max(100).required(), // Job title validation
 		type: jobTypeSchema.required(), // Allowed job types (modify as needed)
 		source: jobSourceSchema.required(), // Allowed job sources
-		status: jobStatusSchema.required(),
 		growerId: Joi.number().integer().positive().required(),
 		applicatorId: Joi.number().integer().positive().optional(),
 		fieldWorkerId: Joi.number().integer().positive().optional(),
@@ -73,19 +72,16 @@ const updateJobSchema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
-		fieldWorkerId :jobStatusSchema.optional(),
+		fieldWorkerId: Joi.number().integer().positive().optional(),
 		status: jobStatusSchema.optional(),
 	}).optional(),
 });
 
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
-		applicatorId: Joi.number().integer().positive(),
+		// applicatorId: Joi.number().integer().positive(),
 		jobId: Joi.number().integer().positive(),
-	})
-
-		.or('jobId', 'applicatorId') // At least one must be present
-		.required(),
+	}).required(),
 });
 
 export default { createJobSchema, paramsSchema, updateJobSchema };

@@ -9,13 +9,7 @@ import uploadMiddleware from '../../../../../shared/middlewares/multer-middlewar
 const router: Router = express.Router();
 
 // Get all jobs for applicator by applicatorId (My Jobs Screen)
-router
-	.route('/allJobsByApplicator/:applicatorId')
-	.get(
-		verifyToken,
-		validateSchema(jobValidation.paramsSchema),
-		jobController.getAllJobsByApplicator,
-	);
+router.route('/my-jobs').get(verifyToken, jobController.getAllJobsByApplicator);
 // Create job
 router
 	.route('/create-job')
@@ -43,7 +37,7 @@ router
 	);
 router
 	.route('/delete/:jobId')
-	.get(
+	.delete(
 		verifyToken,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.deleteJob,
@@ -58,23 +52,22 @@ router
 // );
 
 //job type
-router.route('/all-jobTypes').get(verifyToken, jobController.getAllJobTypes);
+router.route('/all-types').get(verifyToken, jobController.getAllJobTypes);
 
 // job status
-router.route('/all-jobStatus').get(verifyToken, jobController.getAllJobStatus);
+router.route('/all-statuses').get(verifyToken, jobController.getAllJobStatus);
 router
-	.route('/growerList')
+	.route('/growers-list/by-applicator')
 	.get(verifyToken, jobController.getGrowerListForApplicator);
 router
-	.route('/applicatorList')
+	.route('/applicators-list/by-grower')
 	.get(verifyToken, jobController.getApplicatorListForGrower);
 router
-	.route('/farmList/:growerId')
+	.route('/farms-list/:growerId')
 	.get(verifyToken, jobController.getFarmListByGrowerID);
 
-//upload job attachments
+	//upload job attachments
 router
-	.route('/upload/job-attachments')
-	.post(verifyToken, uploadMiddleware, jobController.uploadJobAttachments);
-
+.route('/upload/job-attachments')
+.post(verifyToken, uploadMiddleware, jobController.uploadJobAttachments);
 export default router;
