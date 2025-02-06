@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 import { JobStatus, JobType } from '@prisma/client';
@@ -228,7 +228,7 @@ const updateJobByApplicator = async (
 	jobId: number,
 ) => {
 	try {
-		const job = await prisma.job.update({
+		 await prisma.job.update({
 			where: { id: jobId },
 			data: {
 				...data,
@@ -236,15 +236,15 @@ const updateJobByApplicator = async (
 				fieldWorkerId: data.fieldWorkerId,
 			},
 		});
-		if (!job) {
-			throw new ApiError(
-				httpStatus.NOT_FOUND,
-				'No job found for the given id.',
-			);
-		}
 
 		return { message: 'Job updated successfully.' };
 	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			if (error.code === 'P2025') {
+				// No record found
+				throw new ApiError(httpStatus.NOT_FOUND, 'job not found.');
+			}
+		}
 		if (error instanceof ApiError) {
 			throw new ApiError(error.statusCode, error.message);
 		}
@@ -256,31 +256,31 @@ const updateJobByApplicator = async (
 
 // get pilots by applicator by Grower
 
-// const getAllPilotsByApplicator = async (applicatorId:number) => {
-// 	try {
-// 		const workers = await prisma.user.findMany({
-// 			where:{
-// 				applicatorId,
-// 				role:'WORKER'
-// 			},
-// 			select:{
-// 				id:true,
-// 				firstName:true,
-// 				lastName:true,
-// 				fullName:true
-// 			}
-// 		}); // Fetch all users
-// 		return workers;
-// 	} catch (error) {
-// 		if (error instanceof Error) {
-// 			// Handle generic errors
-// 			throw new ApiError(
-// 				httpStatus.CONFLICT,
-// 				'Error while retreiving all workers list.',
-// 			);
-// 		}
-// 	}
-// };
+const getAllPilotsByApplicator = async (applicatorId:number) => {
+	try {
+		const workers = await prisma.user.findMany({
+			where:{
+				// applicatorId,
+				role:'WORKER'
+			},
+			select:{
+				id:true,
+				firstName:true,
+				lastName:true,
+				fullName:true
+			}
+		}); // Fetch all users
+		return workers;
+	} catch (error) {
+		if (error instanceof Error) {
+			// Handle generic errors
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Error while retreiving all workers list.',
+			);
+		}
+	}
+};
 
 const getAllJobTypes = async () => {
 	try {
@@ -487,7 +487,7 @@ export default {
 	getJobById,
 	deleteJob,
 	updateJobByApplicator,
-	// getAllPilotsByApplicator
+	getAllPilotsByApplicator,
 	getAllJobTypes,
 	getAllJobStatus,
 	getGrowerListForApplicator,
