@@ -43,13 +43,12 @@ router
 		jobController.deleteJob,
 	);
 //Required  Drop down for job creation
-// router
-// .route('/all-pilots')
-// .get(
-// 	verifyToken,
-// 	validateSchema(jobValidation.paramsSchema),
-// 	jobController.getAllPilotsByApplicator,
-// );
+router
+.route('/all-pilots')
+.get(
+	verifyToken,
+	jobController.getAllPilotsByApplicator,
+);
 
 //job type
 router.route('/all-types').get(verifyToken, jobController.getAllJobTypes);
