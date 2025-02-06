@@ -55,11 +55,12 @@ model User {
   growerJobs      Job[]              @relation("GrowerJob")
   fieldWorkerJobs Job[]              @relation("FieldWorkerJob")
 
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   FarmPermission        FarmPermission[]
-  SupportTicketCreated  SupportTicket[]  @relation("SupportTicketCreated")
-  SupportTicketAssigned SupportTicket[]  @relation("SupportTicketAssigned")
+  SupportTicketCreated  SupportTicket[]        @relation("SupportTicketCreated")
+  SupportTicketAssigned SupportTicket[]        @relation("SupportTicketAssigned")
+  WarrantyRegistration  WarrantyRegistration[]
 }
 
 model ApplicatorGrower {
@@ -221,9 +222,9 @@ model JobApplicationFee {
 }
 
 model SupportTicket {
-  id          Int      @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   createdById Int
-  subject     String    @db.VarChar(255) // Limits subject length for better database efficiency
+  subject     String         @db.VarChar(255) // Limits subject length for better database efficiency
   description String
   status      TicketStatus
   assigneeId  Int?
@@ -231,14 +232,37 @@ model SupportTicket {
   category    TicketCategory
   priority    TicketPriority
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   createdByUser User  @relation("SupportTicketCreated", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
   assigneeUser  User? @relation("SupportTicketAssigned", fields: [assigneeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   job           Job?  @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([jobId])
+}
+
+model WarrantyRegistration {
+  id                 Int           @id @default(autoincrement())
+  imageUrl           String?
+  serialNumber       String
+  equipmentType      EquipmentType
+  isRegistered       Boolean       @default(false)
+  documentUrl        String?
+  warrantyExpiration DateTime
+  createdById        Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdByUser User @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+enum EquipmentType {
+  DRONE
+  TRACTOR
+  SPRAYER
+  OTHER // Added to account for future expansion
 }
 
 enum TicketStatus {
@@ -261,7 +285,6 @@ enum TicketPriority {
   HIGH
   CRITICAL
 }
-
 
 enum UserRole {
   GROWER
