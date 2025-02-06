@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import job from './job/job-routes';
-import supportTicket from './support-ticket/support-ticket-routes';
-
+import supportTicket from './Equipment/support-ticket/support-ticket-routes';
+import WarrantyRegistration from './Equipment/warranty-registeration/warranty-registration-routes';
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -16,6 +16,10 @@ const defaultRoutes = [
 		path: '/support-ticket', // Path for the farms routes
 		route: supportTicket,
 	},
+	{
+		path:'/warranty-registeration',
+		route:WarrantyRegistration
+	}
 ];
 
 // Dynamically add routes to the main router
