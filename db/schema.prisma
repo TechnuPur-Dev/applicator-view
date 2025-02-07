@@ -258,6 +258,66 @@ model WarrantyRegistration {
   createdByUser User @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
+model Product {
+  id              Int             @id @default(autoincrement())
+  baseProductName String // Main product category (e.g., Bifenthrin)
+  productName     String // Specific product label or variant
+  code            Int?
+  category        ProductCategory
+  restrictedUse   Boolean         @default(false) // Indicates restricted product
+  epaRegistration String? // EPA or regulatory product number
+  company         String? // Manufacturer or supplier name
+  inventoryUnit   ProductUnit
+  appliedUnits    ProductUnit // Units applied per job (e.g., "Fl oz")
+  perAcreRate     Float? // Application rate per acre
+  density         String? // Support weight/volume (e.g., "0 pounds/gallon")
+  treatAsLiquid   Boolean         @default(false)
+  canadSalesTax   Float?
+  primaryNutrient String?
+  reentryInterval Int? // Reentry time in hours
+
+  nutrients           Json? // Store all nutrient data as JSON key-value pairs
+  jobPricePerMonth    Json  @default("{}") // Stores monthly job prices
+  ticketPricePerMonth Json  @default("{}") // Stores monthly ticket prices
+
+  jobPrice    Float @default(0)
+  ticketPrice Float @default(0)
+
+  personalProtectiveEquipment String?
+  preHarvestInterval          String?
+  comments                    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ProductCategory {
+  INSECTICIDE
+  FUNGICIDE
+  ADJUVANT
+  HERBICIDE
+  PGR // Plant Growth Regulator
+  DRY_FERTILIZER
+  LIQUID_FERTILIZER
+  SEED
+  OTHER
+}
+
+enum ProductUnit {
+  GALLON
+  PINT
+  QUART
+  FLOZ // Fluid Ounce
+  TON
+  POUND
+  OUNCE
+  CASE
+  BAG
+  BULK_BAG
+  JUG
+  UNIT
+}
+
 enum EquipmentType {
   DRONE
   TRACTOR
