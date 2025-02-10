@@ -157,7 +157,7 @@ const getGrowerByEmail = async (userEmail: string) => {
 	});
 	if (!grower) {
 		throw new ApiError(
-			httpStatus.NOT_FOUND,
+			httpStatus.CONFLICT,
 			'Grower with this email not found.',
 		);
 	}
