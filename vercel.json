@@ -12,11 +12,11 @@
   ],
   "routes": [
     {
-      "src": "/api/user-service/(.*)",
+      "src": "/user-service/(.*)",
       "dest": "apps/user-service/index.ts"
     },
     {
-      "src": "/api/job-service/(.*)",
+      "src": "/job-service/(.*)",
       "dest": "apps/job-service/index.ts"
     }
   ]
