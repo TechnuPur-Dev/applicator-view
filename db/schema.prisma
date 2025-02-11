@@ -333,6 +333,32 @@ model Product {
   updatedAt DateTime @updatedAt
 }
 
+model State {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  counties County[]
+}
+
+model County {
+  id        Int        @id @default(autoincrement())
+  name      String
+  stateId   Int
+  state     State      @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  townships Township[]
+
+  @@unique([name, stateId]) // Prevent duplicate county names within a state
+}
+
+model Township {
+  id       Int       @id @default(autoincrement())
+  name     String
+  countyId Int
+  county   County    @relation(fields: [countyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, countyId]) // Prevent duplicate township names within a county
+}
+
+
 enum ProductCategory {
   INSECTICIDE
   FUNGICIDE
