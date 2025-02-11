@@ -22,6 +22,16 @@ enum ProfileStatus {
   COMPLETE
 }
 
+enum WorkerType {
+  PILOT
+  DRONE_OPERATOR
+  FIELD_OPERATOR
+  SCOUT
+  MECHANIC
+  ADVISOR
+  COORDINATOR
+}
+
 model User {
   id                    Int           @id @default(autoincrement())
   profileImage          String?
@@ -55,12 +65,44 @@ model User {
   growerJobs      Job[]              @relation("GrowerJob")
   fieldWorkerJobs Job[]              @relation("FieldWorkerJob")
 
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  FarmPermission        FarmPermission[]
-  SupportTicketCreated  SupportTicket[]        @relation("SupportTicketCreated")
-  SupportTicketAssigned SupportTicket[]        @relation("SupportTicketAssigned")
-  WarrantyRegistration  WarrantyRegistration[]
+  // Worker relationships
+  applicatorWorkers ApplicatorWorker[] @relation("ApplicatorToWorkers")
+  assignedWorkers   ApplicatorWorker[] @relation("WorkerAssignments")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Additional relations
+  farmPermissions        FarmPermission[]
+  supportTicketsCreated  SupportTicket[]        @relation("SupportTicketCreated")
+  supportTicketsAssigned SupportTicket[]        @relation("SupportTicketAssigned")
+  warrantyRegistrations  WarrantyRegistration[]
+}
+
+model ApplicatorWorker {
+  id           Int        @id @default(autoincrement())
+  applicatorId Int
+  workerId     Int
+  workerType   WorkerType
+
+  applicator User @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
+  worker     User @relation("WorkerAssignments", fields: [workerId], references: [id])
+
+  pilotLicenseNumber    String?
+  businessLicenseNumber String?
+  planeOrUnitNumber     String?
+  perAcrePricing        Decimal?
+  percentageFee         Decimal?
+  dollarPerAcre         Decimal?
+  autoAcceptJobs        Boolean   @default(false)
+  canViewPricingDetails Boolean   @default(false)
+  code                  String?
+  lastLogin             DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicatorId, workerId])
 }
 
 model ApplicatorGrower {
@@ -291,6 +333,32 @@ model Product {
   updatedAt DateTime @updatedAt
 }
 
+model State {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  counties County[]
+}
+
+model County {
+  id        Int        @id @default(autoincrement())
+  name      String
+  stateId   Int
+  state     State      @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  townships Township[]
+
+  @@unique([name, stateId]) // Prevent duplicate county names within a state
+}
+
+model Township {
+  id       Int       @id @default(autoincrement())
+  name     String
+  countyId Int
+  county   County    @relation(fields: [countyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, countyId]) // Prevent duplicate township names within a county
+}
+
+
 enum ProductCategory {
   INSECTICIDE
   FUNGICIDE
@@ -361,7 +429,7 @@ enum InviteStatus {
 
 enum ViewTable {
   GROWER
-  Job
+  JOB
 }
 
 enum JobType {
@@ -376,8 +444,11 @@ enum JobSource {
 }
 
 enum JobStatus {
+  PENDING // Awaiting approval
+  REJECTED // Job rejected
+  OPEN_FOR_BIDDING // Job is open for applicators to bid
   TO_BE_MAPPED
-  READY_TO_SPRAY
+  READY_TO_SPRAY // Job ready for execution
   SPRAYED
   INVOICED
   PAID

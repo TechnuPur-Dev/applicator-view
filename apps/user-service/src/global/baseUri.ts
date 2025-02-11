@@ -1,1 +1,1 @@
-export const BASE_URI = '/v1';
+export const BASE_URI = '/user-service/v1';
