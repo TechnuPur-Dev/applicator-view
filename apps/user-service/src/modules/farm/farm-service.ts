@@ -206,6 +206,47 @@ const askFarmPermission = async (email: string) => {
 			'Request email for permission has been sent to the user Succesfully',
 	};
 };
+
+const createFarmByApplicator = async (
+	createdById: number,
+	growerId: number,
+	data: CreateFarmParams,
+) => {
+	// Validate grower existence
+	const grower = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId: createdById,
+				growerId,
+			},
+		},
+		select: { canManageFarms: true },
+	});
+	if (!grower?.canManageFarms) {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'You are not authorized to add a farm against this grower.',
+		);
+	}
+
+	// Create farm
+	const result = await prisma.farm.create({
+		data: {
+			...data,
+			createdById,
+			growerId,
+			permissions: {
+				create: {
+					applicatorId: createdById,
+					canView: true,
+					canEdit: true,
+				},
+			},
+		},
+	});
+
+	return result;
+};
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -216,4 +257,5 @@ export default {
 	updateFarmPermission,
 	deleteFarmPermission,
 	askFarmPermission,
+	createFarmByApplicator,
 };
