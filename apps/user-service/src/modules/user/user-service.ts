@@ -218,13 +218,13 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 							},
 						},
 						include: {
-							permissions: true, // Include permissions to calculate farm permissions for the applicator
-							fields: true, // Include fields to calculate total acres
+							permissions: true,
+							fields: true,
 						},
 					},
 				},
 				omit: {
-					password: true, // Exclude sensitive data
+					password: true,
 					businessName: true,
 					experience: true,
 				},
@@ -232,11 +232,10 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 		},
 	});
 
-	// Calculate total acres for each grower and each farm
+	// Calculate total acres for each grower
 	const enrichedGrowers = growers.map((grower) => {
 		const totalAcresByGrower = grower.grower?.farms.reduce(
 			(totalGrowerAcres, farm) => {
-				// Calculate total acres for this farm
 				const totalAcresByFarm = farm.fields.reduce(
 					(totalFarmAcres, field) => {
 						return (
@@ -246,26 +245,27 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 					},
 					0,
 				);
-
-				// Type assertion to inform TypeScript about `totalAcres`
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				(farm as any).totalAcres = totalAcresByFarm;
-
-				// Accumulate total grower acres
 				return totalGrowerAcres + totalAcresByFarm;
 			},
 			0,
 		);
 
-		// Add total acres to the grower object
+		// Return the grower object without farms
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { farms, ...growerWithoutFarms } = grower.grower || {};
+
 		return {
 			...grower,
+			grower: {
+				...growerWithoutFarms,
+			},
 			totalAcres: totalAcresByGrower,
 		};
 	});
 
 	return enrichedGrowers;
 };
+
 const getAllApplicatorsByGrower = async (growerId: number) => {
 	// Fetch applicators
 	const applicators = await prisma.applicatorGrower.findMany({
@@ -529,6 +529,77 @@ const sendInviteToGrower = async (applicatorId: number, growerId: number) => {
 		};
 	}
 };
+// service for user
+const getGrowerById = async (applicatorId: number, growerId: number) => {
+	// Fetch growers with their farms and fields
+	const grower = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId,
+				growerId,
+			},
+		},
+		select: {
+			growerFirstName: true,
+			growerLastName: true,
+			inviteStatus: true,
+			isArchivedByApplicator: true,
+			grower: {
+				include: {
+					farms: {
+						where: {
+							permissions: {
+								some: {
+									applicatorId,
+								},
+							},
+						},
+						include: {
+							permissions: true, // Include permissions to calculate farm permissions for the applicator
+							fields: true, // Include fields to calculate total acres
+						},
+					},
+				},
+				omit: {
+					password: true, // Exclude sensitive data
+					businessName: true,
+					experience: true,
+				},
+			},
+		},
+	});
+
+	// Calculate total acres for each grower and each farm
+
+	const totalAcresByGrower = grower?.grower?.farms.reduce(
+		(totalGrowerAcres, farm) => {
+			// Calculate total acres for this farm
+			const totalAcresByFarm = farm.fields.reduce(
+				(totalFarmAcres, field) => {
+					return (
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0')
+					);
+				},
+				0,
+			);
+
+			// Type assertion to inform TypeScript about `totalAcres`
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(farm as any).totalAcres = totalAcresByFarm;
+
+			// Accumulate total grower acres
+			return totalGrowerAcres + totalAcresByFarm;
+		},
+		0,
+	);
+
+	// Add total acres to the grower object
+	return {
+		...grower,
+		totalAcres: totalAcresByGrower,
+	};
+};
 
 export default {
 	uploadProfileImage,
@@ -546,4 +617,5 @@ export default {
 	updateArchivedStatus,
 	sendInviteToApplicator,
 	sendInviteToGrower,
+	getGrowerById,
 };
