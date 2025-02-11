@@ -1,9 +1,8 @@
-import httpStatus from 'http-status';
+// import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../../../../../shared/libs/prisma-client';
-
+import {prisma} from '../../../../../../shared/libs/prisma-client'
 import { TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
 // import ApiError from '../../../../../shared/utils/api-error';
 import { CreateSupportTicket } from './support-ticket-types';
