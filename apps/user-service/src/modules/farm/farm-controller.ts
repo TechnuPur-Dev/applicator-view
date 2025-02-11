@@ -5,22 +5,10 @@ import farmService from './farm-service';
 
 // Controller for verifying phone and sending OTP
 const createFarm = catchAsync(async (req: Request, res: Response) => {
-	const createdById = req.payload.id;
+	const currentUser = req.user;
 	const growerId = +req.params.growerId;
-	console.log(createdById, growerId);
-	const { name, state, county, township, zipCode, isActive } = req.body; // Destructure body
-	const result = await farmService.createFarm(
-		{
-			name,
-			state,
-			county,
-			township,
-			zipCode,
-			isActive,
-		},
-		createdById,
-		growerId,
-	);
+	const data = req.body; // Destructure body
+	const result = await farmService.createFarm(currentUser, growerId, data);
 	res.status(httpStatus.OK).json(result);
 });
 // get all farms
@@ -76,20 +64,6 @@ const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-// Controller for verifying phone and sending OTP
-const createFarmByApplicator = catchAsync(
-	async (req: Request, res: Response) => {
-		const createdById = req.payload.id;
-		const growerId = +req.params.growerId;
-		const data = req.body; // Destructure body
-		const result = await farmService.createFarmByApplicator(
-			createdById,
-			growerId,
-			data,
-		);
-		res.status(httpStatus.OK).json(result);
-	},
-);
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -100,5 +74,4 @@ export default {
 	updateFarmPermission,
 	deleteFarmPermission,
 	askFarmPermission,
-	createFarmByApplicator,
 };

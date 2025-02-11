@@ -1,5 +1,6 @@
 // global.d.ts
-export {}; // Makes the file an external module
+
+import { UserRole } from '@prisma/client';
 
 declare global {
 	namespace Express {
@@ -10,6 +11,7 @@ declare global {
 				lastName: string | null;
 				fullName: string | null;
 				email: string | null;
+				role: UserRole;
 			};
 			payload: {
 				id: number;
@@ -19,3 +21,14 @@ declare global {
 		}
 	}
 }
+
+interface User {
+	id: number;
+	firstName: string | null;
+	lastName: string | null;
+	fullName: string | null;
+	email: string | null;
+	role: UserRole;
+}
+
+export { User }; // Makes the file an external module
