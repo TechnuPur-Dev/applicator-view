@@ -430,6 +430,7 @@ enum InviteStatus {
 enum ViewTable {
   GROWER
   JOB
+  APPLICATOR
 }
 
 enum JobType {
