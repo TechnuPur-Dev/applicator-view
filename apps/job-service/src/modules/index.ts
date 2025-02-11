@@ -1,5 +1,7 @@
 import express, { Router } from 'express';
 import job from './job/job-routes';
+import product from './product/product-routes';
+
 import supportTicket from './support-ticket/support-ticket-routes';
 
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
@@ -15,6 +17,10 @@ const defaultRoutes = [
 	{
 		path: '/support-ticket', // Path for the farms routes
 		route: supportTicket,
+	},
+	{
+		path: '/product', // Path for the farms routes
+		route: product,
 	},
 ];
 
