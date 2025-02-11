@@ -75,6 +75,21 @@ const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	const result = await farmService.askFarmPermission(email);
 	res.status(httpStatus.OK).json(result);
 });
+
+// Controller for verifying phone and sending OTP
+const createFarmByApplicator = catchAsync(
+	async (req: Request, res: Response) => {
+		const createdById = req.payload.id;
+		const growerId = +req.params.growerId;
+		const data = req.body; // Destructure body
+		const result = await farmService.createFarmByApplicator(
+			createdById,
+			growerId,
+			data,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -84,5 +99,6 @@ export default {
 	assignFarmPermission,
 	updateFarmPermission,
 	deleteFarmPermission,
-	askFarmPermission
+	askFarmPermission,
+	createFarmByApplicator,
 };

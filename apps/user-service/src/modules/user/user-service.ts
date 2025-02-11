@@ -544,6 +544,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			growerLastName: true,
 			inviteStatus: true,
 			isArchivedByApplicator: true,
+			canManageFarms: true,
 			grower: {
 				include: {
 					farms: {
@@ -557,6 +558,9 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 						include: {
 							permissions: true, // Include permissions to calculate farm permissions for the applicator
 							fields: true, // Include fields to calculate total acres
+						},
+						orderBy: {
+							id: 'desc',
 						},
 					},
 				},
