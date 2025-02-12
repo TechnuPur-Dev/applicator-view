@@ -116,7 +116,7 @@ model ApplicatorGrower {
   inviteStatus           InviteStatus @default(NOT_SENT)
   isArchivedByApplicator Boolean      @default(false)
   isArchivedByGrower     Boolean      @default(false)
-  canManageFarms         Boolean      @default(false)
+  canManageFarms         Boolean      @default(true)
 
   applicator User @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   grower     User @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -350,14 +350,13 @@ model County {
 }
 
 model Township {
-  id       Int       @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   name     String
   countyId Int
-  county   County    @relation(fields: [countyId], references: [id], onDelete: Cascade)
+  county   County @relation(fields: [countyId], references: [id], onDelete: Cascade)
 
   @@unique([name, countyId]) // Prevent duplicate township names within a county
 }
-
 
 enum ProductCategory {
   INSECTICIDE
@@ -430,6 +429,7 @@ enum InviteStatus {
 enum ViewTable {
   GROWER
   JOB
+  APPLICATOR
 }
 
 enum JobType {

@@ -50,11 +50,5 @@ router
 router
 	.route('/permission/request')
 	.post(verifyToken, farmController.askFarmPermission);
-router
-	.route('/create/by-applicator/:growerId')
-	.post(
-		verifyToken,
-		validateSchema(farmValidation.farmSchema),
-		farmController.createFarmByApplicator,
-	);
+
 export default router;

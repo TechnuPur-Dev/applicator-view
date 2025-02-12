@@ -4,34 +4,59 @@ import httpStatus from 'http-status';
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { CreateFarmParams, AssignFarmPermission } from './farm-types';
+import { User } from './../../../../../shared/types/global';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 const createFarm = async (
-	data: CreateFarmParams,
-	createdById: number,
+	user: User,
 	growerId: number,
+	data: CreateFarmParams,
 ) => {
-	// Validate grower existence
-	const grower = await prisma.user.findUnique({
-		where: { id: growerId },
-	});
-	if (!grower) {
-		throw new ApiError(
-			httpStatus.BAD_REQUEST,
-			'Invalid growerId. Grower does not exist.',
-		);
+	const { role, id: userId } = user;
+
+	const farmData = {
+		...data,
+		createdById: userId,
+		growerId,
+	};
+
+	if (role === 'GROWER') {
+		return prisma.farm.create({ data: farmData });
 	}
 
-	// Create farm
-	const result = await prisma.farm.create({
-		data: {
-			...data,
-			createdById,
-			growerId,
-		},
-	});
+	if (role === 'APPLICATOR') {
+		const grower = await prisma.applicatorGrower.findUnique({
+			where: {
+				applicatorId_growerId: {
+					applicatorId: userId,
+					growerId,
+				},
+			},
+			select: { canManageFarms: true },
+		});
 
-	return result;
+		if (!grower?.canManageFarms) {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				'You are not authorized to add a farm for this grower.',
+			);
+		}
+
+		return prisma.farm.create({
+			data: {
+				...farmData,
+				permissions: {
+					create: {
+						applicatorId: userId,
+						canView: true,
+						canEdit: true,
+					},
+				},
+			},
+		});
+	}
+
+	throw new ApiError(httpStatus.FORBIDDEN, 'Invalid user role.');
 };
 
 const getAllFarmsByGrower = async (growerId: number) => {
@@ -207,46 +232,6 @@ const askFarmPermission = async (email: string) => {
 	};
 };
 
-const createFarmByApplicator = async (
-	createdById: number,
-	growerId: number,
-	data: CreateFarmParams,
-) => {
-	// Validate grower existence
-	const grower = await prisma.applicatorGrower.findUnique({
-		where: {
-			applicatorId_growerId: {
-				applicatorId: createdById,
-				growerId,
-			},
-		},
-		select: { canManageFarms: true },
-	});
-	if (!grower?.canManageFarms) {
-		throw new ApiError(
-			httpStatus.UNAUTHORIZED,
-			'You are not authorized to add a farm against this grower.',
-		);
-	}
-
-	// Create farm
-	const result = await prisma.farm.create({
-		data: {
-			...data,
-			createdById,
-			growerId,
-			permissions: {
-				create: {
-					applicatorId: createdById,
-					canView: true,
-					canEdit: true,
-				},
-			},
-		},
-	});
-
-	return result;
-};
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -257,5 +242,4 @@ export default {
 	updateFarmPermission,
 	deleteFarmPermission,
 	askFarmPermission,
-	createFarmByApplicator,
 };

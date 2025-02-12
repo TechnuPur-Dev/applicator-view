@@ -13,7 +13,7 @@ export const signAccessToken = (userId: number): Promise<string> => {
 		const payload = { id: userId };
 		const options = {
 			expiresIn: config.jwt.accessExpirationMinutes,
-			issuer: 'clync-app',
+			issuer: 'acre-app',
 			audience: userId.toString(),
 		};
 
