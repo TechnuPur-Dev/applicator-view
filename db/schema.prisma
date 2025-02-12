@@ -313,6 +313,21 @@ model Township {
   @@unique([name, countyId])
 }
 
+enum ProfileStatus {
+  INCOMPLETE
+  COMPLETE
+}
+
+enum WorkerType {
+  PILOT
+  DRONE_OPERATOR
+  FIELD_OPERATOR
+  SCOUT
+  MECHANIC
+  ADVISOR
+  COORDINATOR
+}
+
 enum ProductCategory {
   INSECTICIDE
   FUNGICIDE
