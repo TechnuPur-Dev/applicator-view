@@ -26,17 +26,18 @@ const getFarmById = catchAsync(async (req: Request, res: Response) => {
 // controller to delete user by ID
 const deleteFarm = catchAsync(async (req: Request, res: Response) => {
 	const farmId = +req.params.farmId;
-	// const userId = req.payload.id;
-	const result = await farmService.deleteFarm(farmId);
+	const currentUser = req.user;
+	const result = await farmService.deleteFarm(farmId,currentUser);
 	res.status(httpStatus.OK).json(result);
 });
 
 // controler to update Farm
 const updateFarm = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const farmId = +req.params.farmId;
 	const data = req.body;
 
-	const result = await farmService.updateFarm(farmId, data);
+	const result = await farmService.updateFarm(currentUser,farmId, data);
 	res.status(httpStatus.OK).json(result);
 });
 // controler to update Farm

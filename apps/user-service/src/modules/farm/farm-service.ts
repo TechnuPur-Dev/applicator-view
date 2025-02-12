@@ -118,34 +118,129 @@ const getFarmById = async (Id: number) => {
 	return farm;
 };
 
-const deleteFarm = async (Id: number) => {
-	await prisma.farm.delete({
+const deleteFarm = async (Id: number, user: User) => {
+	const { role, id: userId } = user;
+	const farm = await prisma.farm.findUnique({
 		where: {
 			id: Id,
 		},
+		include: {
+			permissions: {
+				where: {
+					applicatorId: userId,
+				},
+				select: {
+					canEdit: true,
+					canView: true,
+				},
+			},
+		},
 	});
+	// Check if the farm exists
+
+	if (!farm) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found');
+	}
+	if (role === 'GROWER') {
+		if (farm?.growerId === userId) {
+			await prisma.farm.delete({
+				where: {
+					id: Id,
+				},
+			});
+		} else {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				'You are not authorized to delete this farm',
+			);
+		}
+	}
+
+	// If user is APPLICATOR, check if they have atleast one edit permission because permissions is an array
+	else if (role === 'APPLICATOR') {
+		const hasEditPermission = farm?.permissions.some(
+			(permission) => permission.canEdit,
+		);
+		if (hasEditPermission) {
+			await prisma.farm.delete({
+				where: { id: Id },
+			});
+		} else {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				'You do not have permission to delete this farm',
+			);
+		}
+	}
 
 	return {
 		message: 'Farm deleted successfully.',
 	};
 };
-const updateFarm = async (farmId: number, data: CreateFarmParams) => {
+const updateFarm = async (
+	user: User,
+	farmId: number,
+	data: CreateFarmParams,
+) => {
 	// Validate farm existence
+	const { role, id: userId } = user;
 	const farm = await prisma.farm.findUnique({
-		where: { id: farmId },
-		select: { id: true },
+		where: {
+			id: farmId,
+		},
+		include: {
+				// If user is APPLICATOR, check if they have permission because permissions is an array
+			permissions: {
+				where: {
+					applicatorId: userId,
+				},
+				select: {
+					canEdit: true,
+					canView: true,
+				},
+			},
+		},
 	});
-	if (!farm) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
-	}
-	console.log(farm, 'farm');
-	// Update farm
-	const updatedFarm = await prisma.farm.update({
-		where: { id: farmId },
-		data,
-	});
+	// Check if the farm exists
 
-	return updatedFarm;
+	if (!farm) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found');
+	}
+	if (role === 'GROWER') {
+		if (farm?.growerId === userId) {
+			// Update farm
+			const updatedFarm = await prisma.farm.update({
+				where: { id: farmId },
+				data,
+			});
+			return updatedFarm;
+		} else {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				'You are not authorized to update this farm',
+			);
+		}
+	}
+	// If user is APPLICATOR, check if they have atleast one edit permission because permissions is an array
+	else if (role === 'APPLICATOR') {
+		const hasEditPermission = farm?.permissions.some(
+			(permission) => permission.canEdit,
+		);
+
+		if (hasEditPermission) {
+			// Update farm
+			const updatedFarm = await prisma.farm.update({
+				where: { id: farmId },
+				data,
+			});
+			return updatedFarm;
+		} else {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				'You do not have permission to update this farm',
+			);
+		}
+	}
 };
 
 const assignFarmPermission = async (data: AssignFarmPermission) => {
