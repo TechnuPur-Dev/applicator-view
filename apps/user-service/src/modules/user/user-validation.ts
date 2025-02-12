@@ -58,7 +58,6 @@ const updateArchiveStatus: Schema = Joi.object({
 	}).required(),
 });
 
-
 const sendInviteSchema: Schema = Joi.object({
 	params: Joi.object({
 		applicatorId: Joi.number().integer().positive(),
@@ -73,5 +72,5 @@ export default {
 	verifyEmailAndSendOTPSchema,
 	updateArchiveStatus,
 	updateInviteStatusSchema,
-	sendInviteSchema
+	sendInviteSchema,
 };

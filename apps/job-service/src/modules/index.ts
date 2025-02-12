@@ -1,9 +1,9 @@
 import express, { Router } from 'express';
 import job from './job/job-routes';
+import supportTicket from './Equipment/support-ticket/support-ticket-routes';
+import warrantyRegistration from './Equipment/warranty-registeration/warranty-registration-routes';
+import  applicatorWorker from './applicator-workers/applicator-workers-routes';
 import product from './product/product-routes';
-
-import supportTicket from './support-ticket/support-ticket-routes';
-
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -17,6 +17,14 @@ const defaultRoutes = [
 	{
 		path: '/support-ticket', // Path for the farms routes
 		route: supportTicket,
+	},
+	{
+		path:'/warranty-registeration',
+		route:warrantyRegistration
+	},
+	{
+		path:'/applicator-workers',
+		route:applicatorWorker
 	},
 	{
 		path: '/product', // Path for the farms routes

@@ -92,11 +92,13 @@ model ApplicatorGrower {
   inviteStatus           InviteStatus @default(NOT_SENT)
   isArchivedByApplicator Boolean      @default(false)
   isArchivedByGrower     Boolean      @default(false)
-  canManageFarms         Boolean      @default(false)
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
-  applicator             User         @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade)
-  grower                 User         @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade)
+  canManageFarms         Boolean      @default(true)
+
+  applicator User @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  grower     User @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([applicatorId, growerId])
 }
@@ -309,21 +311,6 @@ model Township {
   county   County @relation(fields: [countyId], references: [id], onDelete: Cascade)
 
   @@unique([name, countyId])
-}
-
-enum ProfileStatus {
-  INCOMPLETE
-  COMPLETE
-}
-
-enum WorkerType {
-  PILOT
-  DRONE_OPERATOR
-  FIELD_OPERATOR
-  SCOUT
-  MECHANIC
-  ADVISOR
-  COORDINATOR
 }
 
 enum ProductCategory {

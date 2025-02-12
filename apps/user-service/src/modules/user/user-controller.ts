@@ -121,6 +121,15 @@ const sendInviteToGrower = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.sendInviteToGrower(applicatorId, growerId);
 	res.status(httpStatus.OK).json(result);
 });
+
+// Controller to get user by ID
+
+const getGrowerById = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
+	const growerId = +req.params.growerId;
+	const result = await userService.getGrowerById(applicatorId, growerId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -137,4 +146,5 @@ export default {
 	getAllApplicatorsByGrower,
 	sendInviteToApplicator,
 	sendInviteToGrower,
+	getGrowerById,
 };
