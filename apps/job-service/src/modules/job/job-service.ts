@@ -201,17 +201,21 @@ const updateJobByApplicator = async (
 // get pilots by applicator by Grower
 
 const getAllPilotsByApplicator = async (applicatorId: number) => {
-	const workers = await prisma.user.findMany({
+	const workers = await prisma.applicatorWorker.findMany({
 		where: {
-			// applicatorId,
-			role: 'WORKER',
+			applicatorId,
 		},
-		select: {
-			id: true,
-			firstName: true,
-			lastName: true,
-			fullName: true,
+		select:{
+			workerType:true,
+			worker:{
+				select:{
+					id:true,
+					fullName:true,
+					role:true
+				}
+			}
 		},
+	
 	}); // Fetch all users
 	return workers;
 };
