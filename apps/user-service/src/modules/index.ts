@@ -2,8 +2,9 @@ import express, { Router } from 'express';
 import auth from './auth/auth-routes';
 import user from './user/user-routes';
 import field from './field/field-routes';
-import farm from './farm/farm-routes'
-import table from './table-view/table-view-routes'
+import farm from './farm/farm-routes';
+import table from './table-view/table-view-routes';
+import geoData from './geo-data/geo-data-routes';
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -19,18 +20,21 @@ const defaultRoutes = [
 		route: user,
 	},
 	{
-		path: '/field', // Path for the user routes
+		path: '/field', // Path for the field routes
 		route: field,
-  },
-  {
-		path: '/farm', // Path for the farms routes
+	},
+	{
+		path: '/farm', // Path for the farm routes
 		route: farm,
 	},
 	{
-		path: '/table', // Path for the farms routes
+		path: '/table', // Path for the table-view routes
 		route: table,
 	},
-	
+	{
+		path: '/geo-data', // Path for the geo-data routes
+		route: geoData,
+	},
 ];
 
 // Dynamically add routes to the main router

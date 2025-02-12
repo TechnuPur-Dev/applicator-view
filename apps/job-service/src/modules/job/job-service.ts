@@ -95,6 +95,9 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 	const jobs = await prisma.job.findMany({
 		where: {
 			applicatorId,
+			status: {
+				in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
+			},
 		},
 		include: {
 			grower: {
@@ -126,6 +129,7 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 						select: {
 							name: true,
 							acres: true,
+							crop: true,
 						},
 					},
 				},
@@ -134,8 +138,8 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 					updatedAt: true,
 				},
 			},
-			products: true,
-			applicationFees: true,
+			// products: true,
+			// applicationFees: true,
 		},
 	}); // Fetch all users
 	return jobs;
@@ -148,7 +152,44 @@ const getJobById = async (jobId: number) => {
 			id: jobId,
 		},
 		include: {
-			fields: true,
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				include: {
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+				omit: {
+					createdAt: true,
+					updatedAt: true,
+				},
+			},
 			products: true,
 			applicationFees: true,
 		},
@@ -200,6 +241,7 @@ const updateJobByApplicator = async (
 
 // get pilots by applicator by Grower
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getAllPilotsByApplicator = async (applicatorId: number) => {
 	const workers = await prisma.applicatorWorker.findMany({
 		where: {

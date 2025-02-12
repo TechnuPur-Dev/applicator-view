@@ -17,9 +17,27 @@ router
 router
 	.route('/all/by-grower')
 	.get(verifyToken, farmController.getAllFarmsByGrower);
-router.route('/get-farm/:farmId').get(verifyToken,validateSchema(farmValidation.paramsSchema), farmController.getFarmById);
-router.route('/delete/:farmId').delete(verifyToken,validateSchema(farmValidation.paramsSchema), farmController.deleteFarm);
-router.route('/update/:farmId').put(verifyToken,validateSchema(farmValidation.farmUpdateSchema), farmController.updateFarm);
+router
+	.route('/get-farm/:farmId')
+	.get(
+		verifyToken,
+		validateSchema(farmValidation.paramsSchema),
+		farmController.getFarmById,
+	);
+router
+	.route('/delete/:farmId')
+	.delete(
+		verifyToken,
+		validateSchema(farmValidation.paramsSchema),
+		farmController.deleteFarm,
+	);
+router
+	.route('/update/:farmId')
+	.put(
+		verifyToken,
+		validateSchema(farmValidation.farmUpdateSchema),
+		farmController.updateFarm,
+	);
 router
 	.route('/permission/assign')
 	.post(verifyToken, farmController.assignFarmPermission);
@@ -29,7 +47,14 @@ router
 router
 	.route('/permission/delete/:permissionId')
 	.delete(verifyToken, farmController.deleteFarmPermission);
-	router
+router
 	.route('/permission/request')
 	.post(verifyToken, farmController.askFarmPermission);
+router
+	.route('/create/by-applicator/:growerId')
+	.post(
+		verifyToken,
+		validateSchema(farmValidation.farmSchema),
+		farmController.createFarmByApplicator,
+	);
 export default router;

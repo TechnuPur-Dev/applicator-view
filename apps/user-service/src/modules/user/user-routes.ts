@@ -87,5 +87,11 @@ router
 		validateSchema(userValidation.updateArchiveStatus),
 		userController.updateArchivedStatus,
 	);
-
+router
+	.route('/grower/by-applicator/:growerId')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.getGrowerById,
+	);
 export default router;
