@@ -17,90 +17,66 @@ model Otp {
   expiredAt DateTime
 }
 
-enum ProfileStatus {
-  INCOMPLETE
-  COMPLETE
-}
-
-enum WorkerType {
-  PILOT
-  DRONE_OPERATOR
-  FIELD_OPERATOR
-  SCOUT
-  MECHANIC
-  ADVISOR
-  COORDINATOR
-}
-
 model User {
-  id                    Int           @id @default(autoincrement())
-  profileImage          String?
-  thumbnailProfileImage String?
-  firstName             String?
-  lastName              String?
-  fullName              String?       @default("")
-  email                 String?       @unique
-  phoneNumber           String?
-  password              String?
-  role                  UserRole
-  businessName          String?
-  experience            Decimal?
-  address1              String?
-  address2              String?
-  state                 String?
-  county                String?
-  township              String?
-  zipCode               String?
-  bio                   String?
-  additionalInfo        String?
-  profileStatus         ProfileStatus @default(INCOMPLETE)
-
-  applicators     ApplicatorGrower[] @relation("Applicators")
-  growers         ApplicatorGrower[] @relation("Growers")
-  farmsCreated    Farm[]             @relation("FarmCreator")
-  farms           Farm[]             @relation("FarmGrower")
-  fieldsCreated   Field[]            @relation("FieldCreator")
-  tableViews      TableView[]
-  applicatorJobs  Job[]              @relation("ApplicatorJob")
-  growerJobs      Job[]              @relation("GrowerJob")
-  fieldWorkerJobs Job[]              @relation("FieldWorkerJob")
-
-  // Worker relationships
-  applicatorWorkers ApplicatorWorker[] @relation("ApplicatorToWorkers")
-  assignedWorkers   ApplicatorWorker[] @relation("WorkerAssignments")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Additional relations
+  id                     Int                    @id @default(autoincrement())
+  profileImage           String?
+  thumbnailProfileImage  String?
+  firstName              String?
+  lastName               String?
+  fullName               String?                @default("")
+  email                  String?                @unique
+  phoneNumber            String?
+  password               String?
+  role                   UserRole
+  businessName           String?
+  experience             Decimal?
+  address1               String?
+  address2               String?
+  state                  String?
+  county                 String?
+  township               String?
+  zipCode                String?
+  bio                    String?
+  additionalInfo         String?
+  profileStatus          ProfileStatus          @default(INCOMPLETE)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  applicators            ApplicatorGrower[]     @relation("Applicators")
+  growers                ApplicatorGrower[]     @relation("Growers")
+  applicatorWorkers      ApplicatorWorker[]     @relation("ApplicatorToWorkers")
+  assignedWorkers        ApplicatorWorker[]     @relation("WorkerAssignments")
+  farmsCreated           Farm[]                 @relation("FarmCreator")
+  farms                  Farm[]                 @relation("FarmGrower")
   farmPermissions        FarmPermission[]
-  supportTicketsCreated  SupportTicket[]        @relation("SupportTicketCreated")
+  fieldsCreated          Field[]                @relation("FieldCreator")
+  applicatorJobs         Job[]                  @relation("ApplicatorJob")
+  fieldWorkerJobs        Job[]                  @relation("FieldWorkerJob")
+  growerJobs             Job[]                  @relation("GrowerJob")
   supportTicketsAssigned SupportTicket[]        @relation("SupportTicketAssigned")
+  supportTicketsCreated  SupportTicket[]        @relation("SupportTicketCreated")
+  tableViews             TableView[]
   warrantyRegistrations  WarrantyRegistration[]
 }
 
 model ApplicatorWorker {
-  id           Int        @id @default(autoincrement())
-  applicatorId Int
-  workerId     Int
-  workerType   WorkerType
-
-  applicator User @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
-  worker     User @relation("WorkerAssignments", fields: [workerId], references: [id])
-
+  id                    Int        @id @default(autoincrement())
+  applicatorId          Int
+  workerId              Int
+  workerType            WorkerType
   pilotLicenseNumber    String?
   businessLicenseNumber String?
   planeOrUnitNumber     String?
   perAcrePricing        Decimal?
   percentageFee         Decimal?
   dollarPerAcre         Decimal?
-  autoAcceptJobs        Boolean   @default(false)
-  canViewPricingDetails Boolean   @default(false)
+  autoAcceptJobs        Boolean    @default(false)
+  canViewPricingDetails Boolean    @default(false)
   code                  String?
   lastLogin             DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  applicator            User       @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
+  worker                User       @relation("WorkerAssignments", fields: [workerId], references: [id])
 
   @@unique([applicatorId, workerId])
 }
@@ -137,33 +113,29 @@ model Farm {
   township    String?
   zipCode     String?
   isActive    Boolean
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   User             @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  grower      User             @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
   permissions FarmPermission[]
+  fields      Field[]
   jobs        Job[]
-
-  grower    User    @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdBy User    @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  fields    Field[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model FarmPermission {
-  id           Int     @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   farmId       Int
   applicatorId Int
-  canView      Boolean @default(true)
+  canView      Boolean  @default(true)
   canEdit      Boolean
-
-  farm       Farm @relation(fields: [farmId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  applicator User @relation(fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  applicator   User     @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
+  farm         Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
 }
 
 model Field {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   name        String?
   crop        String?
   acres       Decimal?
@@ -172,13 +144,11 @@ model Field {
   longitude   String?
   createdById Int
   farmId      Int
-
-  createdBy User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  farm      Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  jobs      FieldJob[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  createdBy   User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  farm        Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  jobs        FieldJob[]
 }
 
 model TableView {
@@ -188,8 +158,7 @@ model TableView {
   config      Json
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  user User @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user        User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
 }
 
 model Job {
@@ -205,35 +174,31 @@ model Job {
   endDate             DateTime?
   description         String?
   farmId              Int
-  fields              FieldJob[]
   sensitiveAreas      String?
   adjacentCrops       String?
-  products            JobProduct[]
-  applicationFees     JobApplicationFee[]
   specialInstructions String?
   attachments         Json?
-
-  grower         User?           @relation("GrowerJob", fields: [growerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  applicator     User?           @relation("ApplicatorJob", fields: [applicatorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  fieldWorker    User?           @relation("FieldWorkerJob", fields: [fieldWorkerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  farm           Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  supportTickets SupportTicket[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  fields              FieldJob[]
+  applicator          User?               @relation("ApplicatorJob", fields: [applicatorId], references: [id])
+  farm                Farm                @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  fieldWorker         User?               @relation("FieldWorkerJob", fields: [fieldWorkerId], references: [id])
+  grower              User?               @relation("GrowerJob", fields: [growerId], references: [id])
+  applicationFees     JobApplicationFee[]
+  products            JobProduct[]
+  supportTickets      SupportTicket[]
 }
 
 model FieldJob {
-  id          Int  @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   fieldId     Int
   jobId       Int
   actualAcres Int?
-
-  field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  field       Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([fieldId, jobId])
 }
@@ -245,8 +210,7 @@ model JobProduct {
   ratePerAcre Decimal
   totalAcres  Decimal
   price       Decimal
-
-  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  job         Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }
@@ -257,29 +221,26 @@ model JobApplicationFee {
   description String
   rateUoM     Decimal
   perAcre     Boolean
+  job         Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
-  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([jobId]) // Explicit index for performance
+  @@index([jobId])
 }
 
 model SupportTicket {
-  id          Int            @id @default(autoincrement())
-  createdById Int
-  subject     String         @db.VarChar(255) // Limits subject length for better database efficiency
-  description String
-  status      TicketStatus
-  assigneeId  Int?
-  jobId       Int?
-  category    TicketCategory
-  priority    TicketPriority
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  createdByUser User  @relation("SupportTicketCreated", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  assigneeUser  User? @relation("SupportTicketAssigned", fields: [assigneeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  job           Job?  @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id            Int            @id @default(autoincrement())
+  createdById   Int
+  subject       String         @db.VarChar(255)
+  description   String
+  status        TicketStatus
+  assigneeId    Int?
+  jobId         Int?
+  category      TicketCategory
+  priority      TicketPriority
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  assigneeUser  User?          @relation("SupportTicketAssigned", fields: [assigneeId], references: [id], onDelete: Cascade)
+  createdByUser User           @relation("SupportTicketCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  job           Job?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }
@@ -293,44 +254,38 @@ model WarrantyRegistration {
   documentUrl        String?
   warrantyExpiration DateTime
   createdById        Int
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  createdByUser User @relation(fields: [createdById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  createdByUser      User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
 }
 
 model Product {
-  id              Int             @id @default(autoincrement())
-  baseProductName String // Main product category (e.g., Bifenthrin)
-  productName     String // Specific product label or variant
-  code            Int?
-  category        ProductCategory
-  restrictedUse   Boolean         @default(false) // Indicates restricted product
-  epaRegistration String? // EPA or regulatory product number
-  company         String? // Manufacturer or supplier name
-  inventoryUnit   ProductUnit
-  appliedUnits    ProductUnit // Units applied per job (e.g., "Fl oz")
-  perAcreRate     Float? // Application rate per acre
-  density         String? // Support weight/volume (e.g., "0 pounds/gallon")
-  treatAsLiquid   Boolean         @default(false)
-  canadSalesTax   Float?
-  primaryNutrient String?
-  reentryInterval Int? // Reentry time in hours
-
-  nutrients           Json? // Store all nutrient data as JSON key-value pairs
-  jobPricePerMonth    Json  @default("{}") // Stores monthly job prices
-  ticketPricePerMonth Json  @default("{}") // Stores monthly ticket prices
-
-  jobPrice    Float @default(0)
-  ticketPrice Float @default(0)
-
+  id                          Int             @id @default(autoincrement())
+  baseProductName             String
+  productName                 String
+  code                        Int?
+  category                    ProductCategory
+  restrictedUse               Boolean         @default(false)
+  epaRegistration             String?
+  company                     String?
+  inventoryUnit               ProductUnit
+  appliedUnits                ProductUnit
+  perAcreRate                 Float?
+  density                     String?
+  treatAsLiquid               Boolean         @default(false)
+  canadSalesTax               Float?
+  primaryNutrient             String?
+  reentryInterval             Int?
+  nutrients                   Json?
+  jobPricePerMonth            Json            @default("{}")
+  ticketPricePerMonth         Json            @default("{}")
+  jobPrice                    Float           @default(0)
+  ticketPrice                 Float           @default(0)
   personalProtectiveEquipment String?
   preHarvestInterval          String?
   comments                    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
 }
 
 model State {
@@ -346,7 +301,7 @@ model County {
   state     State      @relation(fields: [stateId], references: [id], onDelete: Cascade)
   townships Township[]
 
-  @@unique([name, stateId]) // Prevent duplicate county names within a state
+  @@unique([name, stateId])
 }
 
 model Township {
@@ -355,7 +310,22 @@ model Township {
   countyId Int
   county   County @relation(fields: [countyId], references: [id], onDelete: Cascade)
 
-  @@unique([name, countyId]) // Prevent duplicate township names within a county
+  @@unique([name, countyId])
+}
+
+enum ProfileStatus {
+  INCOMPLETE
+  COMPLETE
+}
+
+enum WorkerType {
+  PILOT
+  DRONE_OPERATOR
+  FIELD_OPERATOR
+  SCOUT
+  MECHANIC
+  ADVISOR
+  COORDINATOR
 }
 
 enum ProductCategory {
@@ -363,7 +333,7 @@ enum ProductCategory {
   FUNGICIDE
   ADJUVANT
   HERBICIDE
-  PGR // Plant Growth Regulator
+  PGR
   DRY_FERTILIZER
   LIQUID_FERTILIZER
   SEED
@@ -374,7 +344,7 @@ enum ProductUnit {
   GALLON
   PINT
   QUART
-  FLOZ // Fluid Ounce
+  FLOZ
   TON
   POUND
   OUNCE
@@ -389,7 +359,7 @@ enum EquipmentType {
   DRONE
   TRACTOR
   SPRAYER
-  OTHER // Added to account for future expansion
+  OTHER
 }
 
 enum TicketStatus {
@@ -444,12 +414,12 @@ enum JobSource {
 }
 
 enum JobStatus {
-  PENDING // Awaiting approval
-  REJECTED // Job rejected
-  OPEN_FOR_BIDDING // Job is open for applicators to bid
   TO_BE_MAPPED
-  READY_TO_SPRAY // Job ready for execution
+  READY_TO_SPRAY
   SPRAYED
   INVOICED
   PAID
+  PENDING
+  REJECTED
+  OPEN_FOR_BIDDING
 }

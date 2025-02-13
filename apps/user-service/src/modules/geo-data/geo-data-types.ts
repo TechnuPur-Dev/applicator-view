@@ -2,16 +2,23 @@ interface StateData {
 	name: string;
 }
 interface CountyData {
-	name: string;
-	stateId: number;
+	County: string;
+	State: string;
 }
 interface TownShipData {
-	name: string;
-	countyId: number;
+	Township: string;
+	County: string;
 }
 interface ZipCodeData {
 	code: string;
 	townshipId?: number;
 }
-
-export { StateData, CountyData, TownShipData, ZipCodeData };
+interface UpdateTownShipData {
+	name?: string;
+	countyId?: number;
+}
+interface UpdateCountyData {
+	name?: string;
+	stateId?: number;
+}
+export { StateData, CountyData, TownShipData, ZipCodeData,UpdateCountyData,UpdateTownShipData };
