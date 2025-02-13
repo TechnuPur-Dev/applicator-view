@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import catchAsync from '../../../../../../shared/utils/catch-async';
+import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import supportTicketService from './support-ticket-service';
 

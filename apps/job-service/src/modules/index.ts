@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import job from './job/job-routes';
-import supportTicket from './Equipment/support-ticket/support-ticket-routes';
-import warrantyRegistration from './Equipment/warranty-registeration/warranty-registration-routes';
+import supportTicket from './support-ticket/support-ticket-routes';
+import warrantyRegistration from './warranty-registeration/warranty-registration-routes';
 import  applicatorWorker from './applicator-workers/applicator-workers-routes';
 import product from './product/product-routes';
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
@@ -19,7 +19,7 @@ const defaultRoutes = [
 		route: supportTicket,
 	},
 	{
-		path:'/warranty-registeration',
+		path:'/warranty-registration',
 		route:warrantyRegistration
 	},
 	{

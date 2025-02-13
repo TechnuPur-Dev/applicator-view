@@ -2,10 +2,10 @@ import express, { Router } from 'express';
 
 import warrantyRegisterationController from './warranty-registration-controller';
 // import upload from '../../../../../shared/middlewares/multer-middleware';
-import { verifyToken } from '../../../../../../shared/middlewares/auth-middleware';
-import validateSchema from '../../../../../../shared/middlewares/validation-middleware';
+import { verifyToken } from '../../../../../shared/middlewares/auth-middleware';
+import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import warrantyValidation from './warranty-registration-validation';
-import uploadMiddleware from '../../../../../../shared/middlewares/multer-middleware';
+import uploadMiddleware from '../../../../../shared/middlewares/multer-middleware';
 
 const router: Router = express.Router();
 
@@ -34,27 +34,24 @@ router
 		warrantyRegisterationController.createWarrantyReg,
 	);
 
-	router
+router
 	.route('/all')
-	.get(
-		verifyToken,
-		warrantyRegisterationController.getAllWarrantyRegList,
-	);
-	router
-	.route('/get-byId/:id')
+	.get(verifyToken, warrantyRegisterationController.getAllWarrantyRegList);
+router
+	.route('/by-id/:id')
 	.get(
 		verifyToken,
 		validateSchema(warrantyValidation.paramsSchema),
 		warrantyRegisterationController.getWarrantyRegById,
 	);
-	router
+router
 	.route('/update/:id')
 	.put(
 		verifyToken,
 		validateSchema(warrantyValidation.updateSchema),
 		warrantyRegisterationController.updateWarrantyReg,
 	);
-	router
+router
 	.route('/delete/:id')
 	.delete(
 		verifyToken,
