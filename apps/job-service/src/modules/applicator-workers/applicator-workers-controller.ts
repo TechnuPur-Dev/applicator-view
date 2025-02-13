@@ -17,12 +17,12 @@ const getAllWorker =  catchAsync(async (req: Request, res: Response) => {
 });
 
 const getWorkerById = catchAsync(async (req: Request, res: Response) => {
-	const id = +req.params.id;
-	const result = await applicatorWorkersServices.getWorkerById(id);
+	const workerId = +req.params.workerId;
+	const result = await applicatorWorkersServices.getWorkerById(workerId);
 	res.status(httpStatus.OK).json(result);
 });
 const updateWorker =  catchAsync(async (req: Request, res: Response) => {
-	const workerId = +req.params.id
+	const workerId = +req.params.workerId
 	const data = req.body;
 	const result = await applicatorWorkersServices.updateWorker(workerId,data);
 	res.status(httpStatus.OK).json(result);
