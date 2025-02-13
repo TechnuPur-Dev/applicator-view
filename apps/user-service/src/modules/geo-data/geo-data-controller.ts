@@ -80,6 +80,18 @@ const updateTownship = catchAsync(async (req: Request, res: Response) => {
 	const result = await geoDataService.updateTownship(townshipId, data);
 	res.status(httpStatus.OK).json(result);
 });
+const getCountiesByState = catchAsync(async (req: Request, res: Response) => {
+	const stateId = +req.params.stateId;
+	
+	const result = await geoDataService.getCountiesByState(stateId);
+	res.status(httpStatus.OK).json(result);
+});
+const getTownshipsByCounty = catchAsync(async (req: Request, res: Response) => {
+	const countyId = +req.params.countyId;
+
+	const result = await geoDataService.getTownshipsByCounty(countyId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createStates,
 	createCounties,
@@ -92,5 +104,7 @@ export default {
 	deleteTownship,
 	updateState,
 	updateCounty,
-	updateTownship
+	updateTownship,
+	getCountiesByState,
+	getTownshipsByCounty
 };
