@@ -1,7 +1,13 @@
 import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
-import { StateData, CountyData, TownShipData, UpdateTownShipData, UpdateCountyData } from './geo-data-types';
+import {
+	StateData,
+	CountyData,
+	TownShipData,
+	UpdateTownShipData,
+	UpdateCountyData,
+} from './geo-data-types';
 
 // to update user profile
 const createStates = async (data: StateData[]) => {
@@ -89,43 +95,13 @@ const createTownships = async (data: TownShipData) => {
 		skipDuplicates: true, // Skip duplicates based on unique fields (like name)
 	});
 };
-const getAllStates = async () => {
-	const states = await prisma.state.findMany({
-		
-		include: {
-			counties: true, 
-			
-		},
-		
-	}); 
-	
-	return states;
-};
-const getAllCounties = async () => {
-	const counties = await prisma.county.findMany({
-		
-		include: {
-			state: true, 
-			townships:true
-			
-		},
-		
-	}); 
-	
-	return counties;
-};
-const getAllTownships = async () => {
-	const townships = await prisma.township.findMany({
-		
-		include: {
-			county: true, 
-			
-		},
-		
-	}); 
-	
-	return townships;
-};
+const getAllStates = async () =>
+	await prisma.state.findMany({ orderBy: { id: 'asc' } });
+const getAllCounties = async () =>
+	await prisma.county.findMany({ orderBy: { id: 'asc' } });
+const getAllTownships = async () =>
+	await prisma.township.findMany({ orderBy: { id: 'asc' } });
+
 const deleteState = async (Id: number) => {
 	await prisma.state.delete({
 		where: {
@@ -216,5 +192,5 @@ export default {
 	deleteTownship,
 	updateState,
 	updateCounty,
-	updateTownship
+	updateTownship,
 };
