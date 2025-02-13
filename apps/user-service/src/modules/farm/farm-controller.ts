@@ -18,8 +18,8 @@ const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({ result: userData });
 });
 const getFarmById = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.farmId;
-	const result = await farmService.getFarmById(Id);
+	const id = +req.params.farmId;
+	const result = await farmService.getFarmById(id);
 	res.status(httpStatus.OK).json(result);
 });
 
@@ -27,7 +27,7 @@ const getFarmById = catchAsync(async (req: Request, res: Response) => {
 const deleteFarm = catchAsync(async (req: Request, res: Response) => {
 	const farmId = +req.params.farmId;
 	const currentUser = req.user;
-	const result = await farmService.deleteFarm(farmId,currentUser);
+	const result = await farmService.deleteFarm(farmId, currentUser);
 	res.status(httpStatus.OK).json(result);
 });
 
@@ -36,27 +36,36 @@ const updateFarm = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
 	const farmId = +req.params.farmId;
 	const data = req.body;
-
-	const result = await farmService.updateFarm(currentUser,farmId, data);
+	const result = await farmService.updateFarm(currentUser, farmId, data);
 	res.status(httpStatus.OK).json(result);
 });
 // controler to update Farm
 const assignFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const data = req.body;
-	const result = await farmService.assignFarmPermission(data);
+	const result = await farmService.assignFarmPermission(currentUser, data);
 	res.status(httpStatus.OK).json(result);
 });
 // controler to update Farm
 const updateFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const permissionId = +req.params.permissionId;
 	const data = req.body;
-	const result = await farmService.updateFarmPermission(permissionId, data);
+	const result = await farmService.updateFarmPermission(
+		currentUser,
+		permissionId,
+		data,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 // controler to update Farm
 const deleteFarmPermission = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const permissionId = +req.params.permissionId;
-	const result = await farmService.deleteFarmPermission(permissionId);
+	const result = await farmService.deleteFarmPermission(
+		currentUser,
+		permissionId,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 const askFarmPermission = catchAsync(async (req: Request, res: Response) => {

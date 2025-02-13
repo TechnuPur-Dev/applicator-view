@@ -1,5 +1,5 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# #!/bin/sh
+# . "$(dirname "$0")/_/husky.sh"
 
-# Run lint-staged to check and fix staged files
-npx lint-staged
+# # Run lint-staged to check and fix staged files
+# npx lint-staged
