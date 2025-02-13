@@ -180,6 +180,17 @@ const updateTownship = async (townshipId: number, data: UpdateTownShipData) => {
 
 	return updatedTownship;
 };
+export const getCountiesByState = async (stateId: number) => {
+    return await prisma.county.findMany({
+        where: { stateId }
+    });
+};
+
+export const getTownshipsByCounty = async (countyId: number) => {
+    return await prisma.township.findMany({
+        where: { countyId }
+    });
+};
 export default {
 	createStates,
 	createCounties,
@@ -193,4 +204,6 @@ export default {
 	updateState,
 	updateCounty,
 	updateTownship,
+	getCountiesByState,
+	getTownshipsByCounty
 };
