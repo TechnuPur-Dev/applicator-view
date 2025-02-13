@@ -142,7 +142,7 @@ const getAllUsers = async () => {
 };
 
 // getUserByEmail
-const getGrowerByEmail = async (userEmail: string) => {
+const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 	const grower = await prisma.user.findFirst({
 		where: {
 			email: {
@@ -151,8 +151,24 @@ const getGrowerByEmail = async (userEmail: string) => {
 			},
 			role: 'GROWER',
 		},
+		include: {
+			farms: {
+				include: {
+					permissions: {
+						where: {
+							applicatorId,
+						},
+					}, // Include permissions to calculate farm permissions for the applicator
+				},
+				orderBy: {
+					id: 'desc',
+				},
+			},
+		},
 		omit: {
-			password: true,
+			password: true, // Exclude sensitive data
+			businessName: true,
+			experience: true,
 		},
 	});
 	if (!grower) {
@@ -556,7 +572,11 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 							},
 						},
 						include: {
-							permissions: true, // Include permissions to calculate farm permissions for the applicator
+							permissions: {
+								where: {
+									applicatorId,
+								},
+							}, // Include permissions to calculate farm permissions for the applicator
 							fields: true, // Include fields to calculate total acres
 						},
 						orderBy: {

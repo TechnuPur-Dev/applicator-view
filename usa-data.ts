@@ -96901,4 +96901,4 @@
 		  
 	  
 ];
-module.exports = { counties,townships };
+export default = { counties, townships };

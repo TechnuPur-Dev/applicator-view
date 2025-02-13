@@ -52,8 +52,9 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getGrowerByEmail = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
 	const email = req.params.email;
-	const result = await userService.getGrowerByEmail(email);
+	const result = await userService.getGrowerByEmail(applicatorId, email);
 	res.status(httpStatus.OK).json(result);
 });
 const createGrower = catchAsync(async (req: Request, res: Response) => {
