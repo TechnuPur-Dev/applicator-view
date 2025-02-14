@@ -159,6 +159,7 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 							applicatorId,
 						},
 					}, // Include permissions to calculate farm permissions for the applicator
+					fields: true, // Include fields to calculate total acres
 				},
 				orderBy: {
 					id: 'desc',
@@ -178,7 +179,36 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 		);
 	}
 
-	return grower;
+	// Calculate total acres for each grower and each farm
+
+	const totalAcresByGrower = grower?.farms.reduce(
+		(totalGrowerAcres, farm) => {
+			// Calculate total acres for this farm
+			const totalAcresByFarm = farm.fields.reduce(
+				(totalFarmAcres, field) => {
+					return (
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0')
+					);
+				},
+				0,
+			);
+
+			// Type assertion to inform TypeScript about `totalAcres`
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(farm as any).totalAcres = totalAcresByFarm;
+
+			// Accumulate total grower acres
+			return totalGrowerAcres + totalAcresByFarm;
+		},
+		0,
+	);
+
+	// Add total acres to the grower object
+	return {
+		...grower,
+		totalAcres: totalAcresByGrower,
+	};
 };
 
 // create grower
