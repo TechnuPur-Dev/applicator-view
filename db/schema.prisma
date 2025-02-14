@@ -147,6 +147,7 @@ model Field {
   longitude   String?
   createdById Int
   farmId      Int
+  config      Json?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   createdBy   User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)
