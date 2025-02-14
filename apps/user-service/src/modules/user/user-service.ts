@@ -10,6 +10,7 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adj
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
+import { User } from '../../../../../shared/types/global';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -334,9 +335,15 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 
 	return applicators;
 };
-const updateInviteStatus = async (data: UpdateStatus) => {
+const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	// Destructure
-	const { status, applicatorId, growerId } = data;
+	const { id: userId, role } = user;
+	const { status, userId: targetUserId } = data;
+
+	// Determine the applicatorId and growerId based on the role
+	const isGrower = role === 'GROWER';
+	const applicatorId = isGrower ? targetUserId : userId;
+	const growerId = isGrower ? userId : targetUserId;
 
 	if (status === 'ACCEPTED') {
 		// Update the inviteStatus field
@@ -414,67 +421,46 @@ const getPendingInvites = async (userId: number) => {
 	return pendingInvites;
 };
 
-const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
+const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 	// Destructure
-	const { userId, role, archiveStatus, canManageFarmsStauts } = data;
+	const { id: currentUserId, role } = user;
+	const { userId, archiveStatus, canManageFarmsStauts } = data;
+
 	// Applicator updating Grower
 	if (role === 'APPLICATOR') {
-		const userExist = await prisma.applicatorGrower.findFirst({
-			where: {
-				applicatorId: Id,
-				growerId: userId, //grower id get from frontend
-			},
-		});
-
-		if (!userExist) {
-			throw new ApiError(
-				httpStatus.NOT_FOUND,
-				'User relation not found.',
-			);
-		}
 		await prisma.applicatorGrower.update({
 			where: {
-				id: userExist.id,
+				applicatorId_growerId: {
+					applicatorId: currentUserId,
+					growerId: userId,
+				},
 			},
 			data: {
 				isArchivedByApplicator: archiveStatus, // Only updating the inviteStatus field
 			},
 		});
 		return {
-			message: 'Archived status Updated Successfully',
+			message: 'Updated Successfully.',
 		};
 	}
 	//grower update applicator
-	else {
-		{
-			const userExist = await prisma.applicatorGrower.findFirst({
-				where: {
-					applicatorId: userId, //now applicator id get from frontend
-					growerId: Id,
+	if (role === 'GROWER') {
+		await prisma.applicatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					applicatorId: userId,
+					growerId: currentUserId,
 				},
-			});
+			},
+			data: {
+				isArchivedByGrower: archiveStatus, // Only updating the isArchivedByGrower field
+				canManageFarms: canManageFarmsStauts,
+			},
+		});
 
-			if (!userExist) {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'User relation not found.',
-				);
-			}
-			console.log(userExist, 'userExist');
-			await prisma.applicatorGrower.update({
-				where: {
-					id: userExist.id,
-				},
-				data: {
-					isArchivedByGrower: archiveStatus, // Only updating the isArchivedByGrower field
-					canManageFarms: canManageFarmsStauts,
-				},
-			});
-
-			return {
-				message: 'Archived status Updated Successfully',
-			};
-		}
+		return {
+			message: 'Updated Successfully.',
+		};
 	}
 };
 
@@ -528,8 +514,11 @@ If you did not expect this invitation, please ignore this email.
 		};
 	}
 };
-const sendInviteToGrower = async (applicatorId: number, growerId: number) => {
+const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 	// Update the inviteStatus field
+	const { id: applicatorId, role } = currentUser;
+	if (role !== 'APPLICATOR')
+		return 'You are not allowed to perform this action.';
 	const user = await prisma.applicatorGrower.update({
 		where: {
 			applicatorId_growerId: {

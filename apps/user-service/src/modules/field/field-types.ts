@@ -7,6 +7,7 @@ interface field {
 	longitude: string;
 	createdById: number;
 	farmId: number;
+	config: object;
 }
 
 export { field };

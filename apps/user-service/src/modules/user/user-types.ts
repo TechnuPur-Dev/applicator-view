@@ -28,13 +28,12 @@ interface UpdateUser {
 }
 interface UpdateStatus {
 	status: InviteStatus;
-	growerId: number;
-	applicatorId: number;
+	userId: number;
 }
 interface UpdateArchiveStatus {
-	userId:number,
-	role:UserRole,
+	userId: number;
+	role: UserRole;
 	archiveStatus: boolean;
 	canManageFarmsStauts: boolean;
 }
-export { UploadProfileImage, UpdateUser, UpdateStatus,UpdateArchiveStatus };
+export { UploadProfileImage, UpdateUser, UpdateStatus, UpdateArchiveStatus };
