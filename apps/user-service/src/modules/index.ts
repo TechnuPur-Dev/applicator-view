@@ -4,6 +4,7 @@ import user from './user/user-routes';
 import field from './field/field-routes';
 import farm from './farm/farm-routes';
 import table from './table-view/table-view-routes';
+import  applicatorWorker from './applicator-workers/applicator-workers-routes';
 import geoData from './geo-data/geo-data-routes';
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
@@ -30,6 +31,10 @@ const defaultRoutes = [
 	{
 		path: '/table', // Path for the table-view routes
 		route: table,
+	},
+	{
+		path:'/applicator-workers',
+		route:applicatorWorker
 	},
 	{
 		path: '/geo-data', // Path for the geo-data routes
