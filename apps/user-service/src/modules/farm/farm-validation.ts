@@ -11,7 +11,7 @@ const farmSchema: Schema = Joi.object({
 	}).required(),
 	body: Joi.object({
 		name: Joi.string().min(1).max(50).required(), // First name with minimum and maximum length
-		state: Joi.string().max(50).required(), // State name
+		stateId: Joi.number().integer().positive().required(), // StateId 
 		county: Joi.string().max(50).required(), // County name
 		township: Joi.string().max(50).required(), // Township name
 		zipCode: Joi.string()
@@ -36,7 +36,7 @@ const farmUpdateSchema: Schema = Joi.object({
 	}).required(),
 	body: Joi.object({
 		name: Joi.string().min(1).max(50).required(), // First name with minimum and maximum length
-		state: Joi.string().max(50).required(), // State name
+		stateId: Joi.number().integer().positive().required(), // StateId 
 		county: Joi.string().max(50).required(), // County name
 		township: Joi.string().max(50).required(), // Township name
 		zipCode: Joi.string()

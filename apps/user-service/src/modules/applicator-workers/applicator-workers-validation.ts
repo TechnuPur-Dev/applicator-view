@@ -14,7 +14,7 @@ const workerCreateSchema: Schema = Joi.object({
 		businessName: Joi.string().max(100).optional(),
 		address1: Joi.string().max(100).required(),
 		address2: Joi.string().max(100).optional(),
-		state: Joi.string().max(50).required(),
+		stateId: Joi.number().integer().positive().required(),
 		county: Joi.string().max(50).required(),
 		township: Joi.string().max(50).required(),
 		zipCode: Joi.string()
@@ -52,7 +52,7 @@ const updateSchema: Schema = Joi.object({
 		businessName: Joi.string().max(100).optional(),
 		address1: Joi.string().max(100).required(),
 		address2: Joi.string().max(100).optional(),
-		state: Joi.string().max(50).required(),
+		stateId: Joi.number().integer().positive().required(),
 		county: Joi.string().max(50).required(),
 		township: Joi.string().max(50).required(),
 		zipCode: Joi.string()

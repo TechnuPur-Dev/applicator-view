@@ -14,7 +14,7 @@ const createGrowerSchema: Schema = Joi.object({
 		phoneNumber: phoneNumberSchema.required(), // International phone number format
 		address1: Joi.string().max(100).required(), // Address line 1
 		address2: Joi.string().max(100).optional(), // Address line 2
-		state: Joi.string().max(50).required(), // State name
+		stateId: Joi.number().integer().positive().required(), // StateId
 		county: Joi.string().max(50).required(), // County name
 		township: Joi.string().max(50).required(), // Township name
 		zipCode: Joi.string()

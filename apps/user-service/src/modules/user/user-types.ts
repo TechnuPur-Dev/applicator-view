@@ -18,7 +18,7 @@ interface UpdateUser {
 	experience?: number; // Convert Decimal to number for the DTO
 	address1?: string;
 	address2?: string;
-	state?: string;
+	stateId?: number;
 	county?: string;
 	township?: string;
 	zipCode?: string;
