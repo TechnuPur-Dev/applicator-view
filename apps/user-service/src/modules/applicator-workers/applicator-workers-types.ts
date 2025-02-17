@@ -10,7 +10,7 @@ interface ApplicatorWorker {
 	businessName?: string;
 	address1?: string;
 	address2?: string;
-	state: string;
+	stateId: number;
 	county: string;
 	township: string;
 	zipCode: string;

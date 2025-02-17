@@ -159,13 +159,15 @@ const getMySupportTicket = async (Id: number) => {
 	return tickets;
 };
 const getPilotSupportTicket = async (applicatorId: number) => {
-	const workers = await prisma.user.findMany({
+	const workers = await prisma.applicatorWorker.findMany({
 		where: {
-			// applicatorId, //get the pilots/operator created by or associated by applicator
-			role: 'WORKER',
+			applicatorId, //get the pilots/operator created by or associated by applicator
 		},
+		select:{
+			worker:true
+		}
 	});
-	const workerIds = workers.map((worker) => worker.id);
+	const workerIds = workers.map((item) => item.worker.id);
 	console.log(workerIds, 'workers');
 
 	// Fetch tickets where createdById matches any of the worker IDs

@@ -20,7 +20,7 @@ const registerUserSchema: Schema = Joi.object({
 		experience: Joi.number().min(0).max(50).optional(), // Experience in years
 		address1: Joi.string().max(100).required(), // Address line 1
 		address2: Joi.string().max(100).optional(), // Address line 2
-		state: Joi.string().max(50).required(), // State name
+		stateId: Joi.number().integer().positive().required(), // State name
 		county: Joi.string().max(50).required(), // County name
 		township: Joi.string().max(50).required(), // Township name
 		zipCode: Joi.string()

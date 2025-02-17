@@ -1,6 +1,6 @@
 interface CreateFarmParams {
 	name: string;
-	state: string;
+	stateId: number;
 	county: string;
 	township: string;
 	zipCode: string;
