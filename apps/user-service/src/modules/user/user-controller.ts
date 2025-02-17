@@ -52,8 +52,9 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getGrowerByEmail = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
 	const email = req.params.email;
-	const result = await userService.getGrowerByEmail(email);
+	const result = await userService.getGrowerByEmail(applicatorId, email);
 	res.status(httpStatus.OK).json(result);
 });
 const createGrower = catchAsync(async (req: Request, res: Response) => {
@@ -72,8 +73,9 @@ const getAllGrowersByApplicator = catchAsync(
 );
 
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
 	const data = req.body;
-	const result = await userService.updateInviteStatus(data);
+	const result = await userService.updateInviteStatus(user, data);
 	res.status(httpStatus.OK).json(result);
 });
 const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
@@ -97,10 +99,10 @@ const getAllApplicatorsByGrower = catchAsync(
 );
 
 const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
-	const id = +req.payload.id;
+	const user = req.user;
 	const data = req.body;
-	const result = await userService.updateArchivedStatus(data, id);
-	res.status(httpStatus.OK).json({ result });
+	const result = await userService.updateArchivedStatus(user, data);
+	res.status(httpStatus.OK).json(result);
 });
 
 const sendInviteToApplicator = catchAsync(
@@ -116,9 +118,9 @@ const sendInviteToApplicator = catchAsync(
 );
 
 const sendInviteToGrower = catchAsync(async (req: Request, res: Response) => {
-	const applicatorId = +req.payload.id;
+	const user = req.user;
 	const growerId = +req.params.growerId;
-	const result = await userService.sendInviteToGrower(applicatorId, growerId);
+	const result = await userService.sendInviteToGrower(user, growerId);
 	res.status(httpStatus.OK).json(result);
 });
 

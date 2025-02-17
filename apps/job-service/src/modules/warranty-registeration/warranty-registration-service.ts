@@ -2,12 +2,13 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import config from '../../../../../../shared/config/env-config';
+import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
-import { prisma } from '../../../../../../shared/libs/prisma-client';
+import { prisma } from '../../../../../shared/libs/prisma-client';
 import { EquipmentType } from '@prisma/client';
 import { CreateData } from './warranty-registration-types';
-import ApiError from '../../../../../../shared/utils/api-error';
+import ApiError from '../../../../../shared/utils/api-error';
+import { User } from './../../../../../shared/types/global';
 
 const getAllEquipmentType = async () => {
 	const ticketCategoryList = Object.values(EquipmentType).map(
@@ -79,7 +80,7 @@ const uploadImage = async (userId: number, file: Express.Multer.File) => {
 	};
 };
 
-// upload equipment image
+// Upload Attatchments
 const uploadDocAttachments = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -111,15 +112,16 @@ const uploadDocAttachments = async (
 };
 
 const createWarrantyReg = async (createdById: number, data: CreateData) => {
+	const existingEquipment = await prisma.warrantyRegistration.findFirst({
+		where: { serialNumber: data.serialNumber },
+	});
 
-		const existingEquipment = await prisma.warrantyRegistration.findFirst({ where: { serialNumber:data.serialNumber } });
-
-		if (existingEquipment) {
-			throw new ApiError(
-				httpStatus.BAD_REQUEST,
-				"Serial number already exists, please use a unique serial number.",
-			);
-		}
+	if (existingEquipment) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'Serial number already exists, please use a unique serial number.',
+		);
+	}
 	const result = await prisma.warrantyRegistration.create({
 		data: {
 			imageUrl: data.imageUrl,
@@ -135,35 +137,31 @@ const createWarrantyReg = async (createdById: number, data: CreateData) => {
 	return result;
 };
 
-const getAllWarrantyRegList = async () => {
-	const result = await prisma.warrantyRegistration.findMany({});
-	return result;
-};
-const getWarrantyRegById = async (Id: number) => {
+const getAllWarrantyRegList = async () =>
+	await prisma.warrantyRegistration.findMany();
+const getWarrantyRegById = async (user: User, id: number) => {
 	const result = await prisma.warrantyRegistration.findUnique({
 		where: {
-			id: Id,
+			id,
+			createdById: user.id,
 		},
 	});
 	return result;
 };
-const updateWarrantyReg = async (Id: number, data: CreateData) => {
+const updateWarrantyReg = async (user: User, id: number, data: CreateData) => {
 	const result = await prisma.warrantyRegistration.update({
-		where: { id: Id },
+		where: { id, createdById: user.id },
 		data: {
 			...data,
-
-			// This ensures only the provided field is updated
 		},
 	});
 
 	return result;
 };
 
-const deleteWarrantyReg = async (Id: number,) => {
+const deleteWarrantyReg = async (user: User, id: number) => {
 	const result = await prisma.warrantyRegistration.delete({
-		where: { id: Id },
-	
+		where: { id, createdById: user.id },
 	});
 
 	return result;
@@ -176,5 +174,5 @@ export default {
 	getAllWarrantyRegList,
 	getWarrantyRegById,
 	updateWarrantyReg,
-	deleteWarrantyReg
+	deleteWarrantyReg,
 };

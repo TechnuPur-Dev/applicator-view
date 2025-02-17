@@ -21,7 +21,13 @@ const createFarm = async (
 	};
 
 	if (role === 'GROWER') {
-		return prisma.farm.create({ data: farmData });
+		return prisma.farm.create({
+			data: {
+				...data,
+				createdById: userId,
+				growerId: userId,
+			},
+		});
 	}
 
 	if (role === 'APPLICATOR') {
@@ -118,17 +124,14 @@ const getFarmById = async (Id: number) => {
 	return farm;
 };
 
-const deleteFarm = async (Id: number, user: User) => {
+const deleteFarm = async (id: number, user: User) => {
 	const { role, id: userId } = user;
 	const farm = await prisma.farm.findUnique({
 		where: {
-			id: Id,
+			id,
 		},
 		include: {
 			permissions: {
-				where: {
-					applicatorId: userId,
-				},
 				select: {
 					canEdit: true,
 					canView: true,
@@ -145,7 +148,7 @@ const deleteFarm = async (Id: number, user: User) => {
 		if (farm?.growerId === userId) {
 			await prisma.farm.delete({
 				where: {
-					id: Id,
+					id,
 				},
 			});
 		} else {
@@ -156,14 +159,14 @@ const deleteFarm = async (Id: number, user: User) => {
 		}
 	}
 
-	// If user is APPLICATOR, check if they have atleast one edit permission because permissions is an array
+	// If user is APPLICATOR, check if they have edit permission
 	else if (role === 'APPLICATOR') {
 		const hasEditPermission = farm?.permissions.some(
 			(permission) => permission.canEdit,
 		);
 		if (hasEditPermission) {
 			await prisma.farm.delete({
-				where: { id: Id },
+				where: { id },
 			});
 		} else {
 			throw new ApiError(
@@ -189,7 +192,7 @@ const updateFarm = async (
 			id: farmId,
 		},
 		include: {
-				// If user is APPLICATOR, check if they have permission because permissions is an array
+			// If user is APPLICATOR, check if they have permission because permissions is an array
 			permissions: {
 				where: {
 					applicatorId: userId,
@@ -243,18 +246,21 @@ const updateFarm = async (
 	}
 };
 
-const assignFarmPermission = async (data: AssignFarmPermission) => {
+const assignFarmPermission = async (user: User, data: AssignFarmPermission) => {
+	const { id: userId } = user;
 	const { farmId, applicatorId, canView, canEdit } = data;
 
 	// Validate farm existence
 	const farm = await prisma.farm.findUnique({
-		where: { id: farmId },
+		where: { id: farmId, growerId: userId },
 		select: { id: true },
 	});
 	if (!farm) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'You are not authorized or the farm does not exist.',
+		);
 	}
-	console.log(farm, 'farm');
 	// Update farm
 	const permission = await prisma.farmPermission.create({
 		data: { farmId, applicatorId, canView, canEdit },
@@ -263,18 +269,59 @@ const assignFarmPermission = async (data: AssignFarmPermission) => {
 	return permission;
 };
 const updateFarmPermission = async (
+	user: User,
 	permissionId: number,
 	data: AssignFarmPermission,
 ) => {
+	const { canEdit, canView } = data;
+	const { id: userId } = user;
+	// Validate farm existence
+	const permission = await prisma.farmPermission.findUnique({
+		where: { id: permissionId },
+		select: {
+			farm: {
+				select: {
+					growerId: true,
+				},
+			},
+		},
+	});
+	if (permission?.farm?.growerId !== userId) {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'You are not authorized to perform this action.',
+		);
+	}
 	// Update farm
 	const updatedPermission = await prisma.farmPermission.update({
 		where: { id: permissionId },
-		data,
+		data: {
+			canEdit,
+			canView,
+		},
 	});
 
 	return updatedPermission;
 };
-const deleteFarmPermission = async (permissionId: number) => {
+const deleteFarmPermission = async (user: User, permissionId: number) => {
+	const { id: userId } = user;
+	// Validate farm existence
+	const permission = await prisma.farmPermission.findUnique({
+		where: { id: permissionId },
+		select: {
+			farm: {
+				select: {
+					growerId: true,
+				},
+			},
+		},
+	});
+	if (permission?.farm?.growerId !== userId) {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'You are not authorized to perform this action.',
+		);
+	}
 	// Update farm
 	await prisma.farmPermission.delete({
 		where: { id: permissionId },

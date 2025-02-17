@@ -130,8 +130,11 @@ model FarmPermission {
   canEdit      Boolean
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  applicator   User     @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
-  farm         Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  applicator User @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
+  farm       Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@unique([farmId, applicatorId]) // Ensures only one permission per user per farm
 }
 
 model Field {
@@ -144,6 +147,7 @@ model Field {
   longitude   String?
   createdById Int
   farmId      Int
+  config      Json?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   createdBy   User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)

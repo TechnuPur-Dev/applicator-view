@@ -10,6 +10,7 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adj
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
+import { User } from '../../../../../shared/types/global';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -142,7 +143,7 @@ const getAllUsers = async () => {
 };
 
 // getUserByEmail
-const getGrowerByEmail = async (userEmail: string) => {
+const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 	const grower = await prisma.user.findFirst({
 		where: {
 			email: {
@@ -151,8 +152,25 @@ const getGrowerByEmail = async (userEmail: string) => {
 			},
 			role: 'GROWER',
 		},
+		include: {
+			farms: {
+				include: {
+					permissions: {
+						where: {
+							applicatorId,
+						},
+					}, // Include permissions to calculate farm permissions for the applicator
+					fields: true, // Include fields to calculate total acres
+				},
+				orderBy: {
+					id: 'desc',
+				},
+			},
+		},
 		omit: {
-			password: true,
+			password: true, // Exclude sensitive data
+			businessName: true,
+			experience: true,
 		},
 	});
 	if (!grower) {
@@ -162,7 +180,36 @@ const getGrowerByEmail = async (userEmail: string) => {
 		);
 	}
 
-	return grower;
+	// Calculate total acres for each grower and each farm
+
+	const totalAcresByGrower = grower?.farms.reduce(
+		(totalGrowerAcres, farm) => {
+			// Calculate total acres for this farm
+			const totalAcresByFarm = farm.fields.reduce(
+				(totalFarmAcres, field) => {
+					return (
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0')
+					);
+				},
+				0,
+			);
+
+			// Type assertion to inform TypeScript about `totalAcres`
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(farm as any).totalAcres = totalAcresByFarm;
+
+			// Accumulate total grower acres
+			return totalGrowerAcres + totalAcresByFarm;
+		},
+		0,
+	);
+
+	// Add total acres to the grower object
+	return {
+		...grower,
+		totalAcres: totalAcresByGrower,
+	};
 };
 
 // create grower
@@ -288,9 +335,15 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 
 	return applicators;
 };
-const updateInviteStatus = async (data: UpdateStatus) => {
+const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	// Destructure
-	const { status, applicatorId, growerId } = data;
+	const { id: userId, role } = user;
+	const { status, userId: targetUserId } = data;
+
+	// Determine the applicatorId and growerId based on the role
+	const isGrower = role === 'GROWER';
+	const applicatorId = isGrower ? targetUserId : userId;
+	const growerId = isGrower ? userId : targetUserId;
 
 	if (status === 'ACCEPTED') {
 		// Update the inviteStatus field
@@ -368,67 +421,46 @@ const getPendingInvites = async (userId: number) => {
 	return pendingInvites;
 };
 
-const updateArchivedStatus = async (data: UpdateArchiveStatus, Id: number) => {
+const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 	// Destructure
-	const { userId, role, archiveStatus, canManageFarmsStauts } = data;
+	const { id: currentUserId, role } = user;
+	const { userId, archiveStatus, canManageFarmsStauts } = data;
+
 	// Applicator updating Grower
 	if (role === 'APPLICATOR') {
-		const userExist = await prisma.applicatorGrower.findFirst({
-			where: {
-				applicatorId: Id,
-				growerId: userId, //grower id get from frontend
-			},
-		});
-
-		if (!userExist) {
-			throw new ApiError(
-				httpStatus.NOT_FOUND,
-				'User relation not found.',
-			);
-		}
 		await prisma.applicatorGrower.update({
 			where: {
-				id: userExist.id,
+				applicatorId_growerId: {
+					applicatorId: currentUserId,
+					growerId: userId,
+				},
 			},
 			data: {
 				isArchivedByApplicator: archiveStatus, // Only updating the inviteStatus field
 			},
 		});
 		return {
-			message: 'Archived status Updated Successfully',
+			message: 'Updated Successfully.',
 		};
 	}
 	//grower update applicator
-	else {
-		{
-			const userExist = await prisma.applicatorGrower.findFirst({
-				where: {
-					applicatorId: userId, //now applicator id get from frontend
-					growerId: Id,
+	if (role === 'GROWER') {
+		await prisma.applicatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					applicatorId: userId,
+					growerId: currentUserId,
 				},
-			});
+			},
+			data: {
+				isArchivedByGrower: archiveStatus, // Only updating the isArchivedByGrower field
+				canManageFarms: canManageFarmsStauts,
+			},
+		});
 
-			if (!userExist) {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'User relation not found.',
-				);
-			}
-			console.log(userExist, 'userExist');
-			await prisma.applicatorGrower.update({
-				where: {
-					id: userExist.id,
-				},
-				data: {
-					isArchivedByGrower: archiveStatus, // Only updating the isArchivedByGrower field
-					canManageFarms: canManageFarmsStauts,
-				},
-			});
-
-			return {
-				message: 'Archived status Updated Successfully',
-			};
-		}
+		return {
+			message: 'Updated Successfully.',
+		};
 	}
 };
 
@@ -482,8 +514,11 @@ If you did not expect this invitation, please ignore this email.
 		};
 	}
 };
-const sendInviteToGrower = async (applicatorId: number, growerId: number) => {
+const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 	// Update the inviteStatus field
+	const { id: applicatorId, role } = currentUser;
+	if (role !== 'APPLICATOR')
+		return 'You are not allowed to perform this action.';
 	const user = await prisma.applicatorGrower.update({
 		where: {
 			applicatorId_growerId: {
@@ -556,7 +591,11 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 							},
 						},
 						include: {
-							permissions: true, // Include permissions to calculate farm permissions for the applicator
+							permissions: {
+								where: {
+									applicatorId,
+								},
+							}, // Include permissions to calculate farm permissions for the applicator
 							fields: true, // Include fields to calculate total acres
 						},
 						orderBy: {
