@@ -27,6 +27,14 @@ const createFarm = async (
 				createdById: userId,
 				growerId: userId,
 			},
+			include: {
+				state: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
 		});
 	}
 
@@ -59,6 +67,14 @@ const createFarm = async (
 					},
 				},
 			},
+			include: {
+				state: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
 		});
 	}
 
@@ -84,6 +100,12 @@ const getAllFarmsByGrower = async (growerId: number) => {
 							fullName: true,
 						},
 					},
+				},
+			},
+			state: {
+				select: {
+					id: true,
+					name: true,
 				},
 			},
 		},
@@ -112,6 +134,12 @@ const getFarmById = async (Id: number) => {
 		},
 		include: {
 			fields: true, // Include related fields in the result
+			state: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	});
 	console.log(farm, 'farm');
@@ -215,6 +243,14 @@ const updateFarm = async (
 			const updatedFarm = await prisma.farm.update({
 				where: { id: farmId },
 				data,
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
 			});
 			return updatedFarm;
 		} else {
@@ -235,6 +271,14 @@ const updateFarm = async (
 			const updatedFarm = await prisma.farm.update({
 				where: { id: farmId },
 				data,
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
 			});
 			return updatedFarm;
 		} else {

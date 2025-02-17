@@ -1,5 +1,4 @@
-import { JobType, JobSource,JobStatus} from '@prisma/client';
-
+import { JobType, JobSource, JobStatus } from '@prisma/client';
 
 interface CreateJob {
 	title: string; // Job title (Required)
@@ -16,10 +15,14 @@ interface CreateJob {
 	fields: { fieldId: number; actualAcres?: number }[]; // List of fields (Required)
 	sensitiveAreas?: string; // Optional sensitive areas info
 	adjacentCrops?: string; // Optional adjacent crops info
-	products: { name: string; ratePerAcre: number; totalAcres: number; price: number }[]; // Job products (Required)
-	applicationFees?: { description: string; rateUoM: number; perAcre: boolean }[]; // Application fees (Optional)
+	products: { productId: number; totalAcres: number; price: number }[]; // Job products (Required)
+	applicationFees?: {
+		description: string;
+		rateUoM: number;
+		perAcre: boolean;
+	}[]; // Application fees (Optional)
 	specialInstructions?: string; // Optional special instructions
 	attachments?: object; // JSON object (Optional)
-};
+}
 
 export { CreateJob };

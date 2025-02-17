@@ -58,6 +58,7 @@ model User {
   tableViews             TableView[]
   warrantyRegistrations  WarrantyRegistration[]
   // Notification           Notification[]
+  Product                Product[]
 }
 
 model ApplicatorWorker {
@@ -215,13 +216,13 @@ model FieldJob {
 }
 
 model JobProduct {
-  id          Int     @id @default(autoincrement())
-  jobId       Int
-  name        String
-  ratePerAcre Decimal
-  totalAcres  Decimal
-  price       Decimal
-  job         Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id         Int     @id @default(autoincrement())
+  jobId      Int
+  productId  Int @default(2)
+  totalAcres Decimal
+  price      Decimal
+  job        Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }
@@ -297,6 +298,9 @@ model Product {
   comments                    String?
   createdAt                   DateTime        @default(now())
   updatedAt                   DateTime        @updatedAt
+  createdById                 Int             @default(1)
+  craetedBy                   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  JobProduct                  JobProduct[]
 }
 
 model State {

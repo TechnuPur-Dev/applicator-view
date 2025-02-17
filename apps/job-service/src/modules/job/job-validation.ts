@@ -36,14 +36,7 @@ const createJobSchema = Joi.object({
 		adjacentCrops: Joi.string().max(255).allow('').optional(),
 
 		// Attachments validation (assuming it stores file details)
-		attachments: Joi.array()
-			.items(
-				Joi.object({
-					url: Joi.string().uri().required(), // Ensure valid URL
-					name: Joi.string().max(255).required(),
-				}),
-			)
-			.default([]), // Default to empty array if not provided
+		attachments: Joi.array().default([]), // Default to empty array if not provided
 
 		// Fields array validation
 		fields: Joi.array()
@@ -59,11 +52,7 @@ const createJobSchema = Joi.object({
 		products: Joi.array()
 			.items(
 				Joi.object({
-					name: Joi.string().min(3).max(100).required(),
-					ratePerAcre: Joi.number()
-						.precision(2)
-						.positive()
-						.required(),
+					productId: Joi.number().integer().positive().required(),
 					totalAcres: Joi.number().precision(2).positive().required(),
 					price: Joi.number().precision(2).positive().required(),
 				}),

@@ -1,12 +1,7 @@
-import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
-// import sharp from 'sharp';
-// import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-
-import { ProductCategory, ProductUnit, TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
-// import ApiError from '../../../../../shared/utils/api-error';
+import { ProductCategory, ProductUnit } from '@prisma/client';
 import { CreateProduct, UpdateProduct } from './product-types';
+import { User } from '../../../../../shared/types/global';
 
 const getAllProductCategories = async () => {
 	const productCategoryList = Object.values(ProductCategory).map(
@@ -28,21 +23,23 @@ const getAllAppliedUnits = async () => {
 	return ticketStatusList;
 };
 
-
-const createProduct = async (
-	data: CreateProduct,
-) => {
+const createProduct = async (user: User, data: CreateProduct) => {
 	const product = await prisma.product.create({
 		data: {
-			...data
-				},
+			createdById: user.id,
+			...data,
+		},
 	});
 
 	return product;
 };
 
-const getAllProducts = async () => {
-	const products = await prisma.product.findMany();
+const getAllProducts = async (user: User) => {
+	const products = await prisma.product.findMany({
+		where: {
+			createdById: user.id,
+		},
+	});
 	return products;
 };
 
@@ -51,20 +48,14 @@ const getProductById = async (Id: number) => {
 		where: {
 			id: Id,
 		},
-	
 	});
 	return product;
 };
-const updateProduct = async (
-	productId: number,
-	data: UpdateProduct
-) => {
+const updateProduct = async (productId: number, data: UpdateProduct) => {
 	const product = await prisma.product.update({
 		where: { id: productId },
 		data: {
 			...data,
-
-			
 		},
 	});
 
@@ -83,6 +74,17 @@ const deleteProduct = async (productId: number) => {
 	};
 };
 
+const getAllProductsDropdown = async (user: User) => {
+	return await prisma.product.findMany({
+		where: { createdById: user.id, restrictedUse: false },
+		select: {
+			id: true,
+			productName: true,
+			perAcreRate: true,
+		},
+	});
+};
+
 export default {
 	getAllProductCategories,
 	getAllAppliedUnits,
@@ -90,6 +92,6 @@ export default {
 	getAllProducts,
 	getProductById,
 	updateProduct,
-	deleteProduct
-	
+	deleteProduct,
+	getAllProductsDropdown,
 };

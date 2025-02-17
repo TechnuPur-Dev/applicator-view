@@ -63,7 +63,7 @@ router
 	.get(verifyToken, jobController.getApplicatorListForGrower);
 router
 	.route('/farms-list/:growerId')
-	.get(verifyToken, jobController.getFarmListByGrowerID);
+	.get(verifyToken, jobController.getFarmListByGrowerId);
 
 	//upload job attachments
 router

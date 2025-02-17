@@ -96,8 +96,17 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 			password,
 			profileStatus: 'COMPLETE',
 		},
+		include: {
+			state: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+		},
 		omit: {
 			password: true,
+			stateId: true,
 		},
 	});
 	return udpatedUser;
@@ -153,8 +162,20 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 			role: 'GROWER',
 		},
 		include: {
+			state: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
 			farms: {
 				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 					permissions: {
 						where: {
 							applicatorId,
@@ -256,6 +277,12 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 			isArchivedByApplicator: true,
 			grower: {
 				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 					farms: {
 						where: {
 							permissions: {
@@ -267,6 +294,12 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 						include: {
 							permissions: true,
 							fields: true,
+							state: {
+								select: {
+									id: true,
+									name: true,
+								},
+							},
 						},
 					},
 				},
@@ -274,6 +307,7 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 					password: true,
 					businessName: true,
 					experience: true,
+					stateId: true,
 				},
 			},
 		},
@@ -326,7 +360,16 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 			isArchivedByGrower: true,
 			canManageFarms: true,
 			applicator: {
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
 				omit: {
+					stateId: true,
 					password: true, // Exclude sensitive data
 				},
 			},
@@ -406,11 +449,27 @@ const getPendingInvites = async (userId: number) => {
 		},
 		include: {
 			grower: {
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
 				omit: {
 					password: true,
 				},
 			},
 			applicator: {
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
 				omit: {
 					password: true,
 				},
@@ -582,6 +641,12 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			canManageFarms: true,
 			grower: {
 				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 					farms: {
 						where: {
 							permissions: {
@@ -597,6 +662,12 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 								},
 							}, // Include permissions to calculate farm permissions for the applicator
 							fields: true, // Include fields to calculate total acres
+							state: {
+								select: {
+									id: true,
+									name: true,
+								},
+							},
 						},
 						orderBy: {
 							id: 'desc',
@@ -607,6 +678,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 					password: true, // Exclude sensitive data
 					businessName: true,
 					experience: true,
+					stateId: true,
 				},
 			},
 		},

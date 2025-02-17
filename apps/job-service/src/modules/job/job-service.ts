@@ -61,14 +61,11 @@ const createJob = async (data: CreateJob) => {
 				})),
 			},
 			products: {
-				create: products.map(
-					({ name, ratePerAcre, totalAcres, price }) => ({
-						name,
-						ratePerAcre,
-						totalAcres,
-						price,
-					}),
-				),
+				create: products.map(({ productId, totalAcres, price }) => ({
+					productId,
+					totalAcres,
+					price,
+				})),
 			},
 			applicationFees: {
 				create: applicationFees.map(
@@ -81,8 +78,58 @@ const createJob = async (data: CreateJob) => {
 			},
 		},
 		include: {
-			fields: true,
-			products: true,
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			products: {
+				select: {
+					product: {
+						select: {
+							productName: true,
+							perAcreRate: true,
+						},
+					},
+					totalAcres: true,
+					price: true,
+				},
+			},
 			applicationFees: true,
 		},
 	});
@@ -124,7 +171,8 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 				},
 			},
 			fields: {
-				include: {
+				select: {
+					actualAcres: true,
 					field: {
 						select: {
 							name: true,
@@ -133,16 +181,19 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 						},
 					},
 				},
-				omit: {
-					createdAt: true,
-					updatedAt: true,
-				},
 			},
 			// products: true,
 			// applicationFees: true,
 		},
 	}); // Fetch all users
-	return jobs;
+	// Calculate total acres for each job
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
 
 // service for Job
@@ -176,7 +227,8 @@ const getJobById = async (jobId: number) => {
 				},
 			},
 			fields: {
-				include: {
+				select: {
+					actualAcres: true,
 					field: {
 						select: {
 							name: true,
@@ -185,17 +237,12 @@ const getJobById = async (jobId: number) => {
 						},
 					},
 				},
-				omit: {
-					createdAt: true,
-					updatedAt: true,
-				},
 			},
-			products: true,
-			applicationFees: true,
+			// products: true,
+			// applicationFees: true,
 		},
 		omit: {
 			applicatorId: true,
-			growerId: true,
 			fieldWorkerId: true,
 			farmId: true,
 		},
@@ -207,7 +254,14 @@ const getJobById = async (jobId: number) => {
 			'No job found for the given job Id.',
 		);
 	}
-	return job;
+
+	return {
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	};
 };
 
 // to delete job
@@ -247,17 +301,16 @@ const getAllPilotsByApplicator = async (applicatorId: number) => {
 		where: {
 			applicatorId,
 		},
-		select:{
-			workerType:true,
-			worker:{
-				select:{
-					id:true,
-					fullName:true,
-					role:true
-				}
-			}
+		select: {
+			workerType: true,
+			worker: {
+				select: {
+					id: true,
+					fullName: true,
+					role: true,
+				},
+			},
 		},
-	
 	}); // Fetch all users
 	return workers;
 };
@@ -315,7 +368,7 @@ const getApplicatorListForGrower = async (growerId: number) => {
 	return formatApplicators;
 };
 
-const getFarmListByGrowerID = async (
+const getFarmListByGrowerId = async (
 	applicatorId: number,
 	growerId: number,
 ) => {
@@ -331,6 +384,7 @@ const getFarmListByGrowerID = async (
 		select: {
 			id: true,
 			name: true,
+			farmImageUrl: true,
 			// isActive: true,
 			fields: {
 				select: {
@@ -411,6 +465,6 @@ export default {
 	getAllJobStatus,
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
-	getFarmListByGrowerID,
+	getFarmListByGrowerId,
 	uploadJobAttachments,
 };

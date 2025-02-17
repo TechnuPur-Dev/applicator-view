@@ -21,9 +21,7 @@ router
 		validateSchema(productValidation.productSchema),
 		productController.createProduct,
 	);
-router
-	.route('/all')
-	.get(verifyToken, productController.getAllProducts);
+router.route('/all').get(verifyToken, productController.getAllProducts);
 router
 	.route('/get-byId/:productId')
 	.get(
@@ -38,12 +36,14 @@ router
 		validateSchema(productValidation.updateProductSchema),
 		productController.updateProduct,
 	);
-	router
+router
 	.route('/delete/:productId')
 	.delete(
 		verifyToken,
 		validateSchema(productValidation.paramsSchema),
 		productController.deleteProduct,
 	);
-
+router
+	.route('/all/dropdown')
+	.get(verifyToken, productController.getAllProductsDropdown);
 export default router;

@@ -73,11 +73,11 @@ const getApplicatorListForGrower = catchAsync(
 		res.status(httpStatus.OK).json({ result: result });
 	},
 );
-const getFarmListByGrowerID = catchAsync(
+const getFarmListByGrowerId = catchAsync(
 	async (req: Request, res: Response) => {
 		const applicatorId = +req.payload.id;
 		const growerId = +req.params.growerId;
-		const result = await jobService.getFarmListByGrowerID(
+		const result = await jobService.getFarmListByGrowerId(
 			applicatorId,
 			growerId,
 		);
@@ -114,6 +114,6 @@ export default {
 	getAllJobStatus,
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
-	getFarmListByGrowerID,
+	getFarmListByGrowerId,
 	uploadJobAttachments
 };
