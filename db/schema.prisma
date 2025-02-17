@@ -32,13 +32,14 @@ model User {
   experience             Decimal?
   address1               String?
   address2               String?
-  state                  String?
+  stateId                Int @default(2)
   county                 String?
   township               String?
   zipCode                String?
   bio                    String?
   additionalInfo         String?
   profileStatus          ProfileStatus          @default(INCOMPLETE)
+  state                  State                  @relation(fields: [stateId], references: [id])
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   applicators            ApplicatorGrower[]     @relation("Applicators")
@@ -56,6 +57,7 @@ model User {
   supportTicketsCreated  SupportTicket[]        @relation("SupportTicketCreated")
   tableViews             TableView[]
   warrantyRegistrations  WarrantyRegistration[]
+  // Notification           Notification[]
 }
 
 model ApplicatorWorker {
@@ -104,22 +106,25 @@ model ApplicatorGrower {
 }
 
 model Farm {
-  id          Int              @id @default(autoincrement())
-  name        String?
-  createdById Int
-  growerId    Int
-  state       String?
-  county      String?
-  township    String?
-  zipCode     String?
-  isActive    Boolean
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  createdBy   User             @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  grower      User             @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
-  permissions FarmPermission[]
-  fields      Field[]
-  jobs        Job[]
+  id           Int              @id @default(autoincrement())
+  name         String?
+  farmImageUrl String?
+  createdById  Int
+  growerId     Int
+  stateId      Int @default(2)
+  county       String?
+  township     String?
+  zipCode      String?
+  isActive     Boolean
+  config       Json?
+  state        State            @relation(fields: [stateId], references: [id])
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  createdBy    User             @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  grower       User             @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
+  permissions  FarmPermission[]
+  fields       Field[]
+  jobs         Job[]
 }
 
 model FarmPermission {
@@ -138,21 +143,22 @@ model FarmPermission {
 }
 
 model Field {
-  id          Int        @id @default(autoincrement())
-  name        String?
-  crop        String?
-  acres       Decimal?
-  legal       String?
-  latitude    String?
-  longitude   String?
-  createdById Int
-  farmId      Int
-  config      Json?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  createdBy   User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  farm        Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
-  jobs        FieldJob[]
+  id            Int        @id @default(autoincrement())
+  name          String?
+  fieldImageUrl String?
+  crop          String?
+  acres         Decimal?
+  legal         String?
+  latitude      String?
+  longitude     String?
+  createdById   Int
+  farmId        Int
+  config        Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  createdBy     User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  farm          Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  jobs          FieldJob[]
 }
 
 model TableView {
@@ -192,6 +198,7 @@ model Job {
   applicationFees     JobApplicationFee[]
   products            JobProduct[]
   supportTickets      SupportTicket[]
+  // Notification        Notification?
 }
 
 model FieldJob {
@@ -296,6 +303,8 @@ model State {
   id       Int      @id @default(autoincrement())
   name     String   @unique
   counties County[]
+  User     User[]
+  Farm     Farm[]
 }
 
 model County {
@@ -316,6 +325,37 @@ model Township {
 
   @@unique([name, countyId])
 }
+
+// model Notification {
+//   id     Int  @id @default(autoincrement())
+//   userId Int
+//   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   type    NotificationType
+//   message String?
+//   isRead  Boolean          @default(false)
+
+//   // Nullable foreign keys for referencing related entities
+//   jobId Int? @unique // Only set if related to a job
+//   job   Job? @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt()
+// }
+
+// enum NotificationType {
+//   JOB_ASSIGNED
+//   JOB_COMPLETED
+//   JOB_REJECTED
+//   BID_PLACED
+//   BID_ACCEPTED
+//   PAYMENT_RECEIVED
+//   INVOICE_GENERATED
+//   ACCOUNT_INVITATION
+//   FIELD_UPDATED
+//   SYSTEM_ALERT
+//   ACCEPT_INVITE
+// }
 
 enum ProfileStatus {
   INCOMPLETE
