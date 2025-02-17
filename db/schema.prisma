@@ -32,7 +32,7 @@ model User {
   experience             Decimal?
   address1               String?
   address2               String?
-  stateId                Int @default(2)
+  stateId                Int                    @default(2)
   county                 String?
   township               String?
   zipCode                String?
@@ -111,7 +111,7 @@ model Farm {
   farmImageUrl String?
   createdById  Int
   growerId     Int
-  stateId      Int @default(2)
+  stateId      Int              @default(2)
   county       String?
   township     String?
   zipCode      String?
@@ -444,6 +444,9 @@ enum ViewTable {
   GROWER
   JOB
   APPLICATOR
+  PRODUCT
+  WORKER
+  USER_ADMIN
 }
 
 enum JobType {
