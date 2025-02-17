@@ -14,20 +14,36 @@ const jobStatusSchema: Schema = Joi.string()
 
 const createJobSchema = Joi.object({
 	body: Joi.object({
-		title: Joi.string().min(3).max(100).required(), // Job title validation
-		type: jobTypeSchema.required(), // Allowed job types (modify as needed)
-		source: jobSourceSchema.required(), // Allowed job sources
+		// Job details
+		source: jobSourceSchema.required(),
+		title: Joi.string().min(3).max(100).required(),
+		type: jobTypeSchema.required(),
 		growerId: Joi.number().integer().positive().required(),
-		applicatorId: Joi.number().integer().positive().optional(),
-		fieldWorkerId: Joi.number().integer().positive().optional(),
-		startDate: Joi.date().iso().required(), // Must be a valid date in ISO format
-		endDate: Joi.date().iso().greater(Joi.ref('startDate')).required(), // Must be after startDate
-		description: Joi.string().max(500).optional(),
-		farmId: Joi.number().integer().positive().required(), // Farm ID must be positive
-		sensitiveAreas: Joi.string().max(255).optional(),
-		adjacentCrops: Joi.string().max(255).optional(),
-		specialInstructions: Joi.string().max(500).optional(),
-		attachments: Joi.object().optional(), // Attachments should be a valid JSON object
+		applicatorId: Joi.number().integer().positive().allow(null).optional(),
+		fieldWorkerId: Joi.number().integer().positive().allow(null).optional(),
+
+		// Date validation
+		startDate: Joi.date().iso().required(),
+		endDate: Joi.date().iso().greater(Joi.ref('startDate')).required(),
+
+		// Optional description & instructions
+		description: Joi.string().max(500).allow('').optional(),
+		specialInstructions: Joi.string().max(500).allow('').optional(),
+
+		// Farm & Field Information
+		farmId: Joi.number().integer().positive().required(),
+		sensitiveAreas: Joi.string().max(255).allow('').optional(),
+		adjacentCrops: Joi.string().max(255).allow('').optional(),
+
+		// Attachments validation (assuming it stores file details)
+		attachments: Joi.array()
+			.items(
+				Joi.object({
+					url: Joi.string().uri().required(), // Ensure valid URL
+					name: Joi.string().max(255).required(),
+				}),
+			)
+			.default([]), // Default to empty array if not provided
 
 		// Fields array validation
 		fields: Joi.array()
@@ -37,7 +53,7 @@ const createJobSchema = Joi.object({
 					actualAcres: Joi.number().positive().optional(),
 				}),
 			)
-			.optional(),
+			.default([]),
 
 		// Products array validation
 		products: Joi.array()
@@ -52,7 +68,7 @@ const createJobSchema = Joi.object({
 					price: Joi.number().precision(2).positive().required(),
 				}),
 			)
-			.optional(),
+			.default([]),
 
 		// Application Fees array validation
 		applicationFees: Joi.array()
@@ -63,7 +79,7 @@ const createJobSchema = Joi.object({
 					perAcre: Joi.boolean().required(),
 				}),
 			)
-			.optional(),
+			.default([]),
 	}).required(),
 });
 
