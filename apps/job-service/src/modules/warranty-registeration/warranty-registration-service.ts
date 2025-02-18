@@ -137,8 +137,10 @@ const createWarrantyReg = async (createdById: number, data: CreateData) => {
 	return result;
 };
 
-const getAllWarrantyRegList = async () =>
-	await prisma.warrantyRegistration.findMany();
+const getAllWarrantyRegList = async (user: User) =>
+	await prisma.warrantyRegistration.findMany({
+		where: { createdById: user.id },
+	});
 const getWarrantyRegById = async (user: User, id: number) => {
 	const result = await prisma.warrantyRegistration.findUnique({
 		where: {

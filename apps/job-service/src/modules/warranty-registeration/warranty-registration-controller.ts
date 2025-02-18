@@ -58,8 +58,11 @@ const createWarrantyReg = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllWarrantyRegList = catchAsync(
 	async (req: Request, res: Response) => {
+		const currentUser = req.user;
 		const result =
-			await warrantyRegistrationService.getAllWarrantyRegList();
+			await warrantyRegistrationService.getAllWarrantyRegList(
+				currentUser,
+			);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
