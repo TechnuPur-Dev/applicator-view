@@ -18,11 +18,8 @@ const getAllAppliedUnits = catchAsync(async (req: Request, res: Response) => {
 const createProduct = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
 	const data = req.body;
-	const productData = await productService.createProduct(currentUser, data);
-	res.status(httpStatus.OK).json({
-		result: productData,
-		message: 'Product created successfully',
-	});
+	const result = await productService.createProduct(currentUser, data);
+	res.status(httpStatus.CREATED).json(result);
 });
 
 const getAllProducts = catchAsync(async (req: Request, res: Response) => {
@@ -32,24 +29,28 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getProductById = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.productId;
-	const productData = await productService.getProductById(Id);
-	res.status(httpStatus.OK).json({ result: productData });
+	const currentUser = req.user;
+	const id = +req.params.productId;
+	const result = await productService.getProductById(currentUser, id);
+	res.status(httpStatus.OK).json(result);
 });
 
 const updateProduct = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const productId = +req.params.productId;
 	const data = req.body;
-	const productData = await productService.updateProduct(productId, data);
-	res.status(httpStatus.OK).json({
-		message: 'Product updated successfully',
-		result: productData,
-	});
+	const result = await productService.updateProduct(
+		currentUser,
+		productId,
+		data,
+	);
+	res.status(httpStatus.OK).json(result);
 });
 
 const deleteProduct = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const productId = +req.params.productId;
-	const result = await productService.deleteProduct(productId);
+	const result = await productService.deleteProduct(currentUser, productId);
 	res.status(httpStatus.OK).json(result);
 });
 

@@ -3,69 +3,51 @@ import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { ApplicatorWorker } from './applicator-workers-types';
 import ApiError from '../../../../../shared/utils/api-error';
+import { User } from '../../../../../shared/types/global';
 //
 
-const createWorker = async (data: ApplicatorWorker, applicatorId: number) => {
-	const {
-	
-		firstName,
-		lastName,
-		email,
-		phoneNumber,
-		businessName,
-		address1,
-		address2,
-		stateId,
-		county,
-		township,
-		zipCode,
-		title,
-		pilotLicenseNumber,
-		businessLicenseNumber,
-		planeOrUnitNumber,
-		perAcrePricing,
-		percentageFee,
-		dollarPerAcre,
-		autoAcceptJobs,
-		canViewPricingDetails,
-		code,
-		lastLogin,
-	
-	} = data;
+const createWorker = async (user: User, data: ApplicatorWorker) => {
+	if (user.role !== 'APPLICATOR') {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'You are not authorized to perform this action.',
+		);
+	}
+
 	const workerExist = await prisma.user.findFirst({
 		where: {
 			email: {
-				equals: email,
+				equals: data.email,
 				mode: 'insensitive',
 			},
 		},
 	});
+
 	if (workerExist) {
 		throw new ApiError(
 			httpStatus.CONFLICT,
-			'user with this email already exist.',
+			'Invalid data or already exists.',
 		);
 	}
-	const [worker, applicatorWorker] = await prisma.$transaction(async (prisma) => {
+
+	return prisma.$transaction(async (prisma) => {
 		const worker = await prisma.user.create({
 			data: {
-				firstName,
-				lastName,
-				fullName: `${firstName} ${lastName}`,
-				email,
-				phoneNumber,
-				businessName,
-				address1,
-				address2,
-				stateId,
-				county,
-				township,
-				zipCode,
+				firstName: data.firstName,
+				lastName: data.lastName,
+				fullName: `${data.firstName} ${data.lastName}`,
+				email: data.email.toLowerCase(),
+				phoneNumber: data.phoneNumber,
+				businessName: data.businessName,
+				address1: data.address1,
+				address2: data.address2,
+				stateId: data.stateId,
+				county: data.county,
+				township: data.township,
+				zipCode: data.zipCode,
 				role: 'WORKER',
 			},
 			omit: {
-				profileImage:true,
-				thumbnailProfileImage:true,
 				password: true, // Exclude sensitive data
 				experience: true,
 				bio: true,
@@ -76,27 +58,26 @@ const createWorker = async (data: ApplicatorWorker, applicatorId: number) => {
 
 		const applicatorWorker = await prisma.applicatorWorker.create({
 			data: {
-				applicatorId: applicatorId,
+				applicatorId: user.id,
 				workerId: worker.id,
-				workerType: title,
-				pilotLicenseNumber: pilotLicenseNumber,
-				businessLicenseNumber: businessLicenseNumber,
-				planeOrUnitNumber: planeOrUnitNumber,
-				perAcrePricing: perAcrePricing,
-				percentageFee: percentageFee,
-				dollarPerAcre: dollarPerAcre,
-				autoAcceptJobs: autoAcceptJobs || false,
-				canViewPricingDetails: canViewPricingDetails || false,
-				code: code,
-				lastLogin: lastLogin,
+				workerType: data.title,
+				pilotLicenseNumber: data.pilotLicenseNumber,
+				businessLicenseNumber: data.businessLicenseNumber,
+				planeOrUnitNumber: data.planeOrUnitNumber,
+				perAcrePricing: data.perAcrePricing,
+				percentageFee: data.percentageFee,
+				dollarPerAcre: data.dollarPerAcre,
+				autoAcceptJobs: data.autoAcceptJobs ?? false,
+				canViewPricingDetails: data.canViewPricingDetails ?? false,
+				code: data.code,
+				lastLogin: new Date(), // Set current timestamp if null/undefined
 			},
 		});
 
-		return [worker,applicatorWorker];
+		return { ...worker, ...applicatorWorker };
 	});
-
-	return {worker,applicatorWorker:applicatorWorker};
 };
+
 const getAllWorker = async (applicatorId: number) => {
 	const workers = await prisma.applicatorWorker.findMany({
 		where: {
@@ -105,15 +86,15 @@ const getAllWorker = async (applicatorId: number) => {
 		include: {
 			worker: {
 				omit: {
-					profileImage:true,
-					thumbnailProfileImage:true,
+					profileImage: true,
+					thumbnailProfileImage: true,
 					password: true, // Exclude sensitive data
 					experience: true,
 					bio: true,
 					additionalInfo: true,
 					profileStatus: true,
-					createdAt:true,
-					updatedAt:true
+					createdAt: true,
+					updatedAt: true,
 				},
 			},
 		},
@@ -123,20 +104,20 @@ const getAllWorker = async (applicatorId: number) => {
 const getWorkerById = async (Id: number) => {
 	const workers = await prisma.applicatorWorker.findFirst({
 		where: {
-			workerId: Id
+			workerId: Id,
 		},
 		include: {
 			worker: {
 				omit: {
-					profileImage:true,
-					thumbnailProfileImage:true,
+					profileImage: true,
+					thumbnailProfileImage: true,
 					password: true, // Exclude sensitive data
 					experience: true,
 					bio: true,
 					additionalInfo: true,
 					profileStatus: true,
-					createdAt:true,
-					updatedAt:true
+					createdAt: true,
+					updatedAt: true,
 				},
 			},
 		},
@@ -156,25 +137,25 @@ const updateWorker = async (workerId: number, data: ApplicatorWorker) => {
 		canViewPricingDetails,
 		code,
 		lastLogin,
-	    ...userData
- // Remaining fields for applicatorWorker
+		...userData
+		// Remaining fields for applicatorWorker
 	} = data;
 	await prisma.$transaction(async (prisma) => {
 		const worker = await prisma.user.update({
 			where: {
-				id: workerId, // update worker in user model with their Id 
+				id: workerId, // update worker in user model with their Id
 			},
 			data: {
-				...userData
+				...userData,
 			},
 		});
 
-     const applicatorWorker	=await prisma.applicatorWorker.updateMany({
+		const applicatorWorker = await prisma.applicatorWorker.updateMany({
 			where: {
-			      workerId,
+				workerId,
 			},
 			data: {
-				workerType:title,
+				workerType: title,
 				pilotLicenseNumber,
 				businessLicenseNumber,
 				planeOrUnitNumber,
@@ -184,17 +165,17 @@ const updateWorker = async (workerId: number, data: ApplicatorWorker) => {
 				autoAcceptJobs,
 				canViewPricingDetails,
 				code,
-				lastLogin
+				lastLogin,
 			},
 		});
 
-		return [worker,applicatorWorker];
+		return [worker, applicatorWorker];
 	});
 
-	return {message:"updated successfully"};
+	return { message: 'updated successfully' };
 };
 const deleteWorker = async (Id: number) => {
-	await prisma.applicatorWorker.delete({
+	await prisma.user.delete({
 		where: {
 			id: Id,
 		},

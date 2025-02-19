@@ -61,6 +61,7 @@ const config = {
 		},
 		from: envVars.EMAIL_FROM,
 	},
+	googleCloudCredentials: envVars.GOOGLE_CLOUD_CREDENTIALS,
 };
 
 export default config; // Default export
