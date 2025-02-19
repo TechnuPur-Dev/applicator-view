@@ -2,6 +2,7 @@ import Joi, { Schema } from 'joi';
 import {
 	phoneNumberSchema,
 	passwordSchema,
+	inviteStatusSchema,
 } from '../../../../../shared/utils/joi-common-validations';
 
 const workerTypeSchema: Schema = Joi.string()
@@ -81,4 +82,10 @@ const updateSchema: Schema = Joi.object({
 		lastLogin: Joi.date().optional(),
 	}).required(),
 });
-export default { workerCreateSchema, paramsSchema, updateSchema };
+const updateInviteStatusSchema: Schema = Joi.object({
+	body: Joi.object({
+		status: inviteStatusSchema.required(),
+		workerId: Joi.number().integer().positive().required(),
+	}).required(),
+});
+export default { workerCreateSchema, paramsSchema, updateSchema ,updateInviteStatusSchema};
