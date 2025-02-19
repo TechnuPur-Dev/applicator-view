@@ -88,30 +88,56 @@ const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const files = req.files;
 	console.log('Uploaded file:', files);
-    
+
 	if (!files || !Array.isArray(files)) {
 		throw new Error('No files uploaded');
 	}
-
 
 	if (!files) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
 	const result = await jobService.uploadJobAttachments(userId, files);
 	res.status(httpStatus.OK).json({
-		message:'attachments uploaded successfully',
-		result
+		message: 'attachments uploaded successfully',
+		result,
 	});
 });
-const getJobs = catchAsync(
-	async (req: Request, res: Response) => {
-		const id = +req.payload.id;
-		const type = req.params.type;
+const getJobs = catchAsync(async (req: Request, res: Response) => {
+	const id = +req.payload.id;
+	const type = req.params.type;
 
-		const result = await jobService.getJobs(id,type);
+	const result = await jobService.getJobs(id, type);
+	res.status(httpStatus.OK).json({ result });
+});
+const getOpenJobs = catchAsync(
+	async (req: Request, res: Response) => {
+		const result = await jobService.getOpenJobs();
 		res.status(httpStatus.OK).json({ result });
 	},
 );
+const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
+	const id = +req.payload.id;
+	const result = await jobService.getJobsPendingFromMe(id);
+	res.status(httpStatus.OK).json({ result });
+});
+const getJobsPendingFromGrower = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.payload.id;
+		const result = await jobService.getJobsPendingFromGrowers(id);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
+
+const updatePendingJobStatus = catchAsync(
+	async (req: Request, res: Response) => {
+		const Id = +req.params.jobId;
+		const applicatorId = req.payload.id
+		const data = req.body;
+		const result = await jobService.updatePendingJobStatus(data, Id,applicatorId);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+
 const getJobByPilot = catchAsync(
 	async (req: Request, res: Response) => {
 		const applicatorId = +req.payload.id;
@@ -141,6 +167,10 @@ export default {
 	getFarmListByGrowerId,
 	uploadJobAttachments,
 	getJobs,
+	getOpenJobs,
+	getJobsPendingFromMe,
+	getJobsPendingFromGrower,
+	updatePendingJobStatus,
 	getJobByPilot,
 	getAssignedJobs
 };
