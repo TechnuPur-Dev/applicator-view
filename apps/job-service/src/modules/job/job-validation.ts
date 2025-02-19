@@ -9,7 +9,9 @@ const jobSourceSchema: Schema = Joi.string()
 	.required();
 
 const jobStatusSchema: Schema = Joi.string()
-	.valid('TO_BE_MAPPED', 'READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID')
+	.valid('TO_BE_MAPPED', 'READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID', 'PENDING',
+		'REJECTED',
+		'OPEN_FOR_BIDDING',)
 	.required();
 
 const createJobSchema = Joi.object({
