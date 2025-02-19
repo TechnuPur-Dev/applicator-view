@@ -32,14 +32,14 @@ model User {
   experience             Decimal?
   address1               String?
   address2               String?
-  stateId                Int                    @default(2)
+  stateId                Int?
   county                 String?
   township               String?
   zipCode                String?
   bio                    String?
   additionalInfo         String?
   profileStatus          ProfileStatus          @default(INCOMPLETE)
-  state                  State                  @relation(fields: [stateId], references: [id])
+  state                  State?                 @relation(fields: [stateId], references: [id])
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   applicators            ApplicatorGrower[]     @relation("Applicators")
@@ -57,12 +57,13 @@ model User {
   supportTicketsCreated  SupportTicket[]        @relation("SupportTicketCreated")
   tableViews             TableView[]
   warrantyRegistrations  WarrantyRegistration[]
-  // Notification           Notification[]
+  Notification           Notification[]
   Product                Product[]
+  DeviceToken            DeviceToken[]
 }
 
 model ApplicatorWorker {
-  id                    Int        @id @default(autoincrement())
+  id                    Int          @id @default(autoincrement())
   applicatorId          Int
   workerId              Int
   workerType            WorkerType
@@ -72,14 +73,16 @@ model ApplicatorWorker {
   perAcrePricing        Decimal?
   percentageFee         Decimal?
   dollarPerAcre         Decimal?
-  autoAcceptJobs        Boolean    @default(false)
-  canViewPricingDetails Boolean    @default(false)
+  autoAcceptJobs        Boolean      @default(false)
+  canViewPricingDetails Boolean      @default(false)
   code                  String?
   lastLogin             DateTime?
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
-  applicator            User       @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
-  worker                User       @relation("WorkerAssignments", fields: [workerId], references: [id])
+  isActive              Boolean      @default(true)
+  inviteStatus          InviteStatus @default(NOT_SENT)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  applicator            User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
+  worker                User         @relation("WorkerAssignments", fields: [workerId], references: [id])
 
   @@unique([applicatorId, workerId])
 }
@@ -112,7 +115,7 @@ model Farm {
   farmImageUrl String?
   createdById  Int
   growerId     Int
-  stateId      Int              @default(2)
+  stateId      Int
   county       String?
   township     String?
   zipCode      String?
@@ -199,7 +202,7 @@ model Job {
   applicationFees     JobApplicationFee[]
   products            JobProduct[]
   supportTickets      SupportTicket[]
-  // Notification        Notification?
+  Notification        Notification?
 }
 
 model FieldJob {
@@ -218,7 +221,7 @@ model FieldJob {
 model JobProduct {
   id         Int     @id @default(autoincrement())
   jobId      Int
-  productId  Int @default(2)
+  productId  Int
   totalAcres Decimal
   price      Decimal
   job        Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
@@ -298,7 +301,7 @@ model Product {
   comments                    String?
   createdAt                   DateTime        @default(now())
   updatedAt                   DateTime        @updatedAt
-  createdById                 Int             @default(1)
+  createdById                 Int
   craetedBy                   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
   JobProduct                  JobProduct[]
 }
@@ -330,36 +333,45 @@ model Township {
   @@unique([name, countyId])
 }
 
-// model Notification {
-//   id     Int  @id @default(autoincrement())
-//   userId Int
-//   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Notification {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-//   type    NotificationType
-//   message String?
-//   isRead  Boolean          @default(false)
+  type    NotificationType
+  message String?
+  isRead  Boolean          @default(false)
 
-//   // Nullable foreign keys for referencing related entities
-//   jobId Int? @unique // Only set if related to a job
-//   job   Job? @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  // Nullable foreign keys for referencing related entities
+  jobId Int? @unique // Only set if related to a job
+  job   Job? @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt()
-// }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+}
 
-// enum NotificationType {
-//   JOB_ASSIGNED
-//   JOB_COMPLETED
-//   JOB_REJECTED
-//   BID_PLACED
-//   BID_ACCEPTED
-//   PAYMENT_RECEIVED
-//   INVOICE_GENERATED
-//   ACCOUNT_INVITATION
-//   FIELD_UPDATED
-//   SYSTEM_ALERT
-//   ACCEPT_INVITE
-// }
+model DeviceToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  JOB_ASSIGNED
+  JOB_COMPLETED
+  JOB_REJECTED
+  BID_PLACED
+  BID_ACCEPTED
+  PAYMENT_RECEIVED
+  INVOICE_GENERATED
+  ACCOUNT_INVITATION
+  FIELD_UPDATED
+  SYSTEM_ALERT
+  ACCEPT_INVITE
+}
 
 enum ProfileStatus {
   INCOMPLETE
