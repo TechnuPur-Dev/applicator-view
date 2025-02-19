@@ -1,9 +1,13 @@
 import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { ApplicatorWorker } from './applicator-workers-types';
+import { ApplicatorWorker, UpdateStatus } from './applicator-workers-types';
 import ApiError from '../../../../../shared/utils/api-error';
 import { User } from '../../../../../shared/types/global';
+import {
+	mailHtmlTemplate,
+	sendEmail,
+} from '../../../../../shared/helpers/node-mailer';
 //
 
 const createWorker = async (user: User, data: ApplicatorWorker) => {
@@ -24,10 +28,13 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 	});
 
 	if (workerExist) {
-		throw new ApiError(
-			httpStatus.CONFLICT,
-			'Invalid data or already exists.',
-		);
+		updateInviteStatus(user.id, {
+			workerId: workerExist.id,
+			status: 'PENDING',
+		});
+		return {
+			message: 'Worker already exists, invite sent successfully.',
+		};
 	}
 
 	return prisma.$transaction(async (prisma) => {
@@ -182,10 +189,85 @@ const deleteWorker = async (Id: number) => {
 	});
 	return { result: 'Deleted successfully' };
 };
+const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
+	const { workerId, status } = data;
+	if (status === 'PENDING') {
+		const user = await prisma.applicatorWorker.update({
+			where: {
+				applicatorId_workerId: { applicatorId, workerId }, 
+			},
+			include: {
+				worker: {
+					select: {
+						email: true,
+					},
+				},
+			},
+			data: {
+				inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			},
+		});
+		const subject = 'Email Invitation';
+		const message = `
+	You are invited to join our platform!<br><br>
+	If you did not expect this invitation, please ignore this email.
+	`;
+		if (user) {
+			const email = user?.worker?.email;
+
+			if (!email) {
+				throw new Error(
+					'Email address is not available for this worker.',
+				);
+			}
+
+			const html = await mailHtmlTemplate(subject, message);
+
+			await sendEmail({
+				emailTo: email,
+				subject,
+				text: 'Request Invitation',
+				html,
+			});
+			return {
+				message: 'Invite sent successfully.',
+			};
+		}
+	}
+	if (status === 'ACCEPTED') {
+		await prisma.applicatorWorker.update({
+			where: {
+				applicatorId_workerId: { applicatorId, workerId },
+			},
+
+			data: {
+				inviteStatus: 'ACCEPTED', 
+			},
+		});
+		return {
+			message: 'Invite accepted successfully.',
+		};
+	}
+	if (status === 'REJECTED') {
+		await prisma.applicatorWorker.update({
+			where: {
+				applicatorId_workerId: { applicatorId, workerId }, 
+			},
+
+			data: {
+				inviteStatus: 'REJECTED', 
+			},
+		});
+		return {
+			message: 'Invite rejected successfully.',
+		};
+	}
+};
 export default {
 	createWorker,
 	getAllWorker,
 	getWorkerById,
 	updateWorker,
 	deleteWorker,
+	updateInviteStatus,
 };

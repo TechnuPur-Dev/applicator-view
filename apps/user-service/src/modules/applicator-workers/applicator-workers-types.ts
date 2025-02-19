@@ -1,4 +1,4 @@
-import { WorkerType } from '@prisma/client';
+import { InviteStatus, WorkerType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 interface ApplicatorWorker {
@@ -25,5 +25,8 @@ interface ApplicatorWorker {
     code:string
     lastLogin: Date   
 }
-
-export {ApplicatorWorker}
+interface UpdateStatus {
+	status: InviteStatus;
+	workerId: number;
+}
+export {ApplicatorWorker,UpdateStatus}
