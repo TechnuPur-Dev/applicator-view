@@ -276,22 +276,87 @@ const deleteJob = async (jobId: number) => {
 		message: 'Job deleted successfully.',
 	};
 };
-
 const updateJobByApplicator = async (
-	data: { status: JobStatus; fieldWorkerId: number },
+	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
 	jobId: number,
 ) => {
+	// Fetch current job status from database
+	const job = await prisma.job.findUnique({
+		where: { id: jobId },
+		select: { status: true },
+	});
+
+	if (!job) {
+		throw new Error('Job not found.');
+	}
+
+	const currentStatus = job.status;
+	const requestedStatus = data.status;
+
+	// Check if requested  is valid
+	if (data.status) {
+		if (
+			(currentStatus === 'READY_TO_SPRAY' &&
+				requestedStatus !== 'SPRAYED') ||
+			(currentStatus === 'SPRAYED' && requestedStatus !== 'INVOICED') ||
+			(currentStatus === 'INVOICED' && requestedStatus !== 'PAID') ||
+			(currentStatus === 'PAID' && requestedStatus !== 'PAID')
+		) {
+			throw new Error(
+				`Invalid status from ${currentStatus} to ${requestedStatus}.`,
+			);
+		}
+	}
+
+	if (data.fieldWorkerId) {
+		if (currentStatus === 'READY_TO_SPRAY') {
+			await prisma.job.update({
+				where: { id: jobId },
+				data: {
+					...data,
+					fieldWorkerId: data.fieldWorkerId,
+				},
+			});
+		} else {
+			throw new Error(`job status is invalid to assigne a pilot.`);
+		}
+	}
+
+	// Update job status
 	await prisma.job.update({
 		where: { id: jobId },
 		data: {
 			...data,
 			status: data.status,
-			fieldWorkerId: data.fieldWorkerId,
 		},
 	});
 
-	return { message: 'Job updated successfully.' };
+	return {
+		message: `Job updated successfully.`,
+	};
 };
+
+// const updateJobByApplicator = async (
+// 	data: { status: JobStatus; fieldWorkerId: number },
+// 	jobId: number,
+// ) => {
+// 	const job = await prisma.job.findUnique({
+// 		where: { id: jobId },
+// 		select: { status: true },
+// 	  });
+// 	  if (job?.status === "READY_TO_SPRAY" && data.status === "SPRAYED") {
+
+// 		await prisma.job.update({
+// 			where: { id: jobId },
+// 			data: {
+// 				status: data.status,
+// 				fieldWorkerId: data.fieldWorkerId,
+// 			},
+// 		});
+// 	  }
+
+// 	return { message: 'Job updated successfully.' };
+// };
 
 // get pilots by applicator by Grower
 
