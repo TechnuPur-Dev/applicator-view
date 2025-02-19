@@ -238,7 +238,19 @@ const getJobById = async (jobId: number) => {
 					},
 				},
 			},
-			// products: true,
+			products: {
+				select: {
+					id: true,
+					totalAcres: true,
+					product: {
+						select: {
+							id: true,
+							productName: true,
+							perAcreRate: true,
+						},
+					},
+				},
+			},
 			// applicationFees: true,
 		},
 		omit: {
@@ -547,6 +559,193 @@ const getJobs = async (growerId: number, type: string) => {
 	}
 	return jobs;
 };
+// get apis for Bidding screen
+const getOpenJobs = async () => {
+	const jobs = await prisma.job.findMany({
+		where: {
+			source: 'BIDDING',
+			// status:'OPEN_FOR_BIDDING'
+		},
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			// products: true,
+			// applicationFees: true,
+		},
+	});
+
+	return jobs;
+};
+const getJobsPendingFromGrowers = async (Id: number) => {
+	const jobs = await prisma.job.findMany({
+		where: {
+			applicatorId: Id,
+			source: 'APPLICATOR',
+			status: 'PENDING',
+		},
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			// products: true,
+			// applicationFees: true,
+		},
+	});
+
+	return jobs;
+};
+
+// get job for applicator pending approval screen
+const getJobsPendingFromMe = async (Id: number) => {
+	const jobs = await prisma.job.findMany({
+		where: {
+			applicatorId: Id,
+			source: 'GROWER',
+			status: 'PENDING',
+		},
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			// products: true,
+			// applicationFees: true,
+		},
+	});
+
+	return jobs;
+};
+
+
+const updatePendingJobStatus = async (
+	data: { status: JobStatus }, // fieldWorkerId optional
+	jobId: number,
+	applicatorId:number
+) => {
+	// Fetch current job  from database
+	const job = await prisma.job.findUnique({
+		where: { 
+			id: jobId ,
+			applicatorId:applicatorId
+		},
+	});
+	if (!job) {
+		throw new Error('Job not found.');
+	}
+
+	// Check if requested  is valid
+	if (data.status) {
+		// Update job status
+		await prisma.job.update({
+			where: { id: jobId },
+			data: {
+				...data,
+				status: data.status,
+			},
+		});
+	}
+
+	return {
+		message: `Job updated successfully.`,
+	};
+};
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -561,4 +760,8 @@ export default {
 	getFarmListByGrowerId,
 	uploadJobAttachments,
 	getJobs,
+	getOpenJobs,
+	getJobsPendingFromMe,
+	getJobsPendingFromGrowers,
+	updatePendingJobStatus,
 };

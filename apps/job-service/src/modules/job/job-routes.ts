@@ -70,5 +70,14 @@ router
 .route('/upload/job-attachments')
 .post(verifyToken, uploadMiddleware, jobController.uploadJobAttachments);
 router.route('/get-jobs/:type').get(verifyToken,validateSchema(jobValidation.jobSourceParamSchema), jobController.getJobs);
+router.route('/open-jobs').get(verifyToken,jobController.getOpenJobs);
+router.route('/pending/from-me').get(verifyToken, jobController.getJobsPendingFromMe);
+router.route('/pending/from-grower').get(verifyToken,jobController.getJobsPendingFromGrower);
+router.route('/update/job-status/:jobId').put(
+	verifyToken,
+	validateSchema(jobValidation.jobStatusParamSchema),
+	jobController.updatePendingJobStatus,
+);
+
 
 export default router;

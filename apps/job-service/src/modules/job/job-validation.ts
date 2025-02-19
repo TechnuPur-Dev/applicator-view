@@ -98,4 +98,13 @@ const jobSourceParamSchema: Schema = Joi.object({
 	}).required(),
 	
 });
-export default { createJobSchema, paramsSchema, updateJobSchema,jobSourceParamSchema };
+const jobStatusParamSchema: Schema = Joi.object({
+	params: Joi.object({
+		jobId: Joi.number().integer().positive(),
+	}).required(),
+	body: Joi.object({
+		status: Joi.string()
+		.valid('READY_TO_SPRAY', 'REJECTED')
+	}).optional(),
+});
+export default { createJobSchema, paramsSchema, updateJobSchema,jobSourceParamSchema ,jobStatusParamSchema};
