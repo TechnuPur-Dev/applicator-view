@@ -33,17 +33,17 @@ const productUnitSchema = Joi.string()
 
 const productSchema: Schema = Joi.object({
 	body: Joi.object({
-		baseProductName: Joi.string().min(1).max(50).required(), 
-		productName: Joi.string().min(1).max(50).required(), 
+		baseProductName: Joi.string().min(1).max(50).required(),
+		productName: Joi.string().min(1).max(50).required(),
 		code: Joi.number().integer().positive().optional(),
 		category: productCategorySchema.required(),
 		restrictedUse: Joi.boolean().required(),
-		epaRegistration: Joi.string().min(1).max(50).optional(), 
-		company: Joi.string().min(1).max(50).optional(), 
+		epaRegistration: Joi.string().min(1).max(50).optional(),
+		company: Joi.string().min(1).max(50).optional(),
 		inventoryUnit: productUnitSchema.required(),
 		appliedUnits: productUnitSchema.required(),
 		perAcreRate: Joi.number().positive().precision(2).optional(),
-		density: Joi.string().min(1).max(50).optional(), 
+		density: Joi.string().min(1).max(50).optional(),
 		treatAsLiquid: Joi.boolean().required(),
 		canadSalesTax: Joi.number().positive().precision(2).optional(),
 		primaryNutrient: Joi.string().min(1).max(50).optional(),
@@ -53,34 +53,34 @@ const productSchema: Schema = Joi.object({
 		ticketPricePerMonth: Joi.object().required(),
 		jobPrice: Joi.number().positive().precision(2).required(),
 		ticketPrice: Joi.number().positive().precision(2).required(),
-		personalProtectiveEquipment: Joi.string().min(1).max(50).optional(),
-		preHarvestInterval: Joi.string().min(1).max(50).optional(),
-		comments: Joi.string().min(1).max(50).optional(),
+		personalProtectiveEquipment: Joi.string().allow('').max(50).optional(),
+		preHarvestInterval: Joi.string().allow('').max(50).optional(),
+		comments: Joi.string().allow('').max(50).optional(),
 	}).required(),
 });
 
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
-		productId: Joi.number().integer().positive().required(), 
+		productId: Joi.number().integer().positive().required(),
 	}).required(),
 });
 
 const updateProductSchema: Schema = Joi.object({
 	params: Joi.object({
-		productId: Joi.number().integer().positive().required(), 
+		productId: Joi.number().integer().positive().required(),
 	}).required(),
 	body: Joi.object({
-		baseProductName: Joi.string().min(1).max(50).optional(), 
-		productName: Joi.string().min(1).max(50).optional(), 
+		baseProductName: Joi.string().min(1).max(50).optional(),
+		productName: Joi.string().min(1).max(50).optional(),
 		code: Joi.number().integer().positive().optional(),
 		category: productCategorySchema.optional(),
 		restrictedUse: Joi.boolean().optional(),
-		epaRegistration: Joi.string().min(1).max(50).optional(), 
-		company: Joi.string().min(1).max(50).optional(), 
+		epaRegistration: Joi.string().min(1).max(50).optional(),
+		company: Joi.string().min(1).max(50).optional(),
 		inventoryUnit: productCategorySchema.optional(),
 		appliedUnits: productCategorySchema.optional(),
 		perAcreRate: Joi.number().positive().precision(2).optional(),
-		density: Joi.string().min(1).max(50).optional(), 
+		density: Joi.string().min(1).max(50).optional(),
 		treatAsLiquid: Joi.boolean().optional(),
 		canadSalesTax: Joi.number().positive().precision(2).optional(),
 		primaryNutrient: Joi.string().min(1).max(50).optional(),

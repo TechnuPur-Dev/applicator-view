@@ -746,6 +746,16 @@ const updatePendingJobStatus = async (
 	};
 };
 
+const getJobByPilot = async (applicatorId:number,pilotId: number) => {
+	return await prisma.job.findMany({
+		where: { applicatorId,fieldWorkerId: pilotId },
+	});
+};
+const getAssignedJobs = async (applicatorId:number) => {
+	return await prisma.job.findMany({
+		where: { applicatorId,status:"READY_TO_SPRAY",fieldWorkerId: null },
+	});
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -764,4 +774,6 @@ export default {
 	getJobsPendingFromMe,
 	getJobsPendingFromGrowers,
 	updatePendingJobStatus,
+	getJobByPilot,
+	getAssignedJobs
 };
