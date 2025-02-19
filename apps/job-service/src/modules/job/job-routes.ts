@@ -69,4 +69,6 @@ router
 router
 .route('/upload/job-attachments')
 .post(verifyToken, uploadMiddleware, jobController.uploadJobAttachments);
+router.route('/get-jobs/:type').get(verifyToken,validateSchema(jobValidation.jobSourceParamSchema), jobController.getJobs);
+
 export default router;

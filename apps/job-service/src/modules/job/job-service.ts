@@ -453,7 +453,35 @@ const uploadJobAttachments = async (
 	);
 	return uploadedFiles;
 };
+const getJobs = async (growerId: number, type: string) => {
+	const user = await prisma.user.findUnique({
+		where: { id: growerId },
+		select: { role: true },
+	});
 
+	if (!user) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
+	}
+
+	if (user.role !== 'GROWER') {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Access denied, only growers can view jobs',
+		);
+	}
+	let jobs = await prisma.job.findMany({
+		where: { growerId },
+	});
+
+	if (type === 'BIDDING') {
+		jobs = jobs.filter((job) => job.source === 'BIDDING');
+	} else if (type === 'GROWER') {
+		jobs = jobs.filter((job) => job.source === 'GROWER');
+	} else if (type === 'APPLICATOR') {
+		jobs = jobs.filter((job) => job.source === 'APPLICATOR');
+	}
+	return jobs;
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -467,4 +495,5 @@ export default {
 	getApplicatorListForGrower,
 	getFarmListByGrowerId,
 	uploadJobAttachments,
+	getJobs,
 };

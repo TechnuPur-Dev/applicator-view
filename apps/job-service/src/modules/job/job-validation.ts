@@ -88,5 +88,12 @@ const paramsSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 });
-
-export default { createJobSchema, paramsSchema, updateJobSchema };
+const jobSourceParamSchema: Schema = Joi.object({
+	params:Joi.object({
+		type:  Joi.string()
+		.valid('APPLICATOR', 'GROWER', 'BIDDING','ALL')
+		.required()
+	}).required(),
+	
+});
+export default { createJobSchema, paramsSchema, updateJobSchema,jobSourceParamSchema };

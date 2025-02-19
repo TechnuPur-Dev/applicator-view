@@ -103,6 +103,15 @@ const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 		result
 	});
 });
+const getJobs = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.payload.id;
+		const type = req.params.type;
+
+		const result = await jobService.getJobs(id,type);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -115,5 +124,6 @@ export default {
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerId,
-	uploadJobAttachments
+	uploadJobAttachments,
+	getJobs
 };
