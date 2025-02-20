@@ -607,7 +607,14 @@ const getOpenJobs = async () => {
 		},
 	});
 
-	return jobs;
+		// Calculate total acres for each job
+		return jobs.map((job) => ({
+			...job,
+			totalAcres: job.fields.reduce(
+				(sum, f) => sum + (f.actualAcres || 0),
+				0,
+			), // Sum actualAcres, default to 0 if null
+		}));
 };
 // get job for applicator pending approval screen
 const getJobsPendingFromMe = async (Id: number,currentUser:User) => {
@@ -669,8 +676,14 @@ const getJobsPendingFromMe = async (Id: number,currentUser:User) => {
 			// applicationFees: true,
 		},
 	});
-
-	return jobs;
+	// Calculate total acres for each job
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
 const getJobsPendingFromGrowers = async (Id: number) => {
 	
@@ -721,7 +734,16 @@ const getJobsPendingFromGrowers = async (Id: number) => {
 		},
 	});
 
-	return jobs;
+		// Calculate total acres for each job
+		return jobs.map((job) => ({
+			...job,
+			totalAcres: job.fields.reduce(
+				(sum, f) => sum + (f.actualAcres || 0),
+				0,
+			), // Sum actualAcres, default to 0 if null
+		}));
+
+
 };
 const getJobsPendingFromApplicators = async (Id: number) => {
 	
@@ -772,7 +794,14 @@ const getJobsPendingFromApplicators = async (Id: number) => {
 		},
 	});
 
-	return jobs;
+	// Calculate total acres for each job
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
 
 
