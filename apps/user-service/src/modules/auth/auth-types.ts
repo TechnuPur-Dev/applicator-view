@@ -23,6 +23,7 @@ interface RegisterUser {
 interface LoginUser {
 	email: string;
 	password: string;
+	deviceToken?: string;
 }
 interface verifyOTPAndRegisterEmail {
 	email: string;
