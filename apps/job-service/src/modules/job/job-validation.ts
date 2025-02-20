@@ -98,6 +98,7 @@ const jobSourceParamSchema: Schema = Joi.object({
 	}).required(),
 	
 });
+
 const jobStatusParamSchema: Schema = Joi.object({
 	params: Joi.object({
 		jobId: Joi.number().integer().positive(),
@@ -108,3 +109,13 @@ const jobStatusParamSchema: Schema = Joi.object({
 	}).optional(),
 });
 export default { createJobSchema, paramsSchema, updateJobSchema,jobSourceParamSchema ,jobStatusParamSchema};
+
+const pilotJobsParamSchema: Schema = Joi.object({
+	params:Joi.object({
+		pilotId: Joi.number().integer().positive()
+		.required()
+	}).required(),
+	
+});
+export default { createJobSchema, paramsSchema, updateJobSchema,jobSourceParamSchema,pilotJobsParamSchema };
+

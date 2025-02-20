@@ -37,10 +37,18 @@ const deleteWorker = catchAsync(async (req: Request, res: Response) => {
 	const result = await applicatorWorkersServices.deleteWorker(id);
 	res.status(httpStatus.OK).json(result);
 });
+const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
+	
+	const data = req.body;
+	const result = await applicatorWorkersServices.updateInviteStatus(applicatorId,data);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createWorker,
 	getAllWorker,
 	getWorkerById,
 	updateWorker,
 	deleteWorker,
+	updateInviteStatus
 };

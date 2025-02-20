@@ -80,5 +80,7 @@ router.route('/update/job-status/:jobId').put(
 	jobController.updatePendingJobStatus,
 );
 
+router.route('/get-assignedjobs').get(verifyToken,jobController.getAssignedJobs );
+router.route('/get-jobsbypilot/:pilotId').get(verifyToken,validateSchema(jobValidation.pilotJobsParamSchema),jobController.getJobByPilot );
 
 export default router;
