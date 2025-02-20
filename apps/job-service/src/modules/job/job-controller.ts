@@ -105,8 +105,9 @@ const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 const getJobs = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.payload.id;
 	const type = req.params.type;
+	const role= req.user.role;
 
-	const result = await jobService.getJobs(id, type);
+	const result = await jobService.getJobs(id, type,role);
 	res.status(httpStatus.OK).json({ result });
 });
 const getOpenJobs = catchAsync(

@@ -530,25 +530,52 @@ const uploadJobAttachments = async (
 	);
 	return uploadedFiles;
 };
-const getJobs = async (growerId: number, type: string) => {
-	const user = await prisma.user.findUnique({
-		where: { id: growerId },
-		select: { role: true },
-	});
+const getJobs = async (growerId: number, type: string,role:string) => {
 
-	if (!user) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
-	}
-
-	if (user.role !== 'GROWER') {
+	if (role !== 'GROWER') {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
 			'Access denied, only growers can view jobs',
 		);
 	}
 	let jobs = await prisma.job.findMany({
-		where: { growerId },
-	});
+		where: {
+			growerId,
+		},
+		include: {
+			applicator: {
+				select: {
+					
+					fullName: true,
+					businessName:true
+				},
+			},
+			
+			farm: {
+				select: {
+					name: true,
+					
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			// products: true,
+			// applicationFees: true,
+		},
+	}); // Fetch all users
+	// Calculate total acres for each job
+	
+	
 
 	if (type === 'BIDDING') {
 		jobs = jobs.filter((job) => job.source === 'BIDDING');
@@ -557,7 +584,13 @@ const getJobs = async (growerId: number, type: string) => {
 	} else if (type === 'APPLICATOR') {
 		jobs = jobs.filter((job) => job.source === 'APPLICATOR');
 	}
-	return jobs;
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
 // get apis for Bidding screen
 const getOpenJobs = async () => {
