@@ -5,8 +5,9 @@ import jobService from './job-service';
 
 // Controller to create job
 const createJob = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
 	const data = req.body;
-	const result = await jobService.createJob(data);
+	const result = await jobService.createJob(currentUser, data);
 	res.status(httpStatus.CREATED).json(result);
 });
 const getAllJobsByApplicator = catchAsync(
@@ -105,22 +106,20 @@ const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 const getJobs = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.payload.id;
 	const type = req.params.type;
-	const role= req.user.role;
+	const role = req.user.role;
 
-	const result = await jobService.getJobs(id, type,role);
+	const result = await jobService.getJobs(id, type, role);
 	res.status(httpStatus.OK).json({ result });
 });
-const getOpenJobs = catchAsync(
-	async (req: Request, res: Response) => {
-		const result = await jobService.getOpenJobs();
-		res.status(httpStatus.OK).json({ result });
-	},
-);
+const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
+	const result = await jobService.getOpenJobs();
+	res.status(httpStatus.OK).json({ result });
+});
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.payload.id;
-	const currentUser = req.user
-	const result = await jobService.getJobsPendingFromMe(id,currentUser);
+	const currentUser = req.user;
+	const result = await jobService.getJobsPendingFromMe(id, currentUser);
 	res.status(httpStatus.OK).json({ result });
 });
 const getJobsPendingFromGrower = catchAsync(
@@ -130,7 +129,7 @@ const getJobsPendingFromGrower = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
-// for grower approval screen 
+// for grower approval screen
 const getJobsPendingFromApplicators = catchAsync(
 	async (req: Request, res: Response) => {
 		const id = +req.payload.id;
@@ -142,28 +141,28 @@ const getJobsPendingFromApplicators = catchAsync(
 const updatePendingJobStatus = catchAsync(
 	async (req: Request, res: Response) => {
 		const Id = +req.params.jobId;
-		const applicatorId = req.payload.id
+		const applicatorId = req.payload.id;
 		const data = req.body;
-		const result = await jobService.updatePendingJobStatus(data, Id,applicatorId);
+		const result = await jobService.updatePendingJobStatus(
+			data,
+			Id,
+			applicatorId,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
 
-const getJobByPilot = catchAsync(
-	async (req: Request, res: Response) => {
-		const applicatorId = +req.payload.id;
-		const pilotId = +req.params.pilotId;
-		const result = await jobService.getJobByPilot(applicatorId,pilotId);
-		res.status(httpStatus.OK).json({ result });
-	},
-);
-const getAssignedJobs = catchAsync(
-	async (req: Request, res: Response) => {
-		const applicatorId = +req.payload.id;
-		const result = await jobService.getAssignedJobs(applicatorId);
-		res.status(httpStatus.OK).json({ result });
-	},
-);
+const getJobByPilot = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = +req.payload.id;
+	const pilotId = +req.params.pilotId;
+	const result = await jobService.getJobByPilot(applicatorId, pilotId);
+	res.status(httpStatus.OK).json({ result });
+});
+const getAssignedJobs = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = +req.payload.id;
+	const result = await jobService.getAssignedJobs(applicatorId);
+	res.status(httpStatus.OK).json({ result });
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -184,5 +183,5 @@ export default {
 	getJobsPendingFromApplicators,
 	updatePendingJobStatus,
 	getJobByPilot,
-	getAssignedJobs
+	getAssignedJobs,
 };

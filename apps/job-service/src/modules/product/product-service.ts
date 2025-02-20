@@ -118,6 +118,7 @@ const getAllProductsDropdown = async (user: User) => {
 			productName: true,
 			perAcreRate: true,
 		},
+		orderBy: { id: 'desc' },
 	});
 };
 

@@ -3,7 +3,7 @@ import { prisma } from '../libs/prisma-client';
 import uniq from 'lodash/uniq';
 
 interface PushNotificationParams {
-	userIds: number | number[];
+	userIds: number | number[] | undefined;
 	title: string;
 	message?: string;
 	payload?: Record<string, unknown>;
@@ -23,8 +23,7 @@ interface SingleNotificationParams {
 	payload?: Record<string, unknown>;
 	notificationType: string;
 }
-
-export const sendPushNotifications = async ({
+const sendPushNotifications = async ({
 	userIds,
 	title,
 	message,
@@ -56,7 +55,7 @@ export const sendPushNotifications = async ({
 	);
 };
 
-export const sendSingleNotification = async ({
+const sendSingleNotification = async ({
 	deviceToken,
 	topicName,
 	conditionExpression,
@@ -92,3 +91,5 @@ export const sendSingleNotification = async ({
 		console.error('Error sending notification:', error);
 	}
 };
+
+export { sendPushNotifications };

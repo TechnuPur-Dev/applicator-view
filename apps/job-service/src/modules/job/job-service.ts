@@ -13,39 +13,15 @@ import { User } from '../../../../../shared/types/global';
 // import { object } from 'joi';
 // import config from '../../../../../shared/config/env-config';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
+import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 
 // create grower
-const createJob = async (data: CreateJob) => {
-	const {
-		title,
-		type,
-		source,
-		status,
-		growerId,
-		applicatorId,
-		fieldWorkerId,
-		startDate,
-		endDate,
-		description,
-		farmId,
-		sensitiveAreas,
-		adjacentCrops,
-		specialInstructions,
-		attachments,
-		fields = [],
-		products = [],
-		applicationFees = [],
-	} = data;
-
-	const newJob = await prisma.job.create({
-		data: {
+const createJob = async (user: User, data: CreateJob) => {
+	if (user.role === 'APPLICATOR') {
+		const {
 			title,
 			type,
-			source,
-			status,
 			growerId,
-			applicatorId,
-			fieldWorkerId,
 			startDate,
 			endDate,
 			description,
@@ -53,88 +29,147 @@ const createJob = async (data: CreateJob) => {
 			sensitiveAreas,
 			adjacentCrops,
 			specialInstructions,
-			attachments,
-			fields: {
-				create: fields.map(({ fieldId, actualAcres }) => ({
-					fieldId,
-					actualAcres,
-				})),
-			},
-			products: {
-				create: products.map(({ productId, totalAcres, price }) => ({
-					productId,
-					totalAcres,
-					price,
-				})),
-			},
-			applicationFees: {
-				create: applicationFees.map(
-					({ description, rateUoM, perAcre }) => ({
-						description,
-						rateUoM,
-						perAcre,
-					}),
-				),
-			},
-		},
-		include: {
-			grower: {
-				select: {
-					firstName: true,
-					lastName: true,
-					fullName: true,
-					email: true,
-					phoneNumber: true,
-				},
-			},
-			fieldWorker: {
-				select: {
-					fullName: true,
-				},
-			},
-			farm: {
-				select: {
-					name: true,
-					state: {
-						select: {
-							id: true,
-							name: true,
-						},
-					},
-					county: true,
-					township: true,
-					zipCode: true,
-				},
-			},
-			fields: {
-				select: {
-					actualAcres: true,
-					field: {
-						select: {
-							name: true,
-							acres: true,
-							crop: true,
-						},
-					},
-				},
-			},
-			products: {
-				select: {
-					product: {
-						select: {
-							productName: true,
-							perAcreRate: true,
-						},
-					},
-					totalAcres: true,
-					price: true,
-				},
-			},
-			applicationFees: true,
-		},
-	});
+			attachments = [],
+			fields = [],
+			products = [],
+			applicationFees = [],
+		} = data;
 
-	return newJob;
+		const hasFarmPermission = await prisma.applicatorGrower.count({
+			where: {
+				applicatorId: user.id,
+				growerId,
+				grower: {
+					farms: {
+						some: {
+							id: farmId,
+							permissions: {
+								some: { applicatorId: user.id, canView: true },
+							},
+						},
+					},
+				},
+			},
+		});
+		if (!hasFarmPermission) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access this farm.',
+			);
+		}
+
+		const productIds = products.map(({ productId }) => productId);
+		const productCount = await prisma.product.count({
+			where: { id: { in: productIds }, createdById: user.id },
+		});
+		if (productCount !== productIds.length) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access these products.',
+			);
+		}
+
+		const fieldIds = fields.map(({ fieldId }) => fieldId);
+		const fieldCount = await prisma.field.count({
+			where: { id: { in: fieldIds }, farmId },
+		});
+		if (fieldCount !== fieldIds.length) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access these fields.',
+			);
+		}
+
+		const job = await prisma.job.create({
+			data: {
+				title,
+				type,
+				source: 'APPLICATOR',
+				status: 'PENDING',
+				growerId,
+				applicatorId: user.id,
+				startDate,
+				endDate,
+				description,
+				farmId,
+				sensitiveAreas,
+				adjacentCrops,
+				specialInstructions,
+				attachments,
+				fields: {
+					create: fields.map(({ fieldId, actualAcres }) => ({
+						fieldId,
+						actualAcres,
+					})),
+				},
+				products: {
+					create: products.map(
+						({ productId, totalAcres, price }) => ({
+							productId,
+							totalAcres,
+							price,
+						}),
+					),
+				},
+				applicationFees: {
+					create: applicationFees.map(
+						({ description, rateUoM, perAcre }) => ({
+							description,
+							rateUoM,
+							perAcre,
+						}),
+					),
+				},
+			},
+			include: {
+				grower: {
+					select: {
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+						phoneNumber: true,
+					},
+				},
+				fieldWorker: { select: { fullName: true } },
+				farm: {
+					select: {
+						name: true,
+						state: { select: { id: true, name: true } },
+						county: true,
+						township: true,
+						zipCode: true,
+					},
+				},
+				fields: {
+					select: {
+						actualAcres: true,
+						field: {
+							select: { name: true, acres: true, crop: true },
+						},
+					},
+				},
+				products: {
+					select: {
+						product: {
+							select: { productName: true, perAcreRate: true },
+						},
+						totalAcres: true,
+						price: true,
+					},
+				},
+				applicationFees: true,
+			},
+		});
+
+		await sendPushNotifications({
+			userIds: growerId,
+			title: `Job Confirmation`,
+			message: `${user.firstName} ${user.lastName} added a job that needs your confirmation.`,
+			notificationType: 'JOB_CREATED',
+		});
+		return job;
+	}
 };
 
 // get job List by applicator
@@ -530,8 +565,7 @@ const uploadJobAttachments = async (
 	);
 	return uploadedFiles;
 };
-const getJobs = async (growerId: number, type: string,role:string) => {
-
+const getJobs = async (growerId: number, type: string, role: string) => {
 	if (role !== 'GROWER') {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
@@ -545,16 +579,14 @@ const getJobs = async (growerId: number, type: string,role:string) => {
 		include: {
 			applicator: {
 				select: {
-					
 					fullName: true,
-					businessName:true
+					businessName: true,
 				},
 			},
-			
+
 			farm: {
 				select: {
 					name: true,
-					
 				},
 			},
 			fields: {
@@ -574,8 +606,6 @@ const getJobs = async (growerId: number, type: string,role:string) => {
 		},
 	}); // Fetch all users
 	// Calculate total acres for each job
-	
-	
 
 	if (type === 'BIDDING') {
 		jobs = jobs.filter((job) => job.source === 'BIDDING');
@@ -643,7 +673,7 @@ const getOpenJobs = async () => {
 	return jobs;
 };
 // get job for applicator pending approval screen
-const getJobsPendingFromMe = async (Id: number,currentUser:User) => {
+const getJobsPendingFromMe = async (Id: number, currentUser: User) => {
 	const whereCondition: {
 		status: 'PENDING';
 		applicatorId?: number;
@@ -706,7 +736,6 @@ const getJobsPendingFromMe = async (Id: number,currentUser:User) => {
 	return jobs;
 };
 const getJobsPendingFromGrowers = async (Id: number) => {
-	
 	const jobs = await prisma.job.findMany({
 		where: {
 			applicatorId: Id,
@@ -757,7 +786,6 @@ const getJobsPendingFromGrowers = async (Id: number) => {
 	return jobs;
 };
 const getJobsPendingFromApplicators = async (Id: number) => {
-	
 	const jobs = await prisma.job.findMany({
 		where: {
 			growerId: Id,
@@ -808,18 +836,16 @@ const getJobsPendingFromApplicators = async (Id: number) => {
 	return jobs;
 };
 
-
-
 const updatePendingJobStatus = async (
 	data: { status: JobStatus }, // fieldWorkerId optional
 	jobId: number,
-	applicatorId:number
+	applicatorId: number,
 ) => {
 	// Fetch current job  from database
 	const job = await prisma.job.findUnique({
-		where: { 
-			id: jobId ,
-			applicatorId:applicatorId
+		where: {
+			id: jobId,
+			applicatorId: applicatorId,
 		},
 	});
 	if (!job) {
@@ -843,14 +869,14 @@ const updatePendingJobStatus = async (
 	};
 };
 
-const getJobByPilot = async (applicatorId:number,pilotId: number) => {
+const getJobByPilot = async (applicatorId: number, pilotId: number) => {
 	return await prisma.job.findMany({
-		where: { applicatorId,fieldWorkerId: pilotId },
+		where: { applicatorId, fieldWorkerId: pilotId },
 	});
 };
-const getAssignedJobs = async (applicatorId:number) => {
+const getAssignedJobs = async (applicatorId: number) => {
 	return await prisma.job.findMany({
-		where: { applicatorId,status:"READY_TO_SPRAY",fieldWorkerId: null },
+		where: { applicatorId, status: 'READY_TO_SPRAY', fieldWorkerId: null },
 	});
 };
 export default {
@@ -873,5 +899,5 @@ export default {
 	getJobsPendingFromApplicators,
 	updatePendingJobStatus,
 	getJobByPilot,
-	getAssignedJobs
+	getAssignedJobs,
 };

@@ -4,23 +4,30 @@ import Joi, { Schema } from 'joi';
 
 const jobTypeSchema: Schema = Joi.string().valid('AERIAL', 'GROUND').required();
 
-const jobSourceSchema: Schema = Joi.string()
-	.valid('APPLICATOR', 'GROWER', 'BIDDING')
-	.required();
+// const jobSourceSchema: Schema = Joi.string()
+// 	.valid('APPLICATOR', 'GROWER', 'BIDDING')
+// 	.required();
 
 const jobStatusSchema: Schema = Joi.string()
-	.valid('TO_BE_MAPPED', 'READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID', 'PENDING',
+	.valid(
+		'TO_BE_MAPPED',
+		'READY_TO_SPRAY',
+		'SPRAYED',
+		'INVOICED',
+		'PAID',
+		'PENDING',
 		'REJECTED',
-		'OPEN_FOR_BIDDING',)
+		'OPEN_FOR_BIDDING',
+	)
 	.required();
 
 const createJobSchema = Joi.object({
 	body: Joi.object({
 		// Job details
-		source: jobSourceSchema.required(),
+		// source: jobSourceSchema.required(),
 		title: Joi.string().min(3).max(100).required(),
 		type: jobTypeSchema.required(),
-		growerId: Joi.number().integer().positive().required(),
+		growerId: Joi.number().integer().positive().optional(),
 		applicatorId: Joi.number().integer().positive().allow(null).optional(),
 		fieldWorkerId: Joi.number().integer().positive().allow(null).optional(),
 
@@ -91,12 +98,11 @@ const paramsSchema: Schema = Joi.object({
 	}).required(),
 });
 const jobSourceParamSchema: Schema = Joi.object({
-	params:Joi.object({
-		type:  Joi.string()
-		.valid('APPLICATOR', 'GROWER', 'BIDDING','ALL')
-		.required()
+	params: Joi.object({
+		type: Joi.string()
+			.valid('APPLICATOR', 'GROWER', 'BIDDING', 'ALL')
+			.required(),
 	}).required(),
-	
 });
 
 const jobStatusParamSchema: Schema = Joi.object({
@@ -104,19 +110,21 @@ const jobStatusParamSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
-		status: Joi.string()
-		.valid('READY_TO_SPRAY', 'REJECTED')
+		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED'),
 	}).optional(),
 });
 
 const pilotJobsParamSchema: Schema = Joi.object({
-	params:Joi.object({
-		pilotId: Joi.number().integer().positive()
-		.required()
+	params: Joi.object({
+		pilotId: Joi.number().integer().positive().required(),
 	}).required(),
-	
 });
 
-export default { createJobSchema, paramsSchema, updateJobSchema,jobSourceParamSchema,jobStatusParamSchema,pilotJobsParamSchema };
-
-
+export default {
+	createJobSchema,
+	paramsSchema,
+	updateJobSchema,
+	jobSourceParamSchema,
+	jobStatusParamSchema,
+	pilotJobsParamSchema,
+};
