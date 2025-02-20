@@ -73,6 +73,7 @@ router.route('/get-jobs/:type').get(verifyToken,validateSchema(jobValidation.job
 router.route('/open-jobs').get(verifyToken,jobController.getOpenJobs);
 router.route('/pending/from-me').get(verifyToken, jobController.getJobsPendingFromMe);
 router.route('/pending/from-grower').get(verifyToken,jobController.getJobsPendingFromGrower);
+router.route('/pending/from-applicator').get(verifyToken,jobController.getJobsPendingFromApplicators);
 router.route('/update/job-status/:jobId').put(
 	verifyToken,
 	validateSchema(jobValidation.jobStatusParamSchema),

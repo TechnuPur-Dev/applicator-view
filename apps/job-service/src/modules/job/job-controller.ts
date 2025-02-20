@@ -115,15 +115,25 @@ const getOpenJobs = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
+// for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.payload.id;
-	const result = await jobService.getJobsPendingFromMe(id);
+	const currentUser = req.user
+	const result = await jobService.getJobsPendingFromMe(id,currentUser);
 	res.status(httpStatus.OK).json({ result });
 });
 const getJobsPendingFromGrower = catchAsync(
 	async (req: Request, res: Response) => {
 		const id = +req.payload.id;
 		const result = await jobService.getJobsPendingFromGrowers(id);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
+// for grower approval screen 
+const getJobsPendingFromApplicators = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.payload.id;
+		const result = await jobService.getJobsPendingFromApplicators(id);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
@@ -154,5 +164,6 @@ export default {
 	getOpenJobs,
 	getJobsPendingFromMe,
 	getJobsPendingFromGrower,
+	getJobsPendingFromApplicators,
 	updatePendingJobStatus
 };
