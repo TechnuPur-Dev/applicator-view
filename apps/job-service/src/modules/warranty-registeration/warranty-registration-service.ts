@@ -19,7 +19,7 @@ const getAllEquipmentType = async () => {
 	);
 	return ticketCategoryList;
 };
-const uploadImage = async (userId: number, file: Express.Multer.File) => {
+const uploadImage = async (userId: number, files: Express.Multer.File[]) => {
 	const storageUrl = config.azureStorageUrl;
 	const containerName = config.azureContainerName;
 
@@ -27,7 +27,8 @@ const uploadImage = async (userId: number, file: Express.Multer.File) => {
 		BlobServiceClient.fromConnectionString(storageUrl);
 	const containerClient: ContainerClient =
 		blobServiceClient.getContainerClient(containerName);
-
+		const uploadedFiles = await Promise.all(
+			files.map(async (file) => {
 	// Generate unique blob names
 	const blobName = `equipments/${userId}/${uuidv4()}_${file.originalname}`;
 	const thumbnailBlobName = `equipments/${userId}/thumbnail_${uuidv4()}_${file.originalname}`;
@@ -75,15 +76,17 @@ const uploadImage = async (userId: number, file: Express.Multer.File) => {
 		},
 	});
 
-	return {
-		imageUrl: `/${containerName}/${blobName}`,
-	};
+	return  `/${containerName}/${blobName}`
+	
+}),
+);
+return uploadedFiles;
 };
 
 // Upload Attatchments
 const uploadDocAttachments = async (
 	userId: number,
-	file: Express.Multer.File,
+	files: Express.Multer.File[],
 ) => {
 	const storageUrl = config.azureStorageUrl;
 	const containerName = config.azureContainerName;
@@ -92,7 +95,8 @@ const uploadDocAttachments = async (
 		BlobServiceClient.fromConnectionString(storageUrl);
 	const containerClient: ContainerClient =
 		blobServiceClient.getContainerClient(containerName);
-
+		const uploadedFiles = await Promise.all(
+			files.map(async (file) => {
 	// Generate unique blob names
 	const blobName = `equipments/${userId}/${uuidv4()}_${file.originalname}`;
 	// const thumbnailBlobName = `equipments/${userId}/thumbnail_${uuidv4()}_${file.originalname}`;
@@ -106,9 +110,10 @@ const uploadDocAttachments = async (
 		},
 	});
 
-	return {
-		documentUrl: `/${containerName}/${blobName}`,
-	};
+	return  `/${containerName}/${blobName}`
+}),
+);
+return uploadedFiles;
 };
 
 const createWarrantyReg = async (createdById: number, data: CreateData) => {

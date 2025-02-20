@@ -616,6 +616,14 @@ const getJobs = async (growerId: number, type: string, role: string) => {
 	}
 	return jobs.map((job) => ({
 		...job,
+		...job,
+		...(job.applicator ? { 
+			applicatorFullName: job.applicator.fullName, 
+			applicatorBusinessName: job.applicator.businessName 
+		} : {}), // Applicator values as key-value pair
+    ...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
+    applicator: undefined, // Remove original object
+    farm: undefined ,// Remove original object
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
