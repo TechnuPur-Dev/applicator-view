@@ -9,7 +9,7 @@ import { CreateJob } from './job-types';
 import { v4 as uuidv4 } from 'uuid';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
-
+import { User } from '../../../../../shared/types/global';
 // import { object } from 'joi';
 // import config from '../../../../../shared/config/env-config';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
@@ -642,7 +642,71 @@ const getOpenJobs = async () => {
 
 	return jobs;
 };
+// get job for applicator pending approval screen
+const getJobsPendingFromMe = async (Id: number,currentUser:User) => {
+	const whereCondition: {
+		status: 'PENDING';
+		applicatorId?: number;
+		growerId?: number;
+		source?: 'GROWER' | 'APPLICATOR';
+	} = {
+		status: 'PENDING',
+	};
+
+	if (currentUser.role === 'APPLICATOR') {
+		whereCondition.applicatorId = Id;
+		whereCondition.source = 'GROWER';
+	} else if (currentUser.role === 'GROWER') {
+		whereCondition.growerId = Id;
+		whereCondition.source = 'APPLICATOR';
+	}
+	const jobs = await prisma.job.findMany({
+		where: whereCondition,
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			// products: true,
+			// applicationFees: true,
+		},
+	});
+
+	return jobs;
+};
 const getJobsPendingFromGrowers = async (Id: number) => {
+	
 	const jobs = await prisma.job.findMany({
 		where: {
 			applicatorId: Id,
@@ -692,12 +756,11 @@ const getJobsPendingFromGrowers = async (Id: number) => {
 
 	return jobs;
 };
-
-// get job for applicator pending approval screen
-const getJobsPendingFromMe = async (Id: number) => {
+const getJobsPendingFromApplicators = async (Id: number) => {
+	
 	const jobs = await prisma.job.findMany({
 		where: {
-			applicatorId: Id,
+			growerId: Id,
 			source: 'GROWER',
 			status: 'PENDING',
 		},
@@ -744,6 +807,7 @@ const getJobsPendingFromMe = async (Id: number) => {
 
 	return jobs;
 };
+
 
 
 const updatePendingJobStatus = async (
@@ -806,6 +870,7 @@ export default {
 	getOpenJobs,
 	getJobsPendingFromMe,
 	getJobsPendingFromGrowers,
+	getJobsPendingFromApplicators,
 	updatePendingJobStatus,
 	getJobByPilot,
 	getAssignedJobs
