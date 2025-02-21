@@ -110,6 +110,7 @@ const jobStatusParamSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
+		userId: Joi.number().integer().positive().required(),
 		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED'),
 	}).optional(),
 });
