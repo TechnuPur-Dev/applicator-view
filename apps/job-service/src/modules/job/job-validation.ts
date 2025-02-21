@@ -80,12 +80,16 @@ const createJobSchema = Joi.object({
 
 const updateJobSchema = Joi.object({
 	params: Joi.object({
-		jobId: Joi.number().integer().positive(),
+		jobId: Joi.number().integer().positive().required(),
 	}).required(),
-	body: Joi.object({
-		fieldWorkerId: Joi.number().integer().positive().optional(),
-		status: jobStatusSchema.optional(),
-	}).optional(),
+	body: Joi.alternatives()
+		.try(
+			Joi.object({
+				fieldWorkerId: Joi.number().integer().positive().required(),
+			}),
+			Joi.object({ status: jobStatusSchema.required() }),
+		)
+		.required(),
 });
 
 const paramsSchema: Schema = Joi.object({

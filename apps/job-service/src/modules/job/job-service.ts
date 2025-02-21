@@ -377,74 +377,85 @@ const deleteJob = async (jobId: number) => {
 	};
 };
 const updateJobByApplicator = async (
-	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
-	jobId: number,
 	user: User,
+	jobId: number,
+	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
 ) => {
 	// Fetch current job status from database
 	const job = await prisma.job.findUnique({
-		where: { id: jobId },
+		where: { id: jobId, applicatorId: user.id },
 		select: {
 			status: true,
 		},
 	});
 
 	if (!job) {
-		throw new Error('Job not found.');
+		throw new ApiError(httpStatus.NOT_FOUND, 'Job not found.');
 	}
 
-	const currentStatus = job.status;
-	const requestedStatus = data.status;
+	const { status: currentStatus } = job;
+	const { status: requestedStatus, fieldWorkerId } = data;
 
-	// Check if requested  is valid
-	if (data.status) {
-		if (
-			(currentStatus === 'READY_TO_SPRAY' &&
-				requestedStatus !== 'SPRAYED') ||
-			(currentStatus === 'SPRAYED' && requestedStatus !== 'INVOICED') ||
-			(currentStatus === 'INVOICED' && requestedStatus !== 'PAID') ||
-			(currentStatus === 'PAID' && requestedStatus !== 'PAID')
-		) {
-			throw new Error(
-				`Invalid status from ${currentStatus} to ${requestedStatus}.`,
-			);
-		}
+	// Valid job status transitions
+	const statusTransitions: Record<JobStatus, JobStatus[]> = {
+		READY_TO_SPRAY: ['SPRAYED'],
+		SPRAYED: ['INVOICED'],
+		INVOICED: ['PAID'],
+		PAID: ['PAID'],
+		TO_BE_MAPPED: [], // Assuming it doesn't transition
+		OPEN_FOR_BIDDING: [], // Assuming it doesn't transition
+		PENDING: [], // Assuming it doesn't transition
+		REJECTED: [], // Assuming it doesn't transition
+	};
+
+	if (
+		requestedStatus &&
+		!statusTransitions[currentStatus]?.includes(requestedStatus)
+	) {
+		throw new ApiError(
+			httpStatus.CONFLICT,
+			`Invalid status transition from ${currentStatus} to ${requestedStatus}.`,
+		);
+	}
+	// If assigning a field worker, validate status
+	if (fieldWorkerId && currentStatus !== 'READY_TO_SPRAY') {
+		throw new ApiError(
+			httpStatus.CONFLICT,
+			'Job status must be READY_TO_SPRAY to assign a pilot.',
+		);
 	}
 
-	if (data.fieldWorkerId) {
-		if (currentStatus === 'READY_TO_SPRAY') {
-			await prisma.job.update({
-				where: { id: jobId },
-				data: {
-					...data,
-					fieldWorkerId: data.fieldWorkerId,
-					Notification: {
-						create: {
-							userId: data.fieldWorkerId,
-							type: 'JOB_ASSIGNED',
-						},
+	if (fieldWorkerId) {
+		await prisma.job.update({
+			where: { id: jobId },
+			data: {
+				...data,
+				fieldWorkerId: fieldWorkerId,
+				Notification: {
+					create: {
+						userId: fieldWorkerId,
+						type: 'JOB_ASSIGNED',
 					},
 				},
-			});
-			await sendPushNotifications({
-				userIds: data.fieldWorkerId,
-				title: `Job Confirmation`,
-				message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
-				notificationType: 'JOB_ASSIGNED',
-			});
-		} else {
-			throw new Error(`job status is invalid to assigne a pilot.`);
-		}
+			},
+		});
+		await sendPushNotifications({
+			userIds: fieldWorkerId,
+			title: `Job Confirmation`,
+			message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
+			notificationType: 'JOB_ASSIGNED',
+		});
 	}
-
-	// Update job status
-	await prisma.job.update({
-		where: { id: jobId },
-		data: {
-			...data,
-			status: data.status,
-		},
-	});
+	if (requestedStatus) {
+		// Update job status
+		await prisma.job.update({
+			where: { id: jobId },
+			data: {
+				...data,
+				status: requestedStatus,
+			},
+		});
+	}
 
 	return {
 		message: `Job updated successfully.`,
@@ -976,8 +987,11 @@ const updatePendingJobStatus = async (
 				status: data.status,
 				Notification: {
 					create: {
-						userId: data?.userId,// user id of those user who get the notification related to job status 
-						type: data.status === "READY_TO_SPRAY" ? 'JOB_ASSIGNED':'JOB_REJECTED'
+						userId: data?.userId, // user id of those user who get the notification related to job status
+						type:
+							data.status === 'READY_TO_SPRAY'
+								? 'JOB_ASSIGNED'
+								: 'JOB_REJECTED',
 					},
 				},
 			},

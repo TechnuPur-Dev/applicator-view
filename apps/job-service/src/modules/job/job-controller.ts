@@ -38,11 +38,14 @@ const deleteJob = catchAsync(async (req: Request, res: Response) => {
 
 const updateJobByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const Id = +req.params.jobId;
+		const currentUser = req.user;
+		const id = +req.params.jobId;
 		const data = req.body;
-		const userData = req.user
-		console.log(data, 'data');
-		const result = await jobService.updateJobByApplicator(data, Id,userData);
+		const result = await jobService.updateJobByApplicator(
+			currentUser,
+			id,
+			data,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
