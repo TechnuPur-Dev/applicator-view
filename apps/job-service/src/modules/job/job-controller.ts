@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import jobService from './job-service';
+import pick from '../../../../../shared/utils/pick';
 
 // Controller to create job
 const createJob = catchAsync(async (req: Request, res: Response) => {
@@ -12,14 +13,19 @@ const createJob = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
+		const options = pick(req.query, ['limit', 'page']);
 		const applicatorId = +req.payload.id;
-		const result = await jobService.getAllJobsByApplicator(applicatorId);
-		res.status(httpStatus.OK).json({ result });
+		const result = await jobService.getAllJobsByApplicator(
+			applicatorId,
+			options,
+		);
+		res.status(httpStatus.OK).json(result);
 	},
 );
 const getJobById = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.jobId;
-	const result = await jobService.getJobById(Id);
+	const currentUser = req.user;
+	const id = +req.params.jobId;
+	const result = await jobService.getJobById(currentUser, id);
 	res.status(httpStatus.OK).json(result);
 });
 

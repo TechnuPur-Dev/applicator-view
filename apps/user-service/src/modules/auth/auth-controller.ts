@@ -26,7 +26,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 	const result = await authService.loginUser({
 		email,
 		password,
-		deviceToken
+		deviceToken,
 	});
 	res.status(httpStatus.OK).json(result);
 });

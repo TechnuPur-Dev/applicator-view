@@ -30,5 +30,9 @@ interface User {
 	email: string | null;
 	role: UserRole;
 }
+interface PaginateOptions {
+	limit?: string;
+	page?: string;
+}
 
-export { User }; // Makes the file an external module
+export { User, PaginateOptions }; // Makes the file an external module
