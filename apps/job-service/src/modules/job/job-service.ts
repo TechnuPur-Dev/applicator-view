@@ -334,8 +334,7 @@ const deleteJob = async (jobId: number) => {
 const updateJobByApplicator = async (
 	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
 	jobId: number,
-	user:User
-
+	user: User,
 ) => {
 	// Fetch current job status from database
 	const job = await prisma.job.findUnique({
@@ -374,6 +373,12 @@ const updateJobByApplicator = async (
 				data: {
 					...data,
 					fieldWorkerId: data.fieldWorkerId,
+					Notification: {
+						create: {
+							userId: data.fieldWorkerId,
+							type: 'JOB_ASSIGNED',
+						},
+					},
 				},
 			});
 			await sendPushNotifications({
@@ -914,6 +919,12 @@ const updatePendingJobStatus = async (
 			where: { id: jobId },
 			data: {
 				status: data.status,
+				Notification: {
+					create: {
+						userId: data?.userId,// user id of those user who get the notification related to job status 
+						type: data.status === "READY_TO_SPRAY" ? 'JOB_ASSIGNED':'JOB_REJECTED'
+					},
+				},
 			},
 		});
 	}
@@ -921,7 +932,7 @@ const updatePendingJobStatus = async (
 		userIds: data?.userId,
 		title: `Job ${data.status} === "READY_TO_SPRAY" ? Accepted : ${data.status}  `,
 		message: `${user.firstName} ${user.lastName} ${data.status} === "READY_TO_SPRAY" ? ACCEPTED : ${data.status} the job `,
-		notificationType: `${data.status} === "READY_TO_SPRAY" ? 'ACCEPT_INVITE : JOB_REJECTED '`,
+		notificationType: `${data.status} === "READY_TO_SPRAY" ? 'JOB_ASSIGNED : JOB_REJECTED '`,
 	});
 
 	return {
