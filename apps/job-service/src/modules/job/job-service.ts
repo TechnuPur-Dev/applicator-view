@@ -270,7 +270,7 @@ const getAllJobsByApplicator = async (
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		results: formattedJobs,
+		result: formattedJobs,
 		page,
 		limit,
 		totalPages,
@@ -328,6 +328,7 @@ const getJobById = async (user: User, jobId: number) => {
 				select: {
 					id: true,
 					totalAcres: true,
+					price: true,
 					product: {
 						select: {
 							id: true,
@@ -458,24 +459,29 @@ const updateJobByApplicator = async (
 
 // get pilots by applicator by Grower
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getAllPilotsByApplicator = async (applicatorId: number) => {
 	const workers = await prisma.applicatorWorker.findMany({
 		where: {
 			applicatorId,
+			workerType: 'PILOT',
+			isActive: true,
 		},
 		select: {
-			workerType: true,
 			worker: {
 				select: {
 					id: true,
+					firstName: true,
+					lastName: true,
 					fullName: true,
-					role: true,
 				},
 			},
 		},
+		orderBy: {
+			id: 'desc',
+		},
 	}); // Fetch all users
-	return workers;
+
+	return workers.map((worker) => worker.worker);
 };
 
 const getAllJobTypes = async () => {
@@ -492,7 +498,12 @@ const getAllJobStatus = async () => {
 		id: index + 1,
 		name: status,
 	}));
-	return jobStatusList;
+	// Filter the required statuses
+	const filteredStatuses = jobStatusList.filter((status) =>
+		['SPRAYED', 'INVOICED', 'PAID'].includes(status.name),
+	);
+
+	return filteredStatuses;
 };
 
 const getGrowerListForApplicator = async (applicatorId: number) => {

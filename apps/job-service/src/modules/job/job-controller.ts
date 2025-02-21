@@ -49,8 +49,8 @@ const updateJobByApplicator = catchAsync(
 // get All pilots by applicator
 const getAllPilotsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const Id = +req.payload.id; // applicator id get from token
-		const jobData = await jobService.getAllPilotsByApplicator(Id);
+		const id = req.payload.id; // applicator id get from token
+		const jobData = await jobService.getAllPilotsByApplicator(id);
 		res.status(httpStatus.OK).json({ result: jobData });
 	},
 );

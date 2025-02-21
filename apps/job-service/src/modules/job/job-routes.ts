@@ -44,17 +44,16 @@ router
 	);
 //Required  Drop down for job creation
 router
-.route('/all-pilots')
-.get(
-	verifyToken,
-	jobController.getAllPilotsByApplicator,
-);
+	.route('/all-pilots/dropdown')
+	.get(verifyToken, jobController.getAllPilotsByApplicator);
 
 //job type
 router.route('/all-types').get(verifyToken, jobController.getAllJobTypes);
 
 // job status
-router.route('/all-statuses').get(verifyToken, jobController.getAllJobStatus);
+router
+	.route('/all-statuses/dropdown')
+	.get(verifyToken, jobController.getAllJobStatus);
 router
 	.route('/growers-list/by-applicator')
 	.get(verifyToken, jobController.getGrowerListForApplicator);
@@ -65,22 +64,44 @@ router
 	.route('/farms-list/:growerId')
 	.get(verifyToken, jobController.getFarmListByGrowerId);
 
-	//upload job attachments
+//upload job attachments
 router
-.route('/upload/job-attachments')
-.post(verifyToken, uploadMiddleware, jobController.uploadJobAttachments);
-router.route('/get-jobs/:type').get(verifyToken,validateSchema(jobValidation.jobSourceParamSchema), jobController.getJobs);
-router.route('/open-jobs').get(verifyToken,jobController.getOpenJobs);
-router.route('/pending/from-me').get(verifyToken, jobController.getJobsPendingFromMe);
-router.route('/pending/from-grower').get(verifyToken,jobController.getJobsPendingFromGrower);
-router.route('/pending/from-applicator').get(verifyToken,jobController.getJobsPendingFromApplicators);
-router.route('/update/job-status/:jobId').put(
-	verifyToken,
-	validateSchema(jobValidation.jobStatusParamSchema),
-	jobController.updatePendingJobStatus,
-);
+	.route('/upload/job-attachments')
+	.post(verifyToken, uploadMiddleware, jobController.uploadJobAttachments);
+router
+	.route('/get-jobs/:type')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.jobSourceParamSchema),
+		jobController.getJobs,
+	);
+router.route('/open-jobs').get(verifyToken, jobController.getOpenJobs);
+router
+	.route('/pending/from-me')
+	.get(verifyToken, jobController.getJobsPendingFromMe);
+router
+	.route('/pending/from-grower')
+	.get(verifyToken, jobController.getJobsPendingFromGrower);
+router
+	.route('/pending/from-applicator')
+	.get(verifyToken, jobController.getJobsPendingFromApplicators);
+router
+	.route('/update/job-status/:jobId')
+	.put(
+		verifyToken,
+		validateSchema(jobValidation.jobStatusParamSchema),
+		jobController.updatePendingJobStatus,
+	);
 
-router.route('/get-assignedjobs').get(verifyToken,jobController.getAssignedJobs );
-router.route('/get-jobsbypilot/:pilotId').get(verifyToken,validateSchema(jobValidation.pilotJobsParamSchema),jobController.getJobByPilot );
+router
+	.route('/get-assignedjobs')
+	.get(verifyToken, jobController.getAssignedJobs);
+router
+	.route('/get-jobsbypilot/:pilotId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.pilotJobsParamSchema),
+		jobController.getJobByPilot,
+	);
 
 export default router;
