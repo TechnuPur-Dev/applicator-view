@@ -1,13 +1,9 @@
-import { JobType, JobSource, JobStatus } from '@prisma/client';
+import { JobType } from '@prisma/client';
 
 interface CreateJob {
 	title: string; // Job title (Required)
 	type: JobType; // Enum for job type (Required)
-	source: JobSource; // Enum for job source (Required)
-	status?: JobStatus; // Enum for job status (Default: TO_BE_MAPPED)
-	growerId?: number; // Nullable grower ID
-	applicatorId?: number; // Nullable applicator ID
-	fieldWorkerId?: number; // Nullable field worker ID
+	userId?: number; // Nullable grower ID
 	startDate?: Date; // Optional start date
 	endDate?: Date; // Optional end date
 	description?: string; // Optional job description

@@ -24,12 +24,9 @@ const jobStatusSchema: Schema = Joi.string()
 const createJobSchema = Joi.object({
 	body: Joi.object({
 		// Job details
-		// source: jobSourceSchema.required(),
 		title: Joi.string().min(3).max(100).required(),
 		type: jobTypeSchema.required(),
-		growerId: Joi.number().integer().positive().optional(),
-		applicatorId: Joi.number().integer().positive().allow(null).optional(),
-		fieldWorkerId: Joi.number().integer().positive().allow(null).optional(),
+		userId: Joi.number().integer().positive().optional(),
 
 		// Date validation
 		startDate: Joi.date().iso().required(),

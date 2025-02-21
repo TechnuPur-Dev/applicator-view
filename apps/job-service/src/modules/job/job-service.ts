@@ -21,7 +21,7 @@ const createJob = async (user: User, data: CreateJob) => {
 		const {
 			title,
 			type,
-			growerId,
+			userId: growerId,
 			startDate,
 			endDate,
 			description,
@@ -34,7 +34,9 @@ const createJob = async (user: User, data: CreateJob) => {
 			products = [],
 			applicationFees = [],
 		} = data;
-
+		if (typeof growerId !== 'number') {
+			throw new Error('growerId is required and must be a number');
+		}
 		const hasFarmPermission = await prisma.applicatorGrower.count({
 			where: {
 				applicatorId: user.id,
@@ -119,6 +121,12 @@ const createJob = async (user: User, data: CreateJob) => {
 							perAcre,
 						}),
 					),
+				},
+				Notification: {
+					create: {
+						userId: growerId,
+						type: 'JOB_REQUEST',
+					},
 				},
 			},
 			include: {
@@ -617,13 +625,15 @@ const getJobs = async (growerId: number, type: string, role: string) => {
 	return jobs.map((job) => ({
 		...job,
 		...job,
-		...(job.applicator ? { 
-			applicatorFullName: job.applicator.fullName, 
-			applicatorBusinessName: job.applicator.businessName 
-		} : {}), // Applicator values as key-value pair
-    ...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
-    applicator: undefined, // Remove original object
-    farm: undefined ,// Remove original object
+		...(job.applicator
+			? {
+					applicatorFullName: job.applicator.fullName,
+					applicatorBusinessName: job.applicator.businessName,
+				}
+			: {}), // Applicator values as key-value pair
+		...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
+		applicator: undefined, // Remove original object
+		farm: undefined, // Remove original object
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
