@@ -40,8 +40,9 @@ const updateJobByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
 		const Id = +req.params.jobId;
 		const data = req.body;
+		const userData = req.user
 		console.log(data, 'data');
-		const result = await jobService.updateJobByApplicator(data, Id);
+		const result = await jobService.updateJobByApplicator(data, Id,userData);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -135,24 +136,24 @@ const getJobsPendingFromGrower = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
-// for grower approval screen
-const getJobsPendingFromApplicators = catchAsync(
-	async (req: Request, res: Response) => {
-		const id = +req.payload.id;
-		const result = await jobService.getJobsPendingFromApplicators(id);
-		res.status(httpStatus.OK).json({ result });
-	},
-);
+// // for grower approval screen
+// const getJobsPendingFromApplicators = catchAsync(
+// 	async (req: Request, res: Response) => {
+// 		const id = +req.payload.id;
+// 		const result = await jobService.getJobsPendingFromApplicators(id);
+// 		res.status(httpStatus.OK).json({ result });
+// 	},
+// );
 
 const updatePendingJobStatus = catchAsync(
 	async (req: Request, res: Response) => {
 		const Id = +req.params.jobId;
-		const applicatorId = req.payload.id;
+		const userData = req.user;
 		const data = req.body;
 		const result = await jobService.updatePendingJobStatus(
 			data,
 			Id,
-			applicatorId,
+			userData,
 		);
 		res.status(httpStatus.OK).json(result);
 	},
@@ -186,7 +187,7 @@ export default {
 	getOpenJobs,
 	getJobsPendingFromMe,
 	getJobsPendingFromGrower,
-	getJobsPendingFromApplicators,
+	// getJobsPendingFromApplicators,
 	updatePendingJobStatus,
 	getJobByPilot,
 	getAssignedJobs,

@@ -82,9 +82,9 @@ router
 router
 	.route('/pending/from-grower')
 	.get(verifyToken, jobController.getJobsPendingFromGrower);
-router
-	.route('/pending/from-applicator')
-	.get(verifyToken, jobController.getJobsPendingFromApplicators);
+// router
+// 	.route('/pending/from-applicator')
+// 	.get(verifyToken, jobController.getJobsPendingFromApplicators);
 router
 	.route('/update/job-status/:jobId')
 	.put(

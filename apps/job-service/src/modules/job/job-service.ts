@@ -379,11 +379,14 @@ const deleteJob = async (jobId: number) => {
 const updateJobByApplicator = async (
 	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
 	jobId: number,
+	user: User,
 ) => {
 	// Fetch current job status from database
 	const job = await prisma.job.findUnique({
 		where: { id: jobId },
-		select: { status: true },
+		select: {
+			status: true,
+		},
 	});
 
 	if (!job) {
@@ -415,7 +418,19 @@ const updateJobByApplicator = async (
 				data: {
 					...data,
 					fieldWorkerId: data.fieldWorkerId,
+					Notification: {
+						create: {
+							userId: data.fieldWorkerId,
+							type: 'JOB_ASSIGNED',
+						},
+					},
 				},
+			});
+			await sendPushNotifications({
+				userIds: data.fieldWorkerId,
+				title: `Job Confirmation`,
+				message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
+				notificationType: 'JOB_ASSIGNED',
 			});
 		} else {
 			throw new Error(`job status is invalid to assigne a pilot.`);
@@ -743,17 +758,24 @@ const getOpenJobs = async () => {
 		},
 	});
 
-	return jobs;
+	// Calculate total acres for each job
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
 // get job for applicator pending approval screen
 const getJobsPendingFromMe = async (Id: number, currentUser: User) => {
 	const whereCondition: {
-		status: 'PENDING';
+		status: 'TO_BE_MAPPED';
 		applicatorId?: number;
 		growerId?: number;
 		source?: 'GROWER' | 'APPLICATOR';
 	} = {
-		status: 'PENDING',
+		status: 'TO_BE_MAPPED',
 	};
 
 	if (currentUser.role === 'APPLICATOR') {
@@ -805,8 +827,14 @@ const getJobsPendingFromMe = async (Id: number, currentUser: User) => {
 			// applicationFees: true,
 		},
 	});
-
-	return jobs;
+	// Calculate total acres for each job
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
 const getJobsPendingFromGrowers = async (Id: number) => {
 	const jobs = await prisma.job.findMany({
@@ -856,69 +884,83 @@ const getJobsPendingFromGrowers = async (Id: number) => {
 		},
 	});
 
-	return jobs;
+	// Calculate total acres for each job
+	return jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 };
-const getJobsPendingFromApplicators = async (Id: number) => {
-	const jobs = await prisma.job.findMany({
-		where: {
-			growerId: Id,
-			source: 'GROWER',
-			status: 'PENDING',
-		},
-		include: {
-			grower: {
-				select: {
-					firstName: true,
-					lastName: true,
-					fullName: true,
-					email: true,
-					phoneNumber: true,
-				},
-			},
-			fieldWorker: {
-				select: {
-					fullName: true,
-				},
-			},
-			farm: {
-				select: {
-					name: true,
-					state: true,
-					county: true,
-					township: true,
-					zipCode: true,
-				},
-			},
-			fields: {
-				select: {
-					actualAcres: true,
-					field: {
-						select: {
-							name: true,
-							acres: true,
-							crop: true,
-						},
-					},
-				},
-			},
-			// products: true,
-			// applicationFees: true,
-		},
-	});
+// const getJobsPendingFromApplicators = async (Id: number) => {
+// 	const jobs = await prisma.job.findMany({
+// 		where: {
+// 			growerId: Id,
+// 			source: 'GROWER',
+// 			status: 'PENDING',
+// 		},
+// 		include: {
+// 			grower: {
+// 				select: {
+// 					firstName: true,
+// 					lastName: true,
+// 					fullName: true,
+// 					email: true,
+// 					phoneNumber: true,
+// 				},
+// 			},
+// 			fieldWorker: {
+// 				select: {
+// 					fullName: true,
+// 				},
+// 			},
+// 			farm: {
+// 				select: {
+// 					name: true,
+// 					state: true,
+// 					county: true,
+// 					township: true,
+// 					zipCode: true,
+// 				},
+// 			},
+// 			fields: {
+// 				select: {
+// 					actualAcres: true,
+// 					field: {
+// 						select: {
+// 							name: true,
+// 							acres: true,
+// 							crop: true,
+// 						},
+// 					},
+// 				},
+// 			},
+// 			// products: true,
+// 			// applicationFees: true,
+// 		},
+// 	});
 
-	return jobs;
-};
+// 	// Calculate total acres for each job
+// 	return jobs.map((job) => ({
+// 		...job,
+// 		totalAcres: job.fields.reduce(
+// 			(sum, f) => sum + (f.actualAcres || 0),
+// 			0,
+// 		), // Sum actualAcres, default to 0 if null
+// 	}));
+// };
 
 const updatePendingJobStatus = async (
-	data: { status: JobStatus }, // fieldWorkerId optional
+	data: { userId: number; status: JobStatus }, // fieldWorkerId optional
 	jobId: number,
-	applicatorId: number,
+	user: User,
 ) => {
 	// Fetch current job  from database
+
 	const job = await prisma.job.findUnique({
 		where: {
 			id: jobId,
-			applicatorId: applicatorId,
 		},
 	});
 	if (!job) {
@@ -931,11 +973,22 @@ const updatePendingJobStatus = async (
 		await prisma.job.update({
 			where: { id: jobId },
 			data: {
-				...data,
 				status: data.status,
+				Notification: {
+					create: {
+						userId: data?.userId,// user id of those user who get the notification related to job status 
+						type: data.status === "READY_TO_SPRAY" ? 'JOB_ASSIGNED':'JOB_REJECTED'
+					},
+				},
 			},
 		});
 	}
+	await sendPushNotifications({
+		userIds: data?.userId,
+		title: `Job ${data.status} === "READY_TO_SPRAY" ? Accepted : ${data.status}  `,
+		message: `${user.firstName} ${user.lastName} ${data.status} === "READY_TO_SPRAY" ? ACCEPTED : ${data.status} the job `,
+		notificationType: `${data.status} === "READY_TO_SPRAY" ? 'JOB_ASSIGNED : JOB_REJECTED '`,
+	});
 
 	return {
 		message: `Job updated successfully.`,
@@ -969,7 +1022,7 @@ export default {
 	getOpenJobs,
 	getJobsPendingFromMe,
 	getJobsPendingFromGrowers,
-	getJobsPendingFromApplicators,
+	// getJobsPendingFromApplicators,
 	updatePendingJobStatus,
 	getJobByPilot,
 	getAssignedJobs,
