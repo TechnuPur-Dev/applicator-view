@@ -180,7 +180,7 @@ model Job {
   title               String
   type                JobType
   source              JobSource
-  status              JobStatus           @default(TO_BE_MAPPED)
+  status              JobStatus           @default(PENDING)
   growerId            Int?
   applicatorId        Int?
   fieldWorkerId       Int?
@@ -339,7 +339,6 @@ model Notification {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type    NotificationType
-  message String?
   isRead  Boolean          @default(false)
 
   // Nullable foreign keys for referencing related entities
@@ -360,6 +359,7 @@ model DeviceToken {
 }
 
 enum NotificationType {
+  JOB_REQUEST
   JOB_ASSIGNED
   JOB_COMPLETED
   JOB_REJECTED

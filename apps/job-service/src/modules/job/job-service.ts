@@ -21,7 +21,7 @@ const createJob = async (user: User, data: CreateJob) => {
 		const {
 			title,
 			type,
-			growerId,
+			userId: growerId,
 			startDate,
 			endDate,
 			description,
@@ -34,7 +34,9 @@ const createJob = async (user: User, data: CreateJob) => {
 			products = [],
 			applicationFees = [],
 		} = data;
-
+		if (typeof growerId !== 'number') {
+			throw new Error('growerId is required and must be a number');
+		}
 		const hasFarmPermission = await prisma.applicatorGrower.count({
 			where: {
 				applicatorId: user.id,
@@ -119,6 +121,12 @@ const createJob = async (user: User, data: CreateJob) => {
 							perAcre,
 						}),
 					),
+				},
+				Notification: {
+					create: {
+						userId: growerId,
+						type: 'JOB_REQUEST',
+					},
 				},
 			},
 			include: {
