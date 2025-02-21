@@ -49,6 +49,7 @@ const loginSchema: Schema = Joi.object({
 	body: Joi.object({
 		email: Joi.string().email().required(), // Valid email address
 		password: Joi.string().required(),
+		deviceToken:Joi.string().optional()
 	}).required(),
 });
 

@@ -91,7 +91,7 @@ const registerUser = async (data: RegisterUser) => {
 	return user;
 };
 const loginUser = async (data: LoginUser) => {
-	const { email, password } = data;
+	const { email, password ,deviceToken} = data;
 
 	const user = await prisma.user.findFirst({
 		where: {
@@ -122,6 +122,24 @@ const loginUser = async (data: LoginUser) => {
 	if (!isPasswordValid) {
 		throw new ApiError(httpStatus.UNAUTHORIZED, 'Password is incorrect.');
 	} else {
+		if (deviceToken) {
+			const existingDeviceToken = await prisma.deviceToken.findFirst({
+				where: { userId: user.id },
+			});
+		
+			if (existingDeviceToken) {
+				await prisma.deviceToken.update({
+					where: { id: existingDeviceToken.id },
+					data: { token: deviceToken },
+					
+				});
+				
+			} else {
+				await prisma.deviceToken.create({
+					data: { userId: user.id, token: deviceToken },
+				});
+			}
+		}
 		const accessToken = await signAccessToken(user.id);
 
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars

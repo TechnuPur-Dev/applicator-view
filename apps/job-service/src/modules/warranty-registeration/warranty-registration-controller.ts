@@ -16,14 +16,16 @@ const uploadImage = catchAsync(async (req: Request, res: Response) => {
 		throw new Error('No files uploaded');
 	}
 
-	const file = files[0];
-	console.log('Uploaded file:', file);
+	
 
-	if (!file) {
+	if (!files) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
-	const result = await warrantyRegistrationService.uploadImage(userId, file);
-	res.status(httpStatus.OK).json(result);
+	const result = await warrantyRegistrationService.uploadImage(userId, files);
+	res.status(httpStatus.OK).json({
+		message: 'Images uploaded successfully',
+		result,
+	});
 });
 
 const uploadDocAttachments = catchAsync(async (req: Request, res: Response) => {
@@ -34,17 +36,19 @@ const uploadDocAttachments = catchAsync(async (req: Request, res: Response) => {
 		throw new Error('No files uploaded');
 	}
 
-	const file = files[0];
-	console.log('Uploaded file:', file);
+	
 
-	if (!file) {
+	if (!files) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
 	const result = await warrantyRegistrationService.uploadDocAttachments(
 		userId,
-		file,
+		files,
 	);
-	res.status(httpStatus.OK).json(result);
+	res.status(httpStatus.OK).json({
+		message: 'Documents uploaded successfully',
+		result,
+	});
 });
 
 const createWarrantyReg = catchAsync(async (req: Request, res: Response) => {
