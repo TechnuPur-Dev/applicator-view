@@ -317,6 +317,7 @@ const getJobById = async (user: User, jobId: number) => {
 					actualAcres: true,
 					field: {
 						select: {
+							id: true,
 							name: true,
 							acres: true,
 							crop: true,
