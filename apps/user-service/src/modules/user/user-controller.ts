@@ -104,14 +104,19 @@ const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.updateArchivedStatus(user, data);
 	res.status(httpStatus.OK).json(result);
 });
-
+const getApplicatorByEmail = catchAsync(async (req: Request, res: Response) => {
+	// const growerId = req.payload.id;
+	const email = req.params.email;
+	const result = await userService.getApplicatorByEmail( email);
+	res.status(httpStatus.OK).json(result);
+});
 const sendInviteToApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const growerId = +req.payload.id;
+		const grower = req.user
 		const applicatorId = +req.params.applicatorId;
 		const result = await userService.sendInviteToApplicator(
 			applicatorId,
-			growerId,
+			grower,
 		);
 		res.status(httpStatus.OK).json(result);
 	},
@@ -149,4 +154,5 @@ export default {
 	sendInviteToApplicator,
 	sendInviteToGrower,
 	getGrowerById,
+	getApplicatorByEmail
 };

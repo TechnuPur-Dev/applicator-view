@@ -522,31 +522,88 @@ const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 		};
 	}
 };
-
-const sendInviteToApplicator = async (
-	applicatorId: number,
-	growerId: number,
-) => {
-	// Update the inviteStatus field
-	const user = await prisma.applicatorGrower.update({
+const getApplicatorByEmail = async (userEmail: string) => {
+	const applicator = await prisma.user.findFirst({
 		where: {
-			applicatorId_growerId: {
-				applicatorId,
-				growerId,
+			email: {
+				equals: userEmail,
+				mode: 'insensitive',
 			},
+			role: 'APPLICATOR',
 		},
 		include: {
-			// Move include here
-			applicator: {
+			state: {
 				select: {
-					email: true,
+					id: true,
+					name: true,
 				},
 			},
+			
 		},
+		omit: {
+			password: true, // Exclude sensitive data
+			businessName: true,
+			experience: true,
+		},
+	});
+	if (!applicator) {
+		throw new ApiError(
+			httpStatus.CONFLICT,
+			'applicator with this email not found.',
+		);
+	}
+
+
+	// Add total acres to the grower object
+	return {
+		...applicator,
+	};
+};
+const sendInviteToApplicator = async (
+	applicatorId: number,
+	grower: User,
+) => {
+	// Update the inviteStatus field
+
+	const applicatorExist = await prisma.user.findUnique({
+	    where:{
+			id:applicatorId
+		}	
+	})
+	if (!applicatorExist) {
+		throw new ApiError(
+			httpStatus.CONFLICT,
+			'applicator with this Id not found.',
+		);
+	}
+	const user = await prisma.applicatorGrower.create({
 		data: {
+			applicatorId: applicatorExist.id,
+			growerId: grower.id,
+			applicatorFirstName: applicatorExist.firstName,
+			applicatorLastName: applicatorExist.lastName,
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
 		},
 	});
+	// const user = await prisma.applicatorGrower.update({
+	// 	where: {
+	// 		applicatorId_growerId: {
+	// 			applicatorId,
+	// 			growerId,
+	// 		},
+	// 	},
+	// 	include: {
+	// 		// Move include here
+	// 		applicator: {
+	// 			select: {
+	// 				email: true,
+	// 			},
+	// 		},
+	// 	},
+	// 	data: {
+	// 		inviteStatus: 'PENDING', // Only updating the inviteStatus field
+	// 	},
+	// });
 
 	const subject = 'Email Invitation';
 	const message = `
@@ -554,7 +611,9 @@ You are invited to join our platform!<br><br>
 If you did not expect this invitation, please ignore this email.
 `;
 	if (user) {
-		const email = user?.applicator?.email;
+		const email = applicatorExist?.email;
+
+		// const email = user?.applicator?.email;
 
 		if (!email) {
 			throw new Error('Email address is not available for the grower.');
@@ -733,4 +792,5 @@ export default {
 	sendInviteToApplicator,
 	sendInviteToGrower,
 	getGrowerById,
+	getApplicatorByEmail
 };

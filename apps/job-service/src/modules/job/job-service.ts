@@ -1150,7 +1150,7 @@ const page =
 // Calculate the number of users to skip based on the current page and limit
 const skip = (page - 1) * limit;
 
-	let jobs= await prisma.job.findMany({
+	const jobs= await prisma.job.findMany({
 		where: { applicatorId, fieldWorkerId: pilotId },
 		skip,
 			take: limit,
