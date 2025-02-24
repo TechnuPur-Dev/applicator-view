@@ -15,10 +15,12 @@ const createWorker = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllWorker = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+
 	const applicatorId = req.payload.id;
 	const workerData =
-		await applicatorWorkersServices.getAllWorker(applicatorId);
-	res.status(httpStatus.OK).json({ result: workerData });
+		await applicatorWorkersServices.getAllWorker(applicatorId,options);
+	res.status(httpStatus.OK).json( workerData);
 });
 
 const getWorkerById = catchAsync(async (req: Request, res: Response) => {

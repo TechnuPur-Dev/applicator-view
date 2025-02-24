@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import supportTicketService from './support-ticket-service';
+import pick from '../../../../../shared/utils/pick';
 
 
 const getAllTicketCategories = catchAsync(async (req: Request, res: Response) => {
@@ -27,8 +28,10 @@ const createSupportTicket = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllSupportTicket =  catchAsync(async (req: Request, res: Response) => {
-	const ticketData = await supportTicketService.getAllSupportTicket();
-	res.status(httpStatus.OK).json({ result: ticketData });
+	const options = pick(req.query, ['limit', 'page']);
+	
+	const ticketData = await supportTicketService.getAllSupportTicket(options);
+	res.status(httpStatus.OK).json(ticketData);
 });
 
 const getSupportTicketById = catchAsync(async (req: Request, res: Response) => {
@@ -45,14 +48,16 @@ const updateSupportTicket = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMySupportTicket =  catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
 	const Id = req.payload.id
-	const ticketData = await supportTicketService.getMySupportTicket(Id);
-	res.status(httpStatus.OK).json({ result: ticketData });
+	const ticketData = await supportTicketService.getMySupportTicket(Id,options);
+	res.status(httpStatus.OK).json(ticketData);
 });
 const getPilotSupportTicket = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
 	const Id = req.payload.id
-	const ticketData = await supportTicketService.getPilotSupportTicket(Id);
-	res.status(httpStatus.OK).json({ result: ticketData });
+	const ticketData = await supportTicketService.getPilotSupportTicket(Id,options);
+	res.status(httpStatus.OK).json( ticketData);
 });
 export default {
 	getAllTicketCategories,

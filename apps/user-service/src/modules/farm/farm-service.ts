@@ -4,7 +4,7 @@ import httpStatus from 'http-status';
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { CreateFarmParams, AssignFarmPermission } from './farm-types';
-import { User } from './../../../../../shared/types/global';
+import { PaginateOptions, User } from './../../../../../shared/types/global';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 const createFarm = async (
@@ -81,7 +81,19 @@ const createFarm = async (
 	throw new ApiError(httpStatus.FORBIDDEN, 'Invalid user role.');
 };
 
-const getAllFarmsByGrower = async (growerId: number) => {
+const getAllFarmsByGrower = async (growerId: number,options: PaginateOptions) => {
+	const limit =
+			options.limit && parseInt(options.limit, 10) > 0
+				? parseInt(options.limit, 10)
+				: 10;
+		// Set the page number, default to 1 if not specified or invalid
+		const page =
+			options.page && parseInt(options.page, 10) > 0
+				? parseInt(options.page, 10)
+				: 1;
+		// Calculate the number of users to skip based on the current page and limit
+		const skip = (page - 1) * limit;
+	
 	const farms = await prisma.farm.findMany({
 		where: {
 			growerId,
@@ -111,7 +123,11 @@ const getAllFarmsByGrower = async (growerId: number) => {
 		},
 		orderBy: {
 			createdAt: 'desc',
+			
 		},
+		skip,
+			take: limit,
+			
 	}); // Fetch all users
 	// Calculate total acres for each grower and each farm
 	const enrichedFarms = farms.map((farm) => {
@@ -125,7 +141,23 @@ const getAllFarmsByGrower = async (growerId: number) => {
 			totalAcres: totalAcresByFarm,
 		};
 	});
-	return enrichedFarms;
+	
+	const totalResults = await prisma.farm.count({
+		where: {
+			growerId,
+			
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: enrichedFarms,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 const getFarmById = async (Id: number) => {
 	const farm = await prisma.farm.findUnique({

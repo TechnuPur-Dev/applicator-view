@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import userService from './user-service';
+import pick from '../../../../../shared/utils/pick';
 
 // Controller to get userList
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
@@ -47,8 +48,10 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
 // Controller to get userList
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-	const userData = await userService.getAllUsers();
-	res.status(httpStatus.OK).json({ result: userData });
+	const options = pick(req.query, ['limit', 'page']);
+
+	const userData = await userService.getAllUsers(options);
+	res.status(httpStatus.OK).json(userData);
 });
 
 const getGrowerByEmail = catchAsync(async (req: Request, res: Response) => {
@@ -65,10 +68,12 @@ const createGrower = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllGrowersByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+
 		const applicatorId = req.payload.id;
 		const result =
-			await userService.getAllGrowersByApplicator(applicatorId);
-		res.status(httpStatus.OK).json({ result });
+			await userService.getAllGrowersByApplicator(applicatorId,options);
+		res.status(httpStatus.OK).json(result);
 	},
 );
 
@@ -92,9 +97,11 @@ const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+
 		const growerId = req.payload.id;
-		const result = await userService.getAllApplicatorsByGrower(growerId);
-		res.status(httpStatus.OK).json({ result });
+		const result = await userService.getAllApplicatorsByGrower(growerId,options);
+		res.status(httpStatus.OK).json(result);
 	},
 );
 

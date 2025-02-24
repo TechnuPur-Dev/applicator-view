@@ -1,7 +1,7 @@
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { ProductCategory, ProductUnit } from '@prisma/client';
 import { CreateProduct, UpdateProduct } from './product-types';
-import { User } from '../../../../../shared/types/global';
+import { PaginateOptions, User } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
 
 const getAllProductCategories = async () => {
@@ -35,7 +35,18 @@ const createProduct = async (user: User, data: CreateProduct) => {
 	return product;
 };
 
-const getAllProducts = async (user: User) => {
+const getAllProducts = async (user: User,options: PaginateOptions) => {
+	const limit =
+			options.limit && parseInt(options.limit, 10) > 0
+				? parseInt(options.limit, 10)
+				: 10;
+		// Set the page number, default to 1 if not specified or invalid
+		const page =
+			options.page && parseInt(options.page, 10) > 0
+				? parseInt(options.page, 10)
+				: 1;
+		// Calculate the number of users to skip based on the current page and limit
+		const skip = (page - 1) * limit;
 	const { id: userId, role } = user;
 	if (role !== 'APPLICATOR') {
 		throw new ApiError(
@@ -47,8 +58,28 @@ const getAllProducts = async (user: User) => {
 		where: {
 			createdById: userId,
 		},
+		skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 	});
-	return products;
+	const totalResults = await prisma.product.count({
+		where: {
+			createdById: userId,
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: products,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+
 };
 
 const getProductById = async (user: User, productId: number) => {
