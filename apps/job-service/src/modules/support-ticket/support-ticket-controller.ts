@@ -31,7 +31,7 @@ const getAllSupportTicket =  catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 	
 	const ticketData = await supportTicketService.getAllSupportTicket(options);
-	res.status(httpStatus.OK).json({ result: ticketData });
+	res.status(httpStatus.OK).json(ticketData);
 });
 
 const getSupportTicketById = catchAsync(async (req: Request, res: Response) => {
@@ -51,13 +51,13 @@ const getMySupportTicket =  catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 	const Id = req.payload.id
 	const ticketData = await supportTicketService.getMySupportTicket(Id,options);
-	res.status(httpStatus.OK).json({ result: ticketData });
+	res.status(httpStatus.OK).json(ticketData);
 });
 const getPilotSupportTicket = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 	const Id = req.payload.id
 	const ticketData = await supportTicketService.getPilotSupportTicket(Id,options);
-	res.status(httpStatus.OK).json({ result: ticketData });
+	res.status(httpStatus.OK).json( ticketData);
 });
 export default {
 	getAllTicketCategories,

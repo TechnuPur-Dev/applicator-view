@@ -20,7 +20,7 @@ const getAllWorker = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
 	const workerData =
 		await applicatorWorkersServices.getAllWorker(applicatorId,options);
-	res.status(httpStatus.OK).json({ result: workerData });
+	res.status(httpStatus.OK).json( workerData);
 });
 
 const getWorkerById = catchAsync(async (req: Request, res: Response) => {

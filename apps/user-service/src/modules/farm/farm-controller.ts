@@ -18,7 +18,7 @@ const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
 
 	const growerId = req.payload.id;
 	const userData = await farmService.getAllFarmsByGrower(growerId,options);
-	res.status(httpStatus.OK).json({ result: userData });
+	res.status(httpStatus.OK).json(userData);
 });
 const getFarmById = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.params.farmId;

@@ -51,7 +51,7 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 
 	const userData = await userService.getAllUsers(options);
-	res.status(httpStatus.OK).json({ result: userData });
+	res.status(httpStatus.OK).json(userData);
 });
 
 const getGrowerByEmail = catchAsync(async (req: Request, res: Response) => {
@@ -73,7 +73,7 @@ const getAllGrowersByApplicator = catchAsync(
 		const applicatorId = req.payload.id;
 		const result =
 			await userService.getAllGrowersByApplicator(applicatorId,options);
-		res.status(httpStatus.OK).json({ result });
+		res.status(httpStatus.OK).json(result);
 	},
 );
 
@@ -101,7 +101,7 @@ const getAllApplicatorsByGrower = catchAsync(
 
 		const growerId = req.payload.id;
 		const result = await userService.getAllApplicatorsByGrower(growerId,options);
-		res.status(httpStatus.OK).json({ result });
+		res.status(httpStatus.OK).json(result);
 	},
 );
 

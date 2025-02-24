@@ -28,7 +28,7 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
 
 	const currentUser = req.user;
 	const productData = await productService.getAllProducts(currentUser,options);
-	res.status(httpStatus.OK).json({ result: productData });
+	res.status(httpStatus.OK).json(productData);
 });
 
 const getProductById = catchAsync(async (req: Request, res: Response) => {

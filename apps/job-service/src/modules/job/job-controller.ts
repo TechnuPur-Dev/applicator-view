@@ -120,13 +120,13 @@ const getJobs = catchAsync(async (req: Request, res: Response) => {
 	const role = req.user.role;
 
 	const result = await jobService.getJobs(id, type, role,options);
-	res.status(httpStatus.OK).json({ result });
+	res.status(httpStatus.OK).json(result);
 });
 const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 	
 	const result = await jobService.getOpenJobs(options);
-	res.status(httpStatus.OK).json({ result });
+	res.status(httpStatus.OK).json(result);
 });
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
@@ -134,7 +134,7 @@ const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.payload.id;
 	const currentUser = req.user;
 	const result = await jobService.getJobsPendingFromMe(id, currentUser,options);
-	res.status(httpStatus.OK).json({ result });
+	res.status(httpStatus.OK).json(result);
 });
 const getJobsPendingFromGrower = catchAsync(
 	async (req: Request, res: Response) => {
@@ -142,7 +142,7 @@ const getJobsPendingFromGrower = catchAsync(
 
 		const id = +req.payload.id;
 		const result = await jobService.getJobsPendingFromGrowers(id,options);
-		res.status(httpStatus.OK).json({ result });
+		res.status(httpStatus.OK).json(result);
 	},
 );
 // // for grower approval screen
@@ -174,7 +174,7 @@ const getJobByPilot = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 
 	const result = await jobService.getJobByPilot(applicatorId, pilotId,options);
-	res.status(httpStatus.OK).json({ result });
+	res.status(httpStatus.OK).json(result);
 });
 const getAssignedJobs = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = +req.payload.id;

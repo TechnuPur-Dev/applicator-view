@@ -70,7 +70,7 @@ const getAllWarrantyRegList = catchAsync(
 			await warrantyRegistrationService.getAllWarrantyRegList(
 				currentUser,options
 			);
-		res.status(httpStatus.OK).json({ result });
+		res.status(httpStatus.OK).json(result);
 	},
 );
 const getWarrantyRegById = catchAsync(async (req: Request, res: Response) => {
