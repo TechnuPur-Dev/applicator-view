@@ -114,28 +114,34 @@ const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 const getJobs = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
 	const id = +req.payload.id;
 	const type = req.params.type;
 	const role = req.user.role;
 
-	const result = await jobService.getJobs(id, type, role);
+	const result = await jobService.getJobs(id, type, role,options);
 	res.status(httpStatus.OK).json({ result });
 });
 const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
-	const result = await jobService.getOpenJobs();
+	const options = pick(req.query, ['limit', 'page']);
+	
+	const result = await jobService.getOpenJobs(options);
 	res.status(httpStatus.OK).json({ result });
 });
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
 	const id = +req.payload.id;
 	const currentUser = req.user;
-	const result = await jobService.getJobsPendingFromMe(id, currentUser);
+	const result = await jobService.getJobsPendingFromMe(id, currentUser,options);
 	res.status(httpStatus.OK).json({ result });
 });
 const getJobsPendingFromGrower = catchAsync(
 	async (req: Request, res: Response) => {
+		const options = pick(req.query, ['limit', 'page']);
+
 		const id = +req.payload.id;
-		const result = await jobService.getJobsPendingFromGrowers(id);
+		const result = await jobService.getJobsPendingFromGrowers(id,options);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
@@ -165,7 +171,9 @@ const updatePendingJobStatus = catchAsync(
 const getJobByPilot = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = +req.payload.id;
 	const pilotId = +req.params.pilotId;
-	const result = await jobService.getJobByPilot(applicatorId, pilotId);
+	const options = pick(req.query, ['limit', 'page']);
+
+	const result = await jobService.getJobByPilot(applicatorId, pilotId,options);
 	res.status(httpStatus.OK).json({ result });
 });
 const getAssignedJobs = catchAsync(async (req: Request, res: Response) => {
