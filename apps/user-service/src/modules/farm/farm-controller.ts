@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import farmService from './farm-service';
+import pick from '../../../../../shared/utils/pick';
 
 // Controller for verifying phone and sending OTP
 const createFarm = catchAsync(async (req: Request, res: Response) => {
@@ -13,8 +14,10 @@ const createFarm = catchAsync(async (req: Request, res: Response) => {
 });
 // get all farms
 const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+
 	const growerId = req.payload.id;
-	const userData = await farmService.getAllFarmsByGrower(growerId);
+	const userData = await farmService.getAllFarmsByGrower(growerId,options);
 	res.status(httpStatus.OK).json({ result: userData });
 });
 const getFarmById = catchAsync(async (req: Request, res: Response) => {

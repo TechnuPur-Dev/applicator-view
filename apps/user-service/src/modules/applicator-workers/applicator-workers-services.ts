@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { ApplicatorWorker, UpdateStatus } from './applicator-workers-types';
 import ApiError from '../../../../../shared/utils/api-error';
-import { User } from '../../../../../shared/types/global';
+import { PaginateOptions, User } from '../../../../../shared/types/global';
 import {
 	mailHtmlTemplate,
 	sendEmail,
@@ -85,7 +85,19 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 	});
 };
 
-const getAllWorker = async (applicatorId: number) => {
+const getAllWorker = async (applicatorId: number,options: PaginateOptions) => {
+	const limit =
+			options.limit && parseInt(options.limit, 10) > 0
+				? parseInt(options.limit, 10)
+				: 10;
+		// Set the page number, default to 1 if not specified or invalid
+		const page =
+			options.page && parseInt(options.page, 10) > 0
+				? parseInt(options.page, 10)
+				: 1;
+		// Calculate the number of users to skip based on the current page and limit
+		const skip = (page - 1) * limit;
+	
 	const workers = await prisma.applicatorWorker.findMany({
 		where: {
 			applicatorId: applicatorId,
@@ -105,8 +117,27 @@ const getAllWorker = async (applicatorId: number) => {
 				},
 			},
 		},
+		skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 	});
-	return workers;
+	const totalResults = await prisma.applicatorWorker.count({
+		where: {
+			applicatorId: applicatorId,
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: workers,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 const getWorkerById = async (Id: number) => {
 	const workers = await prisma.applicatorWorker.findFirst({

@@ -8,7 +8,7 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 import { EquipmentType } from '@prisma/client';
 import { CreateData } from './warranty-registration-types';
 import ApiError from '../../../../../shared/utils/api-error';
-import { User } from './../../../../../shared/types/global';
+import { PaginateOptions, User } from './../../../../../shared/types/global';
 
 const getAllEquipmentType = async () => {
 	const ticketCategoryList = Object.values(EquipmentType).map(
@@ -142,10 +142,42 @@ const createWarrantyReg = async (createdById: number, data: CreateData) => {
 	return result;
 };
 
-const getAllWarrantyRegList = async (user: User) =>
-	await prisma.warrantyRegistration.findMany({
+const getAllWarrantyRegList = async (user: User,options: PaginateOptions) =>{
+	  // Set the limit of users to be returned per page, default to 10 if not specified or invalid
+		const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+	const result =await prisma.warrantyRegistration.findMany({
+		where: { createdById: user.id },
+		skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
+	});
+	const totalResults = await prisma.warrantyRegistration.count({
 		where: { createdById: user.id },
 	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: result,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+
+}
 const getWarrantyRegById = async (user: User, id: number) => {
 	const result = await prisma.warrantyRegistration.findUnique({
 		where: {

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import productService from './product-service';
+import pick from '../../../../../shared/utils/pick';
 
 const getAllProductCategories = catchAsync(
 	async (req: Request, res: Response) => {
@@ -23,8 +24,10 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllProducts = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+
 	const currentUser = req.user;
-	const productData = await productService.getAllProducts(currentUser);
+	const productData = await productService.getAllProducts(currentUser,options);
 	res.status(httpStatus.OK).json({ result: productData });
 });
 

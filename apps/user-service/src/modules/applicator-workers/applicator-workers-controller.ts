@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import applicatorWorkersServices from './applicator-workers-services';
+import pick from '../../../../../shared/utils/pick';
 
 const createWorker = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
@@ -14,9 +15,11 @@ const createWorker = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllWorker = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+
 	const applicatorId = req.payload.id;
 	const workerData =
-		await applicatorWorkersServices.getAllWorker(applicatorId);
+		await applicatorWorkersServices.getAllWorker(applicatorId,options);
 	res.status(httpStatus.OK).json({ result: workerData });
 });
 

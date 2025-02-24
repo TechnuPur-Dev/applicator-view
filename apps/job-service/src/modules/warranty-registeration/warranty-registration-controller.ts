@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import warrantyRegistrationService from './warranty-registration-service';
+import pick from '../../../../../shared/utils/pick';
 
 const getAllEquipmentType = catchAsync(async (req: Request, res: Response) => {
 	const result = await warrantyRegistrationService.getAllEquipmentType();
@@ -62,10 +63,12 @@ const createWarrantyReg = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllWarrantyRegList = catchAsync(
 	async (req: Request, res: Response) => {
+		const options = pick(req.query, ['limit', 'page']);
+
 		const currentUser = req.user;
 		const result =
 			await warrantyRegistrationService.getAllWarrantyRegList(
-				currentUser,
+				currentUser,options
 			);
 		res.status(httpStatus.OK).json({ result });
 	},
