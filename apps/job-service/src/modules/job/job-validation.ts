@@ -104,6 +104,10 @@ const jobSourceParamSchema: Schema = Joi.object({
 			.valid('APPLICATOR', 'GROWER', 'BIDDING', 'ALL')
 			.required(),
 	}).required(),
+	query: Joi.object({
+        limit: Joi.number().integer().min(1).default(10), 
+        page: Joi.number().integer().min(1).default(1),   
+    }).optional(),
 });
 
 const jobStatusParamSchema: Schema = Joi.object({
@@ -120,6 +124,10 @@ const pilotJobsParamSchema: Schema = Joi.object({
 	params: Joi.object({
 		pilotId: Joi.number().integer().positive().required(),
 	}).required(),
+	query: Joi.object({
+		limit: Joi.number().integer().min(1).default(10), 
+		page: Joi.number().integer().min(1).default(1),   
+	}).optional(),
 });
 
 export default {

@@ -654,7 +654,18 @@ const uploadJobAttachments = async (
 	);
 	return uploadedFiles;
 };
-const getJobs = async (growerId: number, type: string, role: string) => {
+const getJobs = async (growerId: number, type: string, role: string,options: PaginateOptions,) => {
+	const limit =
+			options.limit && parseInt(options.limit, 10) > 0
+				? parseInt(options.limit, 10)
+				: 10;
+		// Set the page number, default to 1 if not specified or invalid
+		const page =
+			options.page && parseInt(options.page, 10) > 0
+				? parseInt(options.page, 10)
+				: 1;
+		// Calculate the number of users to skip based on the current page and limit
+		const skip = (page - 1) * limit;
 	if (role !== 'GROWER') {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
@@ -693,6 +704,11 @@ const getJobs = async (growerId: number, type: string, role: string) => {
 			// products: true,
 			// applicationFees: true,
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	}); // Fetch all users
 	// Calculate total acres for each job
 
@@ -703,7 +719,7 @@ const getJobs = async (growerId: number, type: string, role: string) => {
 	} else if (type === 'APPLICATOR') {
 		jobs = jobs.filter((job) => job.source === 'APPLICATOR');
 	}
-	return jobs.map((job) => ({
+	const formattedJobs = jobs.map((job) => ({
 		...job,
 		...job,
 		...(job.applicator
@@ -720,9 +736,34 @@ const getJobs = async (growerId: number, type: string, role: string) => {
 			0,
 		), // Sum actualAcres, default to 0 if null
 	}));
+	const totalResults = await prisma.job.count({
+		where: {
+			growerId,
+			
+		},
+	});
+	const totalPages = Math.ceil(totalResults / limit);
+	return {
+		result: formattedJobs,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	}; 
 };
 // get apis for Bidding screen
-const getOpenJobs = async () => {
+const getOpenJobs = async (options: PaginateOptions) => {
+	const limit =
+	options.limit && parseInt(options.limit, 10) > 0
+		? parseInt(options.limit, 10)
+		: 10;
+// Set the page number, default to 1 if not specified or invalid
+const page =
+	options.page && parseInt(options.page, 10) > 0
+		? parseInt(options.page, 10)
+		: 1;
+// Calculate the number of users to skip based on the current page and limit
+const skip = (page - 1) * limit;
 	const jobs = await prisma.job.findMany({
 		where: {
 			source: 'BIDDING',
@@ -767,19 +808,50 @@ const getOpenJobs = async () => {
 			// products: true,
 			// applicationFees: true,
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	});
-
-	// Calculate total acres for each job
-	return jobs.map((job) => ({
+	const formattedJobs =jobs.map((job) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
 		), // Sum actualAcres, default to 0 if null
 	}));
+	// Calculate total acres for each job
+	const totalResults = await prisma.job.count({
+		where: {
+			source: 'BIDDING',
+			
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: formattedJobs,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	}; 
 };
 // get job for applicator pending approval screen
-const getJobsPendingFromMe = async (Id: number, currentUser: User) => {
+const getJobsPendingFromMe = async (Id: number, currentUser: User,options: PaginateOptions,) => {
+	const limit =
+			options.limit && parseInt(options.limit, 10) > 0
+				? parseInt(options.limit, 10)
+				: 10;
+		// Set the page number, default to 1 if not specified or invalid
+		const page =
+			options.page && parseInt(options.page, 10) > 0
+				? parseInt(options.page, 10)
+				: 1;
+		// Calculate the number of users to skip based on the current page and limit
+		const skip = (page - 1) * limit;
 	const whereCondition: {
 		status: 'TO_BE_MAPPED';
 		applicatorId?: number;
@@ -837,17 +909,50 @@ const getJobsPendingFromMe = async (Id: number, currentUser: User) => {
 			// products: true,
 			// applicationFees: true,
 		},
+		skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 	});
 	// Calculate total acres for each job
-	return jobs.map((job) => ({
+	const formattedJobs =  jobs.map((job) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
 		), // Sum actualAcres, default to 0 if null
 	}));
+	// Calculate the total number of pages based on the total results and limit
+	const totalResults = await prisma.job.count({
+		
+			where: whereCondition,
+		
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: formattedJobs,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+	
 };
-const getJobsPendingFromGrowers = async (Id: number) => {
+const getJobsPendingFromGrowers = async (Id: number,options: PaginateOptions) => {
+	const limit =
+			options.limit && parseInt(options.limit, 10) > 0
+				? parseInt(options.limit, 10)
+				: 10;
+		// Set the page number, default to 1 if not specified or invalid
+		const page =
+			options.page && parseInt(options.page, 10) > 0
+				? parseInt(options.page, 10)
+				: 1;
+		// Calculate the number of users to skip based on the current page and limit
+		const skip = (page - 1) * limit;
 	const jobs = await prisma.job.findMany({
 		where: {
 			applicatorId: Id,
@@ -893,16 +998,38 @@ const getJobsPendingFromGrowers = async (Id: number) => {
 			// products: true,
 			// applicationFees: true,
 		},
+		skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 	});
-
-	// Calculate total acres for each job
-	return jobs.map((job) => ({
+	const formattedJobs =  jobs.map((job) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
 		), // Sum actualAcres, default to 0 if null
 	}));
+	// Calculate the total number of pages based on the total results and limit
+	const totalResults = await prisma.job.count({
+		where: {
+			applicatorId: Id,
+			source: 'APPLICATOR',
+			status: 'PENDING',
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: formattedJobs,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+	
 };
 // const getJobsPendingFromApplicators = async (Id: number) => {
 // 	const jobs = await prisma.job.findMany({
@@ -1009,10 +1136,45 @@ const updatePendingJobStatus = async (
 	};
 };
 
-const getJobByPilot = async (applicatorId: number, pilotId: number) => {
-	return await prisma.job.findMany({
+const getJobByPilot = async (applicatorId: number, pilotId: number,options: PaginateOptions) => {
+	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
+	const limit =
+	options.limit && parseInt(options.limit, 10) > 0
+		? parseInt(options.limit, 10)
+		: 10;
+// Set the page number, default to 1 if not specified or invalid
+const page =
+	options.page && parseInt(options.page, 10) > 0
+		? parseInt(options.page, 10)
+		: 1;
+// Calculate the number of users to skip based on the current page and limit
+const skip = (page - 1) * limit;
+
+	let jobs= await prisma.job.findMany({
 		where: { applicatorId, fieldWorkerId: pilotId },
+		skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 	});
+	const totalResults = await prisma.job.count({
+		
+			where: { applicatorId, fieldWorkerId: pilotId },
+			
+		
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: jobs,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+	
 };
 const getAssignedJobs = async (applicatorId: number) => {
 	return await prisma.job.findMany({
