@@ -1,7 +1,7 @@
 import Joi, { Schema } from 'joi';
 import {
 	phoneNumberSchema,
-	passwordSchema,
+	// passwordSchema,
 	inviteStatusSchema,
 } from '../../../../../shared/utils/joi-common-validations';
 
@@ -24,7 +24,7 @@ const workerCreateSchema: Schema = Joi.object({
 		lastName: Joi.string().min(1).max(50).required(),
 		email: Joi.string().email().required(),
 		phoneNumber: phoneNumberSchema.required(),
-		password: passwordSchema.required(), // Password with length constraints
+		// password: passwordSchema.required(), // Password with length constraints
 		address1: Joi.string().max(100).required(),
 		address2: Joi.string().allow('').max(100).optional(),
 		stateId: Joi.number().integer().positive().required(),
@@ -56,30 +56,28 @@ const updateSchema: Schema = Joi.object({
 		id: Joi.number().integer().positive().required(), // ID should be a positive number
 	}).required(),
 	body: Joi.object({
-		title: workerTypeSchema.required(),
-		firstName: Joi.string().min(1).max(50).required(),
-		lastName: Joi.string().min(1).max(50).required(),
-		email: Joi.string().email().required(),
-		phoneNumber: phoneNumberSchema.required(),
+		firstName: Joi.string().min(1).max(50).optional(),
+		lastName: Joi.string().min(1).max(50).optional(),
+		email: Joi.string().email().optional(),
+		phoneNumber: phoneNumberSchema.optional(),
 		businessName: Joi.string().max(100).optional(),
-		address1: Joi.string().max(100).required(),
+		address1: Joi.string().max(100).optional(),
 		address2: Joi.string().max(100).optional(),
-		stateId: Joi.number().integer().positive().required(),
-		county: Joi.string().max(50).required(),
-		township: Joi.string().max(50).required(),
+		stateId: Joi.number().integer().positive().optional(),
+		county: Joi.string().max(50).optional(),
+		township: Joi.string().max(50).optional(),
 		zipCode: Joi.string()
 			.pattern(/^\d{5}(-\d{4})?$/)
-			.required(),
+			.optional(),
+		pilotPestLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
 		pilotLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
 		businessLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
 		planeOrUnitNumber: Joi.string().min(1).max(50).optional(), // Nullable field
-		perAcrePricing: Joi.number().precision(2).min(0).optional(), // Decimal field
 		percentageFee: Joi.number().precision(2).min(0).optional(), // Decimal field
 		dollarPerAcre: Joi.number().precision(2).min(0).optional(), // Decimal field
 		autoAcceptJobs: Joi.boolean().default(false).optional(),
 		canViewPricingDetails: Joi.boolean().default(false).optional(),
 		code: Joi.string().optional(),
-		lastLogin: Joi.date().optional(),
 	}).required(),
 });
 const updateInviteStatusSchema: Schema = Joi.object({

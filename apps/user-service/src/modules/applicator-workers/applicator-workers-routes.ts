@@ -14,7 +14,7 @@ router
 		validateSchema(workerValidation.workerCreateSchema),
 		applicatorWorker.createWorker,
 	);
-router.route('/get/all').get(verifyToken, applicatorWorker.getAllWorker);
+router.route('/get/all').get(verifyToken, applicatorWorker.getAllWorkers);
 router
 	.route('/get/by-Id/:id')
 	.get(
@@ -30,7 +30,7 @@ router
 		applicatorWorker.updateInviteStatus,
 	);
 router
-	.route('/update/:workerId')
+	.route('/update/:id')
 	.put(
 		verifyToken,
 		validateSchema(workerValidation.updateSchema),
