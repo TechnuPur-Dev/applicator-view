@@ -42,9 +42,23 @@ const deleteWorker = catchAsync(async (req: Request, res: Response) => {
 });
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
-	
 	const data = req.body;
-	const result = await applicatorWorkersServices.updateInviteStatus(applicatorId,data);
+	const result = await applicatorWorkersServices.updateInviteStatus(
+		applicatorId,
+		data,
+	);
+	res.status(httpStatus.OK).json(result);
+});
+
+const searchWorkerByEmail = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
+	const email = req.params.email;
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await applicatorWorkersServices.searchWorkerByEmail(
+		applicatorId,
+		email,
+		options,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -53,5 +67,6 @@ export default {
 	getWorkerById,
 	updateWorker,
 	deleteWorker,
-	updateInviteStatus
+	updateInviteStatus,
+	searchWorkerByEmail,
 };

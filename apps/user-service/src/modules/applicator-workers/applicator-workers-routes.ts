@@ -14,15 +14,15 @@ router
 		validateSchema(workerValidation.workerCreateSchema),
 		applicatorWorker.createWorker,
 	);
-router.route('/all').get(verifyToken, applicatorWorker.getAllWorker);
+router.route('/get/all').get(verifyToken, applicatorWorker.getAllWorker);
 router
-	.route('/get-byId/:workerId')
+	.route('/get/by-Id/:id')
 	.get(
 		verifyToken,
 		validateSchema(workerValidation.paramsSchema),
 		applicatorWorker.getWorkerById,
 	);
-	router
+router
 	.route('/update/invite-status')
 	.put(
 		verifyToken,
@@ -44,4 +44,11 @@ router
 		applicatorWorker.deleteWorker,
 	);
 
+router
+	.route('/search/by-email/:email')
+	.get(
+		verifyToken,
+		validateSchema(workerValidation.searchWorkerByEmail),
+		applicatorWorker.searchWorkerByEmail,
+	);
 export default router;
