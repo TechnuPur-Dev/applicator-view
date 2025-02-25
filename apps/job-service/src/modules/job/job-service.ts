@@ -793,6 +793,7 @@ const getOpenJobs = async (options: PaginateOptions) => {
 					county: true,
 					township: true,
 					zipCode: true,
+					farmImageUrl: true,
 				},
 			},
 			fields: {
