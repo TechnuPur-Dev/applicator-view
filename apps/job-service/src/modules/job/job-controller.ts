@@ -130,22 +130,18 @@ const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
-	const id = +req.payload.id;
 	const currentUser = req.user;
-	const result = await jobService.getJobsPendingFromMe(
-		id,
-		currentUser,
-		options,
-	);
+	const result = await jobService.getJobsPendingFromMe(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getJobsPendingFromGrower = catchAsync(
 	async (req: Request, res: Response) => {
 		const options = pick(req.query, ['limit', 'page']);
-
-		const id = +req.payload.id;
-
-		const result = await jobService.getJobsPendingFromGrowers(id, options);
+		const currentUser = req.user;
+		const result = await jobService.getJobsPendingFromGrowers(
+			currentUser,
+			options,
+		);
 
 		res.status(httpStatus.OK).json(result);
 	},
@@ -161,12 +157,12 @@ const getJobsPendingFromGrower = catchAsync(
 
 const updatePendingJobStatus = catchAsync(
 	async (req: Request, res: Response) => {
-		const Id = +req.params.jobId;
+		const id = +req.params.jobId;
 		const userData = req.user;
 		const data = req.body;
 		const result = await jobService.updatePendingJobStatus(
 			data,
-			Id,
+			id,
 			userData,
 		);
 		res.status(httpStatus.OK).json(result);
