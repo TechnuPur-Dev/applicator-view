@@ -684,14 +684,23 @@ const getJobs = async (
 		include: {
 			applicator: {
 				select: {
+					firstName: true,
+					lastName: true,
+					email: true,
 					fullName: true,
 					businessName: true,
+					phoneNumber: true,
+
 				},
 			},
 
 			farm: {
 				select: {
 					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
 				},
 			},
 			fields: {
@@ -726,16 +735,6 @@ const getJobs = async (
 	}
 	const formattedJobs = jobs.map((job) => ({
 		...job,
-		...job,
-		...(job.applicator
-			? {
-					applicatorFullName: job.applicator.fullName,
-					applicatorBusinessName: job.applicator.businessName,
-				}
-			: {}), // Applicator values as key-value pair
-		...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
-		applicator: undefined, // Remove original object
-		farm: undefined, // Remove original object
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,

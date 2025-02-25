@@ -284,9 +284,9 @@ const deleteWorker = async (applicatorId: number, workerId: number) => {
 	});
 	return { result: 'Deleted successfully' };
 };
-const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
-	const { workerId, status } = data;
-	if (status === 'PENDING') {
+const  sendInviteStatus= async (applicatorId: number, workerId: number) => {
+	
+	
 		const user = await prisma.applicatorWorker.update({
 			where: {
 				applicatorId_workerId: { applicatorId, workerId },
@@ -328,7 +328,12 @@ const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
 				message: 'Invite sent successfully.',
 			};
 		}
-	}
+	
+	
+};
+const updateInviteStatus  = async (applicatorId: number, data: UpdateStatus) => {
+	const { workerId, status } = data;
+	
 	if (status === 'ACCEPTED') {
 		await prisma.applicatorWorker.update({
 			where: {
@@ -441,4 +446,5 @@ export default {
 	deleteWorker,
 	updateInviteStatus,
 	searchWorkerByEmail,
+	sendInviteStatus
 };
