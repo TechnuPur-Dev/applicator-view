@@ -316,6 +316,8 @@ const getJobById = async (user: User, jobId: number) => {
 			},
 			farm: {
 				select: {
+					id: true,
+					farmImageUrl: true,
 					name: true,
 					state: true,
 					county: true,
@@ -365,6 +367,14 @@ const getJobById = async (user: User, jobId: number) => {
 			'No job found for the given job Id.',
 		);
 	}
+	const fields = await prisma.field.findMany({
+		where: {
+			farmId: job.farm.id,
+		},
+		select: {
+			acres: true,
+		},
+	});
 
 	return {
 		...job,
@@ -373,6 +383,13 @@ const getJobById = async (user: User, jobId: number) => {
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
 		), // Sum actualAcres, default to 0 if null
+		farm: {
+			...job.farm,
+			totalAcres: fields.reduce(
+				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
+				0,
+			),
+		},
 	};
 };
 
@@ -793,14 +810,17 @@ const getOpenJobs = async (options: PaginateOptions) => {
 			source: 'BIDDING',
 			status: 'OPEN_FOR_BIDDING',
 		},
-		include: {
+		select: {
+			id: true,
+			title: true,
+			type: true,
 			grower: {
 				select: {
 					firstName: true,
 					lastName: true,
 					fullName: true,
-					email: true,
-					phoneNumber: true,
+					// email: true,
+					// phoneNumber: true,
 				},
 			},
 			// fieldWorker: {
@@ -814,31 +834,31 @@ const getOpenJobs = async (options: PaginateOptions) => {
 					state: true,
 					county: true,
 					township: true,
-					zipCode: true,
-					farmImageUrl: true,
+					// zipCode: true,
+					// farmImageUrl: true,
 				},
 			},
 			fields: {
 				select: {
-					fieldId: true,
+					// fieldId: true,
 					actualAcres: true,
-					field: {
-						select: {
-							name: true,
-							acres: true,
-							crop: true,
-						},
-					},
+					// field: {
+					// 	select: {
+					// 		name: true,
+					// 		acres: true,
+					// 		crop: true,
+					// 	},
+					// },
 				},
 			},
-			products: true,
-			applicationFees: true,
+			// products: true,
+			// applicationFees: true,
 		},
-		omit: {
-			source: true,
-			applicatorId: true,
-			fieldWorkerId: true,
-		},
+		// omit: {
+		// 	source: true,
+		// 	applicatorId: true,
+		// 	fieldWorkerId: true,
+		// },
 		skip,
 		take: limit,
 		orderBy: {
@@ -851,19 +871,20 @@ const getOpenJobs = async (options: PaginateOptions) => {
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
 		), // Sum actualAcres, default to 0 if null
-		farm: {
-			...job.farm,
-			totalAcres: job.fields.reduce(
-				(sum, f) =>
-					sum + (f.field?.acres ? f.field.acres.toNumber() : 0),
-				0,
-			),
-		},
+		// farm: {
+		// 	...job.farm,
+		// 	totalAcres: job.fields.reduce(
+		// 		(sum, f) =>
+		// 			sum + (f.field?.acres ? f.field.acres.toNumber() : 0),
+		// 		0,
+		// 	),
+		// },
 	}));
 	// Calculate total acres for each job
 	const totalResults = await prisma.job.count({
 		where: {
 			source: 'BIDDING',
+			status: 'OPEN_FOR_BIDDING',
 		},
 	});
 
