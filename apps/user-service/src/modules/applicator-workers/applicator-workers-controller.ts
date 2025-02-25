@@ -55,11 +55,10 @@ const deleteWorker = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(result);
 });
-const sendInviteStatus = catchAsync(async (req: Request, res: Response) => {
+const sendInviteToWorker = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
 	const workerId = +req.params.id;
-
-	const result = await applicatorWorkersServices.sendInviteStatus(
+	const result = await applicatorWorkersServices.sendInviteToWorker(
 		applicatorId,
 		workerId,
 	);
@@ -93,6 +92,6 @@ export default {
 	updateWorker,
 	deleteWorker,
 	updateInviteStatus,
-	sendInviteStatus,
+	sendInviteToWorker,
 	searchWorkerByEmail,
 };

@@ -23,11 +23,11 @@ router
 		applicatorWorker.getWorkerById,
 	);
 router
-	.route('/send/invite-status/:id')
+	.route('/send/invite/:id')
 	.put(
 		verifyToken,
 		validateSchema(workerValidation.paramsSchema),
-		applicatorWorker.sendInviteStatus,
+		applicatorWorker.sendInviteToWorker,
 	);
 	router
 	.route('/update/invite-status')
