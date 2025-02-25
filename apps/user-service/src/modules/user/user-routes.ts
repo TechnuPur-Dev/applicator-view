@@ -35,6 +35,14 @@ router
 		validateSchema(userValidation.verifyEmailAndSendOTPSchema),
 		userController.getGrowerByEmail,
 	);
+	router
+	.route('/applicator/email/:email')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.searchApplicatorByEmail),
+		userController.getApplicatorByEmail,
+	);
+	
 router
 	.route('/grower/create')
 	.post(
