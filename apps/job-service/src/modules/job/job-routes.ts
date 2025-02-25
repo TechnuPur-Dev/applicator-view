@@ -112,5 +112,12 @@ router
 		validateSchema(jobValidation.pilotJobsParamSchema),
 		jobController.getJobByPilot,
 	);
+	router
+	.route('/create/open-for-bidding')
+	.post(
+		verifyToken,
+		validateSchema(jobValidation.createJobSchema),
+		jobController.addOpenForBiddingJob,
+	);
 
 export default router;
