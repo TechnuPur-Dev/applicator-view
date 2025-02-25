@@ -296,6 +296,17 @@ const getJobById = async (user: User, jobId: number) => {
 					fullName: true,
 					email: true,
 					phoneNumber: true,
+					businessName: true,
+				},
+			},
+			applicator: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+					businessName: true,
 				},
 			},
 			fieldWorker: {
@@ -357,6 +368,7 @@ const getJobById = async (user: User, jobId: number) => {
 
 	return {
 		...job,
+	
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
@@ -690,7 +702,6 @@ const getJobs = async (
 					fullName: true,
 					businessName: true,
 					phoneNumber: true,
-
 				},
 			},
 
@@ -735,6 +746,16 @@ const getJobs = async (
 	}
 	const formattedJobs = jobs.map((job) => ({
 		...job,
+		...job,
+		...(job.applicator
+			? {
+					applicatorFullName: job.applicator.fullName,
+					applicatorBusinessName: job.applicator.businessName,
+				}
+			: {}), // Applicator values as key-value pair
+		...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
+		// applicator: undefined, // Remove original object
+		// farm: undefined, // Remove original object
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
@@ -1186,6 +1207,123 @@ const getAssignedJobs = async (applicatorId: number) => {
 		where: { applicatorId, status: 'READY_TO_SPRAY', fieldWorkerId: null },
 	});
 };
+
+const addOpenForBiddingJob = async (user: User, data: CreateJob) => {
+	if (user.role === 'GROWER') {
+		const {
+			title,
+			type,
+			userId:growerId ,
+			startDate,
+			endDate,
+			description,
+			farmId,
+			sensitiveAreas,
+			adjacentCrops,
+			specialInstructions,
+			attachments = [],
+			fields = [],
+			products = [],
+			applicationFees = [],
+		} = data;
+		if (typeof user.id !== 'number') {
+			throw new Error('growerId is required and must be a number');
+		}
+
+		const fieldIds = fields.map(({ fieldId }) => fieldId);
+		const fieldCount = await prisma.field.count({
+			where: { id: { in: fieldIds }, farmId },
+		});
+		if (fieldCount !== fieldIds.length) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access these fields.',
+			);
+		}
+
+		const job = await prisma.job.create({
+			data: {
+				title,
+				type,
+				source: 'BIDDING',
+				status: 'OPEN_FOR_BIDDING',
+				growerId,
+				startDate,
+				endDate,
+				description,
+				farmId,
+				sensitiveAreas,
+				adjacentCrops,
+				specialInstructions,
+				attachments,
+				fields: {
+					create: fields.map(({ fieldId, actualAcres }) => ({
+						fieldId,
+						actualAcres,
+					})),
+				},
+				products: {
+					create: products.map(
+						({ productId, totalAcres, price }) => ({
+							productId,
+							totalAcres,
+							price,
+						}),
+					),
+				},
+				applicationFees: {
+					create: applicationFees.map(
+						({ description, rateUoM, perAcre }) => ({
+							description,
+							rateUoM,
+							perAcre,
+						}),
+					),
+				},
+			},
+			include: {
+				grower: {
+					select: {
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+						phoneNumber: true,
+					},
+				},
+				fieldWorker: { select: { fullName: true } },
+				farm: {
+					select: {
+						name: true,
+						state: { select: { id: true, name: true } },
+						county: true,
+						township: true,
+						zipCode: true,
+					},
+				},
+				fields: {
+					select: {
+						actualAcres: true,
+						field: {
+							select: { name: true, acres: true, crop: true },
+						},
+					},
+				},
+				products: {
+					select: {
+						product: {
+							select: { productName: true, perAcreRate: true },
+						},
+						totalAcres: true,
+						price: true,
+					},
+				},
+				applicationFees: true,
+			},
+		});
+		return job;
+	}
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -1207,4 +1345,5 @@ export default {
 	updatePendingJobStatus,
 	getJobByPilot,
 	getAssignedJobs,
+	addOpenForBiddingJob,
 };
