@@ -11,6 +11,7 @@ import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
 import { User } from '../../../../../shared/types/global';
+import { PaginateOptions } from '../../../../../shared/types/global';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -522,43 +523,120 @@ const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 		};
 	}
 };
-const getApplicatorByEmail = async (userEmail: string) => {
-	const applicator = await prisma.user.findFirst({
+const getApplicatorByEmail = async (
+	growerId: number,
+	email: string,
+	options: PaginateOptions,
+) => {
+	// Set pagination parameters
+	const limit =
+		options.limit && parseInt(options.limit.toString(), 10) > 0
+			? parseInt(options.limit.toString(), 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page.toString(), 10) > 0
+			? parseInt(options.page.toString(), 10)
+			: 1;
+	const skip = (page - 1) * limit;
+
+	// Find all users matching the email pattern (debounced search)
+	const users = await prisma.user.findMany({
 		where: {
 			email: {
-				equals: userEmail,
+				contains: email, // Case-insensitive partial match
 				mode: 'insensitive',
 			},
-			role: 'APPLICATOR',
-		},
-		include: {
-			state: {
-				select: {
-					id: true,
-					name: true,
+			role:'APPLICATOR',
+			NOT: {
+				// Exclude users already connected by grower with ACCEPTED or PENDING statuses
+				applicators: {
+					some: {
+						growerId,
+						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
+					},
 				},
 			},
-			
 		},
-		omit: {
-			password: true, // Exclude sensitive data
-			businessName: true,
-			experience: true,
+		select: {
+			id: true,
+			profileImage: true,
+			thumbnailProfileImage: true,
+			firstName: true,
+			lastName: true,
+			fullName: true,
+			email: true,
+		},
+		take: limit,
+		skip,
+	});
+
+	// Get total count of matching users
+	const totalResults = await prisma.user.count({
+		where: {
+			email: {
+				contains: email,
+				mode: 'insensitive',
+				
+			},
+			role:'APPLICATOR',
+			NOT: {
+				applicators: {
+					some: {
+						growerId,
+						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
+					},
+				},
+			},
 		},
 	});
-	if (!applicator) {
-		throw new ApiError(
-			httpStatus.CONFLICT,
-			'applicator with this email not found.',
-		);
-	}
 
-
-	// Add total acres to the grower object
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		...applicator,
+		result: users,
+		page,
+		limit,
+		totalPages,
+		totalResults,
 	};
 };
+// const getApplicatorByEmail = async (userEmail: string) => {
+// 	const applicator = await prisma.user.findFirst({
+// 		where: {
+// 			email: {
+// 				equals: userEmail,
+// 				mode: 'insensitive',
+// 			},
+// 			role: 'APPLICATOR',
+// 		},
+// 		include: {
+// 			state: {
+// 				select: {
+// 					id: true,
+// 					name: true,
+// 				},
+// 			},
+			
+// 		},
+// 		omit: {
+// 			password: true, // Exclude sensitive data
+// 			businessName: true,
+// 			experience: true,
+// 		},
+// 	});
+// 	if (!applicator) {
+// 		throw new ApiError(
+// 			httpStatus.CONFLICT,
+// 			'applicator with this email not found.',
+// 		);
+// 	}
+
+
+// 	// Add total acres to the grower object
+// 	return {
+// 		...applicator,
+// 	};
+// };
 const sendInviteToApplicator = async (
 	applicatorId: number,
 	grower: User,

@@ -63,6 +63,16 @@ const sendInviteSchema: Schema = Joi.object({
 		.or('applicatorId', 'growerId') // At least one must be present
 		.required(),
 });
+
+const searchApplicatorByEmail: Schema = Joi.object({
+	params: Joi.object({
+		email: Joi.string().required(),
+	}).required(),
+	query: Joi.object({
+		limit: Joi.number().integer().positive().optional(),
+		page: Joi.number().integer().positive().optional(),
+	}).required(),
+});
 export default {
 	createGrowerSchema,
 	paramsSchema,
@@ -70,4 +80,5 @@ export default {
 	updateArchiveStatus,
 	updateInviteStatusSchema,
 	sendInviteSchema,
+	searchApplicatorByEmail
 };

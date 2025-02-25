@@ -39,7 +39,7 @@ router
 	.route('/applicator/email/:email')
 	.get(
 		verifyToken,
-		validateSchema(userValidation.verifyEmailAndSendOTPSchema),
+		validateSchema(userValidation.searchApplicatorByEmail),
 		userController.getApplicatorByEmail,
 	);
 	

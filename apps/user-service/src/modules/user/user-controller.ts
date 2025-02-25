@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import userService from './user-service';
+import pick from '../../../../../shared/utils/pick';
 
 // Controller to get userList
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
@@ -105,9 +106,14 @@ const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getApplicatorByEmail = catchAsync(async (req: Request, res: Response) => {
-	// const growerId = req.payload.id;
+	const growerId = req.payload.id;
 	const email = req.params.email;
-	const result = await userService.getApplicatorByEmail( email);
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await userService.getApplicatorByEmail(
+		growerId,
+		email,
+		options,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 const sendInviteToApplicator = catchAsync(
