@@ -55,6 +55,16 @@ const deleteWorker = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(result);
 });
+const sendInviteStatus = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
+	const workerId = +req.params.id;
+
+	const result = await applicatorWorkersServices.sendInviteStatus(
+		applicatorId,
+		workerId,
+	);
+	res.status(httpStatus.OK).json(result);
+});
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
 	const data = req.body;
@@ -83,5 +93,6 @@ export default {
 	updateWorker,
 	deleteWorker,
 	updateInviteStatus,
+	sendInviteStatus,
 	searchWorkerByEmail,
 };
