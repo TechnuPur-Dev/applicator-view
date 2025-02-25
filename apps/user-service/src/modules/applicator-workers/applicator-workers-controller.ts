@@ -14,28 +14,45 @@ const createWorker = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.CREATED).json(result);
 });
 
-const getAllWorker = catchAsync(async (req: Request, res: Response) => {
+const getAllWorkers = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
 	const applicatorId = req.payload.id;
-	const workerData =
-		await applicatorWorkersServices.getAllWorker(applicatorId);
-	res.status(httpStatus.OK).json({ result: workerData });
+	const workerData = await applicatorWorkersServices.getAllWorkers(
+		applicatorId,
+		options,
+	);
+	res.status(httpStatus.OK).json(workerData);
 });
 
 const getWorkerById = catchAsync(async (req: Request, res: Response) => {
-	const workerId = +req.params.workerId;
-	const result = await applicatorWorkersServices.getWorkerById(workerId);
+	const applicatorId = req.payload.id;
+	const workerId = +req.params.id;
+	const result = await applicatorWorkersServices.getWorkerById(
+		applicatorId,
+		workerId,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 const updateWorker = catchAsync(async (req: Request, res: Response) => {
-	const workerId = +req.params.workerId;
+	const applicatorId = req.payload.id;
+	const workerId = +req.params.id;
 	const data = req.body;
-	const result = await applicatorWorkersServices.updateWorker(workerId, data);
+
+	const result = await applicatorWorkersServices.updateWorker(
+		applicatorId,
+		workerId,
+		data,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 
 const deleteWorker = catchAsync(async (req: Request, res: Response) => {
-	const id = +req.params.id;
-	const result = await applicatorWorkersServices.deleteWorker(id);
+	const applicatorId = req.payload.id;
+	const workerId = +req.params.id;
+	const result = await applicatorWorkersServices.deleteWorker(
+		applicatorId,
+		workerId,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
@@ -61,7 +78,7 @@ const searchWorkerByEmail = catchAsync(async (req: Request, res: Response) => {
 });
 export default {
 	createWorker,
-	getAllWorker,
+	getAllWorkers,
 	getWorkerById,
 	updateWorker,
 	deleteWorker,

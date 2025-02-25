@@ -10,8 +10,7 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adj
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
-import { User } from '../../../../../shared/types/global';
-import { PaginateOptions } from '../../../../../shared/types/global';
+import { PaginateOptions, User } from '../../../../../shared/types/global';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -147,9 +146,36 @@ const deleteUser = async (userId: number) => {
 };
 
 // get user List
-const getAllUsers = async () => {
-	const users = await prisma.user.findMany(); // Fetch all users
-	return users;
+const getAllUsers = async (options: PaginateOptions) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+	const users = await prisma.user.findMany({
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	}); // Fetch all users
+	const totalResults = await prisma.user.count();
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: users,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 
 // getUserByEmail
@@ -265,7 +291,21 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 	return grower;
 };
 
-const getAllGrowersByApplicator = async (applicatorId: number) => {
+const getAllGrowersByApplicator = async (
+	applicatorId: number,
+	options: PaginateOptions,
+) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
 	// Fetch growers with their farms and fields
 	const growers = await prisma.applicatorGrower.findMany({
 		where: {
@@ -312,6 +352,11 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 				},
 			},
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	});
 
 	// Calculate total acres for each grower
@@ -344,11 +389,38 @@ const getAllGrowersByApplicator = async (applicatorId: number) => {
 			totalAcres: totalAcresByGrower,
 		};
 	});
+	const totalResults = await prisma.applicatorGrower.count({
+		where: {
+			applicatorId,
+		},
+	});
 
-	return enrichedGrowers;
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: enrichedGrowers,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 
-const getAllApplicatorsByGrower = async (growerId: number) => {
+const getAllApplicatorsByGrower = async (
+	growerId: number,
+	options: PaginateOptions,
+) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
 	// Fetch applicators
 	const applicators = await prisma.applicatorGrower.findMany({
 		where: {
@@ -375,9 +447,27 @@ const getAllApplicatorsByGrower = async (growerId: number) => {
 				},
 			},
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+	const totalResults = await prisma.applicatorGrower.count({
+		where: {
+			growerId,
+		},
 	});
 
-	return applicators;
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: applicators,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	// Destructure

@@ -63,26 +63,27 @@ model User {
 }
 
 model ApplicatorWorker {
-  id                    Int          @id @default(autoincrement())
-  applicatorId          Int
-  workerId              Int
-  workerType            WorkerType
-  pilotLicenseNumber    String?
-  businessLicenseNumber String?
-  planeOrUnitNumber     String?
-  perAcrePricing        Decimal?
-  percentageFee         Decimal?
-  dollarPerAcre         Decimal?
-  autoAcceptJobs        Boolean      @default(false)
-  canViewPricingDetails Boolean      @default(false)
-  code                  String?
-  lastLogin             DateTime?
-  isActive              Boolean      @default(true)
-  inviteStatus          InviteStatus @default(NOT_SENT)
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
-  applicator            User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
-  worker                User         @relation("WorkerAssignments", fields: [workerId], references: [id])
+  id                     Int          @id @default(autoincrement())
+  applicatorId           Int
+  workerId               Int
+  workerType             WorkerType
+  pilotPestLicenseNumber String?
+  pilotLicenseNumber     String?
+  businessLicenseNumber  String?
+  planeOrUnitNumber      String?
+  // perAcrePricing         Decimal?
+  percentageFee          Decimal?
+  dollarPerAcre          Decimal?
+  autoAcceptJobs         Boolean      @default(false)
+  canViewPricingDetails  Boolean      @default(false)
+  code                   String?
+  lastLogin              DateTime?
+  isActive               Boolean      @default(true)
+  inviteStatus           InviteStatus @default(NOT_SENT)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  applicator             User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
+  worker                 User         @relation("WorkerAssignments", fields: [workerId], references: [id])
 
   @@unique([applicatorId, workerId])
 }
@@ -338,8 +339,8 @@ model Notification {
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type    NotificationType
-  isRead  Boolean          @default(false)
+  type   NotificationType
+  isRead Boolean          @default(false)
 
   // Nullable foreign keys for referencing related entities
   jobId Int? @unique // Only set if related to a job

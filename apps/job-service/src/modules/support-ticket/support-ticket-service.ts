@@ -2,10 +2,11 @@
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
-import {prisma} from '../../../../../shared/libs/prisma-client'
+import { prisma } from '../../../../../shared/libs/prisma-client';
 import { TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
 // import ApiError from '../../../../../shared/utils/api-error';
 import { CreateSupportTicket } from './support-ticket-types';
+import { PaginateOptions } from '../../../../../shared/types/global';
 
 const getAllTicketCategories = async () => {
 	const ticketCategoryList = Object.values(TicketCategory).map(
@@ -56,7 +57,19 @@ const createSupportTicket = async (
 	return ticket;
 };
 
-const getAllSupportTicket = async () => {
+const getAllSupportTicket = async (options: PaginateOptions) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+
 	const tickets = await prisma.supportTicket.findMany({
 		include: {
 			createdByUser: {
@@ -78,8 +91,24 @@ const getAllSupportTicket = async () => {
 			createdById: true,
 			assigneeId: true,
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	});
-	return tickets;
+	// Calculate the total number of pages based on the total results and limit
+	const totalResults = await prisma.supportTicket.count();
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: tickets,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 
 const getSupportTicketById = async (Id: number) => {
@@ -130,7 +159,19 @@ const updateSupportTicket = async (
 	return ticket;
 };
 
-const getMySupportTicket = async (Id: number) => {
+const getMySupportTicket = async (Id: number, options: PaginateOptions) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+
 	const tickets = await prisma.supportTicket.findMany({
 		where: {
 			createdById: Id,
@@ -155,17 +196,52 @@ const getMySupportTicket = async (Id: number) => {
 			createdById: true,
 			assigneeId: true,
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	});
-	return tickets;
+	const totalResults = await prisma.supportTicket.count({
+		where: {
+			createdById: Id,
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: tickets,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
-const getPilotSupportTicket = async (applicatorId: number) => {
+const getPilotSupportTicket = async (
+	applicatorId: number,
+	options: PaginateOptions,
+) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+
 	const workers = await prisma.applicatorWorker.findMany({
 		where: {
 			applicatorId, //get the pilots/operator created by or associated by applicator
 		},
-		select:{
-			worker:true
+		select: {
+			worker: true,
 		}
+		
 	});
 	const workerIds = workers.map((item) => item.worker.id);
 	console.log(workerIds, 'workers');
@@ -197,8 +273,29 @@ const getPilotSupportTicket = async (applicatorId: number) => {
 			createdById: true,
 			assigneeId: true,
 		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	});
-	return { tickets };
+	const totalResults = await prisma.supportTicket.count({
+		where: {
+			createdById: {
+				in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
+			},
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: tickets,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 
 export default {

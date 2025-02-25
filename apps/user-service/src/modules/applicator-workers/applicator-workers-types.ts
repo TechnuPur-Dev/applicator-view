@@ -7,26 +7,25 @@ interface ApplicatorWorker {
 	lastName: string;
 	email: string;
 	phoneNumber?: string;
-	businessName?: string;
 	address1?: string;
 	address2?: string;
 	stateId: number;
 	county: string;
 	township: string;
 	zipCode: string;
-    pilotLicenseNumber?:string;
-    businessLicenseNumber?:string;
-    planeOrUnitNumber?:string;
-    perAcrePricing:Decimal;
-    percentageFee: Decimal;       
-    dollarPerAcre: Decimal;
-    autoAcceptJobs:boolean        
-    canViewPricingDetails:boolean 
-    code:string
-    lastLogin: Date   
+	pilotPestLicenseNumber?: string;
+	pilotLicenseNumber?: string;
+	businessLicenseNumber?: string;
+	planeOrUnitNumber?: string;
+	percentageFee: Decimal;
+	dollarPerAcre: Decimal;
+	autoAcceptJobs: boolean;
+	canViewPricingDetails: boolean;
+	code: string;
+	lastLogin: Date;
 }
 interface UpdateStatus {
 	status: InviteStatus;
 	workerId: number;
 }
-export {ApplicatorWorker,UpdateStatus}
+export { ApplicatorWorker, UpdateStatus };

@@ -119,6 +119,7 @@ const getJobs = catchAsync(async (req: Request, res: Response) => {
 	const type = req.params.type;
 	const role = req.user.role;
 
+
 	const result = await jobService.getJobs(id, type, role, options);
 	res.status(httpStatus.OK).json(result);
 });
@@ -145,7 +146,9 @@ const getJobsPendingFromGrower = catchAsync(
 		const options = pick(req.query, ['limit', 'page']);
 
 		const id = +req.payload.id;
+
 		const result = await jobService.getJobsPendingFromGrowers(id, options);
+
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -177,11 +180,13 @@ const getJobByPilot = catchAsync(async (req: Request, res: Response) => {
 	const pilotId = +req.params.pilotId;
 	const options = pick(req.query, ['limit', 'page']);
 
+
 	const result = await jobService.getJobByPilot(
 		applicatorId,
 		pilotId,
 		options,
 	);
+
 	res.status(httpStatus.OK).json(result);
 });
 const getAssignedJobs = catchAsync(async (req: Request, res: Response) => {
