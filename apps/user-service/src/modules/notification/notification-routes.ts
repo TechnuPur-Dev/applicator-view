@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import notificationController from './user-notification-controller'
+import notificationController from './notification-controller'
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware'; // Uncomment and add correct path for TypeScript support if needed
 // import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 const router: Router = express.Router();
