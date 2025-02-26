@@ -1,14 +1,13 @@
-import httpStatus from "http-status";
+import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import ApiError from "../../../../../shared/utils/api-error";
+import ApiError from '../../../../../shared/utils/api-error';
 
 // get all notification by current user Id
 const getAllNotificationByUserId = async (userId: number) => {
 	const notification = await prisma.notification.findMany({
 		where: {
-			userId: userId,
+			userId,
 		},
-		
 	});
 	// Check if user is null
 	if (!notification) {
@@ -21,5 +20,5 @@ const getAllNotificationByUserId = async (userId: number) => {
 };
 
 export default {
-    getAllNotificationByUserId
-}
+	getAllNotificationByUserId,
+};

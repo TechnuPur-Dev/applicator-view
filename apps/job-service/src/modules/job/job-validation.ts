@@ -105,9 +105,9 @@ const jobSourceParamSchema: Schema = Joi.object({
 			.required(),
 	}).required(),
 	query: Joi.object({
-        limit: Joi.number().integer().min(1).default(10), 
-        page: Joi.number().integer().min(1).default(1),   
-    }).optional(),
+		limit: Joi.number().integer().min(1).default(10),
+		page: Joi.number().integer().min(1).default(1),
+	}).optional(),
 });
 
 const jobStatusParamSchema: Schema = Joi.object({
@@ -115,9 +115,9 @@ const jobStatusParamSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
-		userId: Joi.number().integer().positive().required(),
-		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED'),
-	}).optional(),
+		// userId: Joi.number().integer().positive().required(),
+		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED').required(),
+	}).required(),
 });
 
 const pilotJobsParamSchema: Schema = Joi.object({
@@ -125,8 +125,8 @@ const pilotJobsParamSchema: Schema = Joi.object({
 		pilotId: Joi.number().integer().positive().required(),
 	}).required(),
 	query: Joi.object({
-		limit: Joi.number().integer().min(1).default(10), 
-		page: Joi.number().integer().min(1).default(1),   
+		limit: Joi.number().integer().min(1).default(10),
+		page: Joi.number().integer().min(1).default(1),
 	}).optional(),
 });
 
