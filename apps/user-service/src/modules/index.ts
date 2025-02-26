@@ -6,7 +6,7 @@ import farm from './farm/farm-routes';
 import table from './table-view/table-view-routes';
 import  applicatorWorker from './applicator-workers/applicator-workers-routes';
 import geoData from './geo-data/geo-data-routes';
-import userNotification from './user-notification/user-notification-routes'
+import userNotification from './notification/notification-routes'
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
