@@ -13,7 +13,12 @@ const createJob = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, [
+			'limit',
+			'page',
+			'label',
+			'searchValue',
+		]);
 		const applicatorId = +req.payload.id;
 		const result = await jobService.getAllJobsByApplicator(
 			applicatorId,

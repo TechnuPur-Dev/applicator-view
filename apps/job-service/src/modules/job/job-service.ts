@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
-import { JobStatus, JobType } from '@prisma/client';
+import { JobSource, JobStatus, JobType, Prisma } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateJob } from './job-types';
@@ -180,30 +180,126 @@ const createJob = async (user: User, data: CreateJob) => {
 	}
 };
 
-// get job List by applicator
+// Get job list by applicator with filters
 const getAllJobsByApplicator = async (
 	applicatorId: number,
-	options: PaginateOptions,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
 ) => {
-	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
+	// Set pagination
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
 			: 10;
-	// Set the page number, default to 1 if not specified or invalid
 	const page =
 		options.page && parseInt(options.page, 10) > 0
 			? parseInt(options.page, 10)
 			: 1;
-	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-	const jobs = await prisma.job.findMany({
-		where: {
-			applicatorId,
-			status: {
-				in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
-			},
+
+	// Build filters dynamically
+	const filters: Prisma.JobWhereInput = {
+		applicatorId,
+		status: {
+			in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 		},
+	};
+
+	// Apply dynamic label filtering
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'title':
+				searchFilter.title = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+			case 'type':
+				searchFilter.type = {
+					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'source':
+				searchFilter.source = {
+					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'growerName':
+				searchFilter.grower = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'status':
+				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				break;
+			case 'township':
+				searchFilter.farm = {
+					township: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'county':
+				searchFilter.farm = {
+					county: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'state':
+				searchFilter.farm = {
+					state: {
+						name: { contains: searchValue, mode: 'insensitive' },
+					},
+				};
+				break;
+
+			case 'pilot':
+				searchFilter.fieldWorker = {
+					fullName: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'startDate':
+				searchFilter.startDate = {
+					gte: new Date(searchValue),
+				};
+				break;
+			case 'endDate':
+				searchFilter.endDate = {
+					lte: new Date(searchValue),
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+
+	// Fetch jobs
+	const jobs = await prisma.job.findMany({
+		where: filters,
 		include: {
 			grower: {
 				select: {
@@ -240,35 +336,30 @@ const getAllJobsByApplicator = async (
 					},
 				},
 			},
-			// products: true,
-			// applicationFees: true,
 		},
 		skip,
 		take: limit,
 		orderBy: {
 			id: 'desc',
 		},
-	}); // Fetch all users
+	});
+
 	// Calculate total acres for each job
 	const formattedJobs = jobs.map((job) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		), // Sum actualAcres, default to 0 if null
+		),
 	}));
-	// Calculate the total number of pages based on the total results and limit
+
+	// Count total results for pagination
 	const totalResults = await prisma.job.count({
-		where: {
-			applicatorId,
-			status: {
-				in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
-			},
-		},
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
-	// Return the paginated result including users, current page, limit, total pages, and total results
+
 	return {
 		result: formattedJobs,
 		page,
