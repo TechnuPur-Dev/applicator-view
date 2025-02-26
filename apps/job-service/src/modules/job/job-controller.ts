@@ -128,20 +128,25 @@ const getJobs = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const result = await jobService.getOpenJobs(options);
 	res.status(httpStatus.OK).json(result);
 });
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const currentUser = req.user;
 	const result = await jobService.getJobsPendingFromMe(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getJobsPendingFromGrower = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, [
+			'limit',
+			'page',
+			'label',
+			'searchValue',
+		]);
 		const currentUser = req.user;
 		const result = await jobService.getJobsPendingFromGrowers(
 			currentUser,
