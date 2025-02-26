@@ -58,7 +58,9 @@ const createJobSchema = Joi.object({
 		products: Joi.array()
 			.items(
 				Joi.object({
-					productId: Joi.number().integer().positive().required(),
+					productName: Joi.string().min(1).max(50).optional(),
+					productId: Joi.number().integer().positive().optional(),
+					perAcreRate: Joi.number().integer().positive().optional(),
 					totalAcres: Joi.number().precision(2).positive().required(),
 					price: Joi.number().precision(2).positive().required(),
 				}),

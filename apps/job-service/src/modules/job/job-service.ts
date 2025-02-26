@@ -178,6 +178,178 @@ const createJob = async (user: User, data: CreateJob) => {
 		});
 		return job;
 	}
+	if (user.role === 'GROWER') {
+		const {
+			title,
+			type,
+			userId: applicatorId,
+			startDate,
+			endDate,
+			description,
+			farmId,
+			sensitiveAreas,
+			adjacentCrops,
+			specialInstructions,
+			attachments = [],
+			fields = [],
+			products = [],
+			applicationFees = [],
+		} = data;
+		if (typeof applicatorId !== 'number') {
+			throw new Error('applicatorId is required and must be a number');
+		}
+		// const hasFarmPermission = await prisma.applicatorGrower.count({
+		// 	where: {
+		// 		growerId: user.id,
+		// 		applicatorId,
+		// 		grower: {
+		// 			farms: {
+		// 				some: {
+		// 					id: farmId,
+		// 					permissions: {
+		// 						some: { applicatorId: user.id, canView: true },
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// });
+		// if (!hasFarmPermission) {
+		// 	throw new ApiError(
+		// 		httpStatus.FORBIDDEN,
+		// 		'You do not have permission to access this farm.',
+		// 	);
+		// }
+
+		// const productIds = products.map(({ productId }) => productId);
+		// const productCount = await prisma.product.count({
+		// 	where: { id: { in: productIds }, createdById: user.id },
+		// });
+		// if (productCount !== productIds.length) {
+		// 	throw new ApiError(
+		// 		httpStatus.FORBIDDEN,
+		// 		'You do not have permission to access these products.',
+		// 	);
+		// }
+		const farm = await prisma.farm.findUnique({
+			where: { id: farmId, growerId: user.id },
+			select: { id: true },
+		});
+		if (!farm) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access this farm.',
+			);
+		}
+
+		const fieldIds = fields.map(({ fieldId }) => fieldId);
+		const fieldCount = await prisma.field.count({
+			where: { id: { in: fieldIds }, farmId },
+		});
+		if (fieldCount !== fieldIds.length) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access these fields.',
+			);
+		}
+
+		const job = await prisma.job.create({
+			data: {
+				title,
+				type,
+				source: 'GROWER',
+				status: 'PENDING',
+				growerId: user.id,
+				applicatorId,
+				startDate,
+				endDate,
+				description,
+				farmId,
+				sensitiveAreas,
+				adjacentCrops,
+				specialInstructions,
+				attachments,
+				fields: {
+					create: fields.map(({ fieldId, actualAcres }) => ({
+						fieldId,
+						actualAcres,
+					})),
+				},
+				products: {
+					create: products.map(
+						({ productName, perAcreRate, totalAcres, price }) => ({
+							name: productName,
+							perAcreRate,
+							totalAcres,
+							price,
+						}),
+					),
+				},
+				applicationFees: {
+					create: applicationFees.map(
+						({ description, rateUoM, perAcre }) => ({
+							description,
+							rateUoM,
+							perAcre,
+						}),
+					),
+				},
+				Notification: {
+					create: {
+						userId: applicatorId,
+						type: 'JOB_REQUEST',
+					},
+				},
+			},
+			include: {
+				grower: {
+					select: {
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+						phoneNumber: true,
+					},
+				},
+				fieldWorker: { select: { fullName: true } },
+				farm: {
+					select: {
+						name: true,
+						state: { select: { id: true, name: true } },
+						county: true,
+						township: true,
+						zipCode: true,
+					},
+				},
+				fields: {
+					select: {
+						actualAcres: true,
+						field: {
+							select: { name: true, acres: true, crop: true },
+						},
+					},
+				},
+				products: {
+					select: {
+						product: {
+							select: { productName: true, perAcreRate: true },
+						},
+						totalAcres: true,
+						price: true,
+					},
+				},
+				applicationFees: true,
+			},
+		});
+
+		await sendPushNotifications({
+			userIds: applicatorId,
+			title: `Job Confirmation`,
+			message: `${user.firstName} ${user.lastName} added a job that needs your confirmation.`,
+			notificationType: 'JOB_CREATED',
+		});
+		return job;
+	}
 };
 
 // Get job list by applicator with filters
