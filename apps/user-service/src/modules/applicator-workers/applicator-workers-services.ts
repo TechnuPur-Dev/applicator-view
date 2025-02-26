@@ -284,56 +284,62 @@ const deleteWorker = async (applicatorId: number, workerId: number) => {
 	});
 	return { result: 'Deleted successfully' };
 };
-const  sendInviteStatus= async (applicatorId: number, workerId: number) => {
-	
-	
-		const user = await prisma.applicatorWorker.update({
-			where: {
-				applicatorId_workerId: { applicatorId, workerId },
-			},
-			include: {
-				worker: {
-					select: {
-						email: true,
-					},
+const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
+	const workerRecord = await prisma.applicatorWorker.findUnique({
+		where: {
+			applicatorId_workerId: { applicatorId, workerId },
+			inviteStatus: 'NOT_SENT',
+		},
+	});
+	if (!workerRecord) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Worker not found or invite already sent.',
+		);
+	}
+	const user = await prisma.applicatorWorker.update({
+		where: {
+			applicatorId_workerId: { applicatorId, workerId },
+		},
+		include: {
+			worker: {
+				select: {
+					email: true,
 				},
 			},
-			data: {
-				inviteStatus: 'PENDING', // Only updating the inviteStatus field
-			},
-		});
-		const subject = 'Email Invitation';
-		const message = `
+		},
+		data: {
+			inviteStatus: 'PENDING', // Only updating the inviteStatus field
+		},
+	});
+	const subject = 'Email Invitation';
+	const message = `
 	You are invited to join our platform!<br><br>
 	If you did not expect this invitation, please ignore this email.
 	`;
-		if (user) {
-			const email = user?.worker?.email;
+	if (user) {
+		const email = user?.worker?.email;
 
-			if (!email) {
-				throw new Error(
-					'Email address is not available for this worker.',
-				);
-			}
-
-			const html = await mailHtmlTemplate(subject, message);
-
-			await sendEmail({
-				emailTo: email,
-				subject,
-				text: 'Request Invitation',
-				html,
-			});
-			return {
-				message: 'Invite sent successfully.',
-			};
+		if (!email) {
+			throw new Error('Email address is not available for this worker.');
 		}
-	
-	
+
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+		return {
+			message: 'Invite sent successfully.',
+		};
+	}
 };
-const updateInviteStatus  = async (applicatorId: number, data: UpdateStatus) => {
+const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
 	const { workerId, status } = data;
-	
+
 	if (status === 'ACCEPTED') {
 		await prisma.applicatorWorker.update({
 			where: {
@@ -446,5 +452,5 @@ export default {
 	deleteWorker,
 	updateInviteStatus,
 	searchWorkerByEmail,
-	sendInviteStatus
+	sendInviteToWorker,
 };
