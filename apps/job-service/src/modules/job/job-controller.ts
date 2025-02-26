@@ -173,6 +173,8 @@ const updatePendingJobStatus = catchAsync(
 	},
 );
 
+
+
 const getJobByPilot = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = +req.payload.id;
 	const pilotId = +req.params.pilotId;
@@ -182,7 +184,6 @@ const getJobByPilot = catchAsync(async (req: Request, res: Response) => {
 		pilotId,
 		options,
 	);
-
 	res.status(httpStatus.OK).json(result);
 });
 const getAssignedJobs = catchAsync(async (req: Request, res: Response) => {
