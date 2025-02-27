@@ -117,8 +117,12 @@ const jobStatusParamSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
-		// userId: Joi.number().integer().positive().required(),
 		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED').required(),
+		rejectionReason: Joi.string().min(1).max(300).when('status', {
+			is: 'REJECTED',
+			then: Joi.required(),
+			otherwise: Joi.forbidden(),
+		}),
 	}).required(),
 });
 
@@ -143,5 +147,5 @@ export default {
 	jobSourceParamSchema,
 	jobStatusParamSchema,
 	pilotJobsParamSchema,
-	monthParamsSchema
+	monthParamsSchema,
 };

@@ -1038,9 +1038,9 @@ const getJobs = async (
 		...job,
 		...(job.applicator
 			? {
-				applicatorFullName: job.applicator.fullName,
-				applicatorBusinessName: job.applicator.businessName,
-			}
+					applicatorFullName: job.applicator.fullName,
+					applicatorBusinessName: job.applicator.businessName,
+				}
 			: {}), // Applicator values as key-value pair
 		...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
 		// applicator: undefined, // Remove original object
@@ -1754,7 +1754,7 @@ const getJobsPendingFromGrowers = async (
 // };
 
 const updatePendingJobStatus = async (
-	data: { userId: number; status: JobStatus }, // fieldWorkerId optional
+	data: { status: JobStatus; rejectionReason: string }, // fieldWorkerId optional
 	jobId: number,
 	user: User,
 ) => {
@@ -1791,6 +1791,7 @@ const updatePendingJobStatus = async (
 				where: whereCondition,
 				data: {
 					status: data.status,
+					rejectionReason: data.rejectionReason,
 				},
 				select: {
 					applicatorId: true,
@@ -1998,17 +1999,29 @@ const addOpenForBiddingJob = async (user: User, data: CreateJob) => {
 	}
 };
 
-
-const upcomingApplications = async (userId: number, options: PaginateOptions & {
-	month?: string;
-},) => {
+const upcomingApplications = async (
+	userId: number,
+	options: PaginateOptions & {
+		month?: string;
+	},
+) => {
 	const currentDate = new Date();
 	// Month names array for converting string month to number
 	const monthNames = [
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December"
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December',
 	];
-	console.log(options.month, "month")
+
 	let monthFilter = {}; // Default empty filter
 
 	if (options.month) {
@@ -2017,7 +2030,7 @@ const upcomingApplications = async (userId: number, options: PaginateOptions & {
 		if (selectedMonth >= 1 && selectedMonth <= 12) {
 			const year = currentDate.getFullYear(); // Get current year
 			const startOfMonth = new Date(year, selectedMonth - 1, 1);
-			console.log(startOfMonth, "startOfMonth")
+			console.log(startOfMonth, 'startOfMonth');
 			const endOfMonth = new Date(year, selectedMonth, 0, 23, 59, 59);
 			monthFilter = {
 				startDate: {
@@ -2025,20 +2038,30 @@ const upcomingApplications = async (userId: number, options: PaginateOptions & {
 					lte: endOfMonth,
 				},
 			};
-
 		}
 	}
 	const allJobsApplications = await prisma.job.findMany({
 		where: {
 			applicatorId: userId,
-			...monthFilter // if user wants to get selected month upcoming jobs
-
+			...monthFilter, // if user wants to get selected month upcoming jobs
 		},
-		include: {
-			farm: true,
+		select: {
+			id: true,
+			startDate: true,
+			farm: {
+				select: {
+					name: true,
+				},
+			},
 			fields: {
-				include: {
-					field: true,
+				select: {
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
 				},
 			},
 		},
@@ -2050,16 +2073,16 @@ const upcomingApplications = async (userId: number, options: PaginateOptions & {
 		startDate: job.startDate || new Date(),
 		fields: job.fields.map((fieldJob) => ({
 			acres: fieldJob.field.acres,
-			title: job.title, // Crop ki jagah Job Title return karna
-			jobType: job.type,
+			name: fieldJob.field.name, // Crop ki jagah Job Title return karna
+			crop: fieldJob.field.crop, // Crop ki jagah Job Title return karna
 		})),
 	}));
 	const upcomingJobApplication = formattedJobs.filter(
-		(job) => new Date(job.startDate).toISOString().split("T")[0] >= currentDate.toISOString().split("T")[0]
+		(job) =>
+			new Date(job.startDate).toISOString().split('T')[0] >=
+			currentDate.toISOString().split('T')[0],
 	);
-	return {
-		upcomingJobApplication
-	}
+	return upcomingJobApplication;
 };
 
 const getHeadersData = async (
@@ -2188,7 +2211,6 @@ const getHeadersData = async (
 
 	return result;
 };
-
 
 export default {
 	createJob,
