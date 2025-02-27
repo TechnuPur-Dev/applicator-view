@@ -1065,10 +1065,12 @@ const getJobs = async (
 	};
 };
 // get apis for Bidding screen
-const getOpenJobs = async (options: PaginateOptions & {
-	label?: string;
-	searchValue?: string;
-},) => {
+const getOpenJobs = async (
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -1081,10 +1083,8 @@ const getOpenJobs = async (options: PaginateOptions & {
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 	const filters: Prisma.JobWhereInput = {
-	
-			source: 'BIDDING',
-			status: 'OPEN_FOR_BIDDING',
-		
+		source: 'BIDDING',
+		status: 'OPEN_FOR_BIDDING',
 	};
 
 	// Apply dynamic label filtering
@@ -1251,7 +1251,7 @@ const getOpenJobs = async (options: PaginateOptions & {
 	}));
 	// Calculate total acres for each job
 	const totalResults = await prisma.job.count({
-		where:filters
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -1300,7 +1300,6 @@ const getJobsPendingFromMe = async (
 		whereCondition.growerId = id;
 		whereCondition.source = 'APPLICATOR';
 	}
-	
 
 	// Apply dynamic label filtering
 	if (options.label && options.searchValue) {
@@ -1515,7 +1514,6 @@ const getJobsPendingFromGrowers = async (
 		whereCondition.growerId = id;
 		whereCondition.source = 'GROWER';
 	}
-	
 
 	// Apply dynamic label filtering
 	if (options.label && options.searchValue) {
@@ -1684,7 +1682,7 @@ const getJobsPendingFromGrowers = async (
 
 	// Calculate the total number of pages based on the total results and limit
 	const totalResults = await prisma.job.count({
-		where: whereCondition
+		where: whereCondition,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -1999,6 +1997,133 @@ const addOpenForBiddingJob = async (user: User, data: CreateJob) => {
 		return job;
 	}
 };
+const getHeadersData = async (
+	applicatorId: number,
+	options: { date: string; type: string },
+) => {
+	let startDate, endDate;
+	let result;
+
+	if (options.date) {
+		const [year, month, day] = options.date.split('-').map(Number);
+
+		if (!year || !month || !day) {
+			throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid date format.');
+		}
+
+		startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+		endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+	}
+	switch (options.type) {
+		case 'totalApplicators':
+			result = await prisma.user.count({
+				where: {
+					role: 'APPLICATOR',
+					...(options.date
+						? { createdAt: { gte: startDate, lte: endDate } }
+						: {}),
+				},
+			});
+			result = { totalApplicators: result };
+			break;
+
+		case 'completedJobs':
+			result = await prisma.job.count({
+				where: {
+					applicatorId: applicatorId,
+					status: 'PAID',
+					...(options.date
+						? { createdAt: { gte: startDate, lte: endDate } }
+						: {}),
+				},
+			});
+			result = { completedJobs: result };
+
+			break;
+		case 'openForBiding':
+			result = await prisma.job.count({
+				where: {
+					applicatorId: applicatorId,
+					status: 'OPEN_FOR_BIDDING',
+					...(options.date
+						? { createdAt: { gte: startDate, lte: endDate } }
+						: {}),
+				},
+			});
+			result = { openForBidingJobs: result };
+
+			break;
+		case 'totalAcres':
+			let jobs = await prisma.job.findMany({
+				where: {
+					applicatorId: applicatorId,
+					...(options.date
+						? { createdAt: { gte: startDate, lte: endDate } }
+						: {}),
+				},
+				include: {
+					fields: {
+						select: { actualAcres: true },
+					},
+				},
+			});
+
+			// Sum up all actualAcres values
+			const totalAcres = jobs.reduce(
+				(sum, job) =>
+					sum +
+					job.fields.reduce(
+						(fieldSum, f) => fieldSum + (f.actualAcres || 0),
+						0,
+					),
+				0,
+			);
+
+			result = { totalAcres };
+			break;
+		case 'totalRevenue':
+			let applicatorJobs = await prisma.job.findMany({
+				where: {
+					applicatorId: applicatorId,
+					...(options.date
+						? { createdAt: { gte: startDate, lte: endDate } }
+						: {}),
+				},
+				include: {
+					applicationFees: true,
+					products: true,
+				},
+			});
+
+			const totalApplicationFees = applicatorJobs.reduce((sum, job) => {
+				return (
+					sum +
+					job.applicationFees.reduce(
+						(feeSum, fee) => feeSum + fee.rateUoM.toNumber(),
+						0,
+					)
+				);
+			}, 0);
+			const totalProPrice = applicatorJobs.reduce((sum, job) => {
+				return (
+					sum +
+					job.products.reduce(
+						(feeSum, fee) => feeSum + fee.price.toNumber(),
+						0,
+					)
+				);
+			}, 0);
+
+			result = { totalRevenue: totalApplicationFees + totalProPrice };
+			break;
+
+		default:
+			throw new Error('Invalid type provided.');
+	}
+
+	return result;
+};
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -2021,4 +2146,5 @@ export default {
 	getJobByPilot,
 	getAssignedJobs,
 	addOpenForBiddingJob,
+	getHeadersData,
 };
