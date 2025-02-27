@@ -2,6 +2,7 @@ import Joi, { Schema } from 'joi';
 
 const createFieldSchema: Schema = Joi.object({
 	body: Joi.object({
+		fieldImageUrl: Joi.string().required(),
 		name: Joi.string().min(1).max(50).required(),
 		crop: Joi.string().min(1).max(50).required(),
 		legal: Joi.string().max(100).required(),
@@ -24,6 +25,7 @@ const editFieldSchema: Schema = Joi.object({
 		id: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
+		fieldImageUrl: Joi.string().required(),
 		name: Joi.string().min(1).max(50).optional(),
 		crop: Joi.string().min(1).max(50).optional(),
 		legal: Joi.string().max(100).optional(),

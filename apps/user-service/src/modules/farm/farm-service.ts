@@ -9,7 +9,7 @@ import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 import config from '../../../../../shared/config/env-config';
-import sharp from 'sharp';
+// import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 
 const createFarm = async (
@@ -457,7 +457,7 @@ const askFarmPermission = async (email: string) => {
 const uploadFarmImage = async (
 	userId: number,
 	type: string,
-	file: Express.Multer.File,
+	fileBuffer: Buffer,
 ) => {
 	const storageUrl = config.azureStorageUrl;
 	const containerName = config.azureContainerName;
@@ -467,37 +467,16 @@ const uploadFarmImage = async (
 	const containerClient: ContainerClient =
 		blobServiceClient.getContainerClient(containerName);
 
-	// Generate unique blob names
-	const blobName = `${type}/${uuidv4()}_${file.originalname}`;
+	// Generate a unique blob name
+	const blobName = `${type}/${uuidv4()}`;
 
-	// Get original image dimensions
-	const imageMetadata = await sharp(file.buffer).metadata();
-	const originalWidth = imageMetadata.width || 0;
-	const originalHeight = imageMetadata.height || 0;
-	const thumbnailSize = Math.min(originalWidth, originalHeight);
-	const left = Math.floor((originalWidth - thumbnailSize) / 2);
-	const top = Math.floor((originalHeight - thumbnailSize) / 2);
-
-	// Create and upload the original image
-	const compressedImageBuffer = await sharp(file.buffer)
-		.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
-		.resize({
-			width: thumbnailSize,
-			height: thumbnailSize,
-			fit: 'cover',
-		})
-		.toBuffer();
-
+	// Upload the file buffer to Azure Blob Storage
 	const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-	await blockBlobClient.upload(
-		compressedImageBuffer,
-		compressedImageBuffer.length,
-		{
-			blobHTTPHeaders: {
-				blobContentType: file.mimetype,
-			},
+	await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
+		blobHTTPHeaders: {
+			blobContentType: 'image/jpeg', // Adjust based on file type
 		},
-	);
+	});
 
 	return {
 		imageUrl: `/${containerName}/${blobName}`,

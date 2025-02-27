@@ -79,30 +79,42 @@ const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
 
 const uploadFarmImage = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
-	const type = req.query.type;
+	const { type, file } = req.body;
 
 	// Ensure `type` is a string
-	const typeString = typeof type === 'string' ? type : undefined;
-
-	if (!typeString) {
+	if (typeof type !== 'string' || !type) {
 		return res.status(400).json({ error: 'Invalid type parameter' });
 	}
 
-	const files = req.files;
-
-	if (!files || !Array.isArray(files)) {
-		throw new Error('No files uploaded');
-	}
-
-	const file = files[0];
-	console.log('Uploaded file:', file);
-
+	// Validate file and filename
 	if (!file) {
-		return res.status(400).json({ error: 'File is required.' });
+		return res
+			.status(400)
+			.json({ error: 'File and filename are required.' });
 	}
 
-	const result = await farmService.uploadFarmImage(userId, typeString, file);
-	res.status(httpStatus.OK).json(result);
+	try {
+		// Decode Base64 file
+		const base64Data = file.replace(
+			/^data:(image|application)\/(jpeg|png|pdf);base64,/,
+			'',
+		);
+		const fileBuffer = Buffer.from(base64Data, 'base64');
+
+		// Upload to Azure Blob Storage
+		const result = await farmService.uploadFarmImage(
+			userId,
+			type,
+			fileBuffer,
+		);
+
+		res.status(httpStatus.OK).json(result);
+	} catch (error) {
+		console.error('Error uploading file:', error);
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: 'File upload failed',
+		});
+	}
 });
 
 export default {
