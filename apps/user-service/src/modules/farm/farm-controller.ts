@@ -17,7 +17,7 @@ const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 
 	const growerId = req.payload.id;
-	const userData = await farmService.getAllFarmsByGrower(growerId,options);
+	const userData = await farmService.getAllFarmsByGrower(growerId, options);
 	res.status(httpStatus.OK).json(userData);
 });
 const getFarmById = catchAsync(async (req: Request, res: Response) => {
@@ -77,6 +77,34 @@ const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
+const uploadFarmImage = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
+	const type = req.query.type;
+
+	// Ensure `type` is a string
+	const typeString = typeof type === 'string' ? type : undefined;
+
+	if (!typeString) {
+		return res.status(400).json({ error: 'Invalid type parameter' });
+	}
+
+	const files = req.files;
+
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+
+	const file = files[0];
+	console.log('Uploaded file:', file);
+
+	if (!file) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+
+	const result = await farmService.uploadFarmImage(userId, typeString, file);
+	res.status(httpStatus.OK).json(result);
+});
+
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -87,4 +115,5 @@ export default {
 	updateFarmPermission,
 	deleteFarmPermission,
 	askFarmPermission,
+	uploadFarmImage,
 };

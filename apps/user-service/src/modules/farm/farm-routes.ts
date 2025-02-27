@@ -3,6 +3,7 @@ import farmController from './farm-controller';
 import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import farmValidation from './farm-validation';
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware';
+import upload from '../../../../../shared/middlewares/multer-middleware';
 
 const router: Router = express.Router();
 
@@ -50,5 +51,14 @@ router
 router
 	.route('/permission/request')
 	.post(verifyToken, farmController.askFarmPermission);
+
+router
+	.route('/upload/image')
+	.post(
+		verifyToken,
+		validateSchema(farmValidation.uploadFarmImage),
+		upload,
+		farmController.uploadFarmImage,
+	);
 
 export default router;

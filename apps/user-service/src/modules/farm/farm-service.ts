@@ -7,6 +7,11 @@ import { CreateFarmParams, AssignFarmPermission } from './farm-types';
 import { PaginateOptions, User } from './../../../../../shared/types/global';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
+import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
+import config from '../../../../../shared/config/env-config';
+import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
+
 const createFarm = async (
 	user: User,
 	growerId: number,
@@ -81,19 +86,22 @@ const createFarm = async (
 	throw new ApiError(httpStatus.FORBIDDEN, 'Invalid user role.');
 };
 
-const getAllFarmsByGrower = async (growerId: number,options: PaginateOptions) => {
+const getAllFarmsByGrower = async (
+	growerId: number,
+	options: PaginateOptions,
+) => {
 	const limit =
-			options.limit && parseInt(options.limit, 10) > 0
-				? parseInt(options.limit, 10)
-				: 10;
-		// Set the page number, default to 1 if not specified or invalid
-		const page =
-			options.page && parseInt(options.page, 10) > 0
-				? parseInt(options.page, 10)
-				: 1;
-		// Calculate the number of users to skip based on the current page and limit
-		const skip = (page - 1) * limit;
-	
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+
 	const farms = await prisma.farm.findMany({
 		where: {
 			growerId,
@@ -123,11 +131,9 @@ const getAllFarmsByGrower = async (growerId: number,options: PaginateOptions) =>
 		},
 		orderBy: {
 			createdAt: 'desc',
-			
 		},
 		skip,
-			take: limit,
-			
+		take: limit,
 	}); // Fetch all users
 	// Calculate total acres for each grower and each farm
 	const enrichedFarms = farms.map((farm) => {
@@ -141,11 +147,10 @@ const getAllFarmsByGrower = async (growerId: number,options: PaginateOptions) =>
 			totalAcres: totalAcresByFarm,
 		};
 	});
-	
+
 	const totalResults = await prisma.farm.count({
 		where: {
 			growerId,
-			
 		},
 	});
 
@@ -449,7 +454,55 @@ const askFarmPermission = async (email: string) => {
 			'Request email for permission has been sent to the user Succesfully',
 	};
 };
+const uploadFarmImage = async (
+	userId: number,
+	type: string,
+	file: Express.Multer.File,
+) => {
+	const storageUrl = config.azureStorageUrl;
+	const containerName = config.azureContainerName;
 
+	const blobServiceClient =
+		BlobServiceClient.fromConnectionString(storageUrl);
+	const containerClient: ContainerClient =
+		blobServiceClient.getContainerClient(containerName);
+
+	// Generate unique blob names
+	const blobName = `${type}/${uuidv4()}_${file.originalname}`;
+
+	// Get original image dimensions
+	const imageMetadata = await sharp(file.buffer).metadata();
+	const originalWidth = imageMetadata.width || 0;
+	const originalHeight = imageMetadata.height || 0;
+	const thumbnailSize = Math.min(originalWidth, originalHeight);
+	const left = Math.floor((originalWidth - thumbnailSize) / 2);
+	const top = Math.floor((originalHeight - thumbnailSize) / 2);
+
+	// Create and upload the original image
+	const compressedImageBuffer = await sharp(file.buffer)
+		.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
+		.resize({
+			width: thumbnailSize,
+			height: thumbnailSize,
+			fit: 'cover',
+		})
+		.toBuffer();
+
+	const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+	await blockBlobClient.upload(
+		compressedImageBuffer,
+		compressedImageBuffer.length,
+		{
+			blobHTTPHeaders: {
+				blobContentType: file.mimetype,
+			},
+		},
+	);
+
+	return {
+		imageUrl: `/${containerName}/${blobName}`,
+	};
+};
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -460,4 +513,5 @@ export default {
 	updateFarmPermission,
 	deleteFarmPermission,
 	askFarmPermission,
+	uploadFarmImage,
 };
