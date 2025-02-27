@@ -120,10 +120,17 @@ router
 		jobController.addOpenForBiddingJob,
 	);
 	router
+
 	.route('/upcomping-applications')
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.monthParamsSchema),
 		jobController.upcomingApplications,
+
+	.route('/applcator-dashboard-headers')
+.get(
+		verifyToken,
+		authorize("APPLICATOR"),
+		jobController.getHeadersData,
 	);
 export default router;

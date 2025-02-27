@@ -128,20 +128,25 @@ const getJobs = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const result = await jobService.getOpenJobs(options);
 	res.status(httpStatus.OK).json(result);
 });
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const currentUser = req.user;
 	const result = await jobService.getJobsPendingFromMe(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getJobsPendingFromGrower = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, [
+			'limit',
+			'page',
+			'label',
+			'searchValue',
+		]);
 		const currentUser = req.user;
 		const result = await jobService.getJobsPendingFromGrowers(
 			currentUser,
@@ -198,10 +203,19 @@ const addOpenForBiddingJob = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.CREATED).json(result);
 });
 
+
 const upcomingApplications = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id
 	const options = pick(req.query, ['month']);
 	const result = await jobService.upcomingApplications(userId,options);
+	res.status(httpStatus.OK).json(result);
+});
+
+
+const getHeadersData = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
+	const options = pick(req.query, ['date', 'type']) as {date:string,type:string};
+	const result = await jobService.getHeadersData(applicatorId, options);
 	res.status(httpStatus.OK).json(result);
 });
 
@@ -227,5 +241,7 @@ export default {
 	getJobByPilot,
 	getAssignedJobs,
 	addOpenForBiddingJob,
-	upcomingApplications
+	upcomingApplications,
+  getHeadersData
+
 };
