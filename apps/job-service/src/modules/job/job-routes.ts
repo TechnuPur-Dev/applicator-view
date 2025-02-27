@@ -119,5 +119,11 @@ router
 		validateSchema(jobValidation.createJobSchema),
 		jobController.addOpenForBiddingJob,
 	);
-
+	router
+	.route('/applcator-dashboard-headers')
+.get(
+		verifyToken,
+		authorize("APPLICATOR"),
+		jobController.getHeadersData,
+	);
 export default router;
