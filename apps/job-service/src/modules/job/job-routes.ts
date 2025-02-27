@@ -120,7 +120,7 @@ router
 		jobController.addOpenForBiddingJob,
 	);
 	router
-	.route('/applcator-dashboard-headers')
+	.route('/applcator-headers')
 .get(
 		verifyToken,
 		authorize("APPLICATOR"),
