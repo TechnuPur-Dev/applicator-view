@@ -129,7 +129,11 @@ const pilotJobsParamSchema: Schema = Joi.object({
 		page: Joi.number().integer().min(1).default(1),
 	}).optional(),
 });
-
+const monthParamsSchema: Schema = Joi.object({
+	query: Joi.object({
+		month: Joi.string().max(500).optional(),
+	}).optional(),
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -137,4 +141,5 @@ export default {
 	jobSourceParamSchema,
 	jobStatusParamSchema,
 	pilotJobsParamSchema,
+	monthParamsSchema
 };

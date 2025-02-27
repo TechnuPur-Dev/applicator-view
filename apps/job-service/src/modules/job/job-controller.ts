@@ -197,6 +197,14 @@ const addOpenForBiddingJob = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.addOpenForBiddingJob(currentUser, data);
 	res.status(httpStatus.CREATED).json(result);
 });
+
+const upcomingApplications = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id
+	const options = pick(req.query, ['month']);
+	const result = await jobService.upcomingApplications(userId,options);
+	res.status(httpStatus.OK).json(result);
+});
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -219,4 +227,5 @@ export default {
 	getJobByPilot,
 	getAssignedJobs,
 	addOpenForBiddingJob,
+	upcomingApplications
 };

@@ -119,5 +119,11 @@ router
 		validateSchema(jobValidation.createJobSchema),
 		jobController.addOpenForBiddingJob,
 	);
-
+	router
+	.route('/upcomping-applications')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.monthParamsSchema),
+		jobController.upcomingApplications,
+	);
 export default router;
