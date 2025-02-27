@@ -47,7 +47,7 @@ const uploadFarmImage: Schema = Joi.object({
 	body: Joi.object({
 		file: Joi.string()
 			.pattern(
-				/^data:(image|application)\/(jpeg|png|pdf);base64,[A-Za-z0-9+/=]+$/,
+				/^data:(image|application)\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/,
 			)
 			.required(),
 		type: Joi.string().valid('farms', 'fields').required(), // Accepts only specific types
