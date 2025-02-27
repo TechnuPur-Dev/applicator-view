@@ -178,6 +178,178 @@ const createJob = async (user: User, data: CreateJob) => {
 		});
 		return job;
 	}
+	if (user.role === 'GROWER') {
+		const {
+			title,
+			type,
+			userId: applicatorId,
+			startDate,
+			endDate,
+			description,
+			farmId,
+			sensitiveAreas,
+			adjacentCrops,
+			specialInstructions,
+			attachments = [],
+			fields = [],
+			products = [],
+			applicationFees = [],
+		} = data;
+		if (typeof applicatorId !== 'number') {
+			throw new Error('applicatorId is required and must be a number');
+		}
+		// const hasFarmPermission = await prisma.applicatorGrower.count({
+		// 	where: {
+		// 		growerId: user.id,
+		// 		applicatorId,
+		// 		grower: {
+		// 			farms: {
+		// 				some: {
+		// 					id: farmId,
+		// 					permissions: {
+		// 						some: { applicatorId: user.id, canView: true },
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// });
+		// if (!hasFarmPermission) {
+		// 	throw new ApiError(
+		// 		httpStatus.FORBIDDEN,
+		// 		'You do not have permission to access this farm.',
+		// 	);
+		// }
+
+		// const productIds = products.map(({ productId }) => productId);
+		// const productCount = await prisma.product.count({
+		// 	where: { id: { in: productIds }, createdById: user.id },
+		// });
+		// if (productCount !== productIds.length) {
+		// 	throw new ApiError(
+		// 		httpStatus.FORBIDDEN,
+		// 		'You do not have permission to access these products.',
+		// 	);
+		// }
+		const farm = await prisma.farm.findUnique({
+			where: { id: farmId, growerId: user.id },
+			select: { id: true },
+		});
+		if (!farm) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access this farm.',
+			);
+		}
+
+		const fieldIds = fields.map(({ fieldId }) => fieldId);
+		const fieldCount = await prisma.field.count({
+			where: { id: { in: fieldIds }, farmId },
+		});
+		if (fieldCount !== fieldIds.length) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access these fields.',
+			);
+		}
+
+		const job = await prisma.job.create({
+			data: {
+				title,
+				type,
+				source: 'GROWER',
+				status: 'PENDING',
+				growerId: user.id,
+				applicatorId,
+				startDate,
+				endDate,
+				description,
+				farmId,
+				sensitiveAreas,
+				adjacentCrops,
+				specialInstructions,
+				attachments,
+				fields: {
+					create: fields.map(({ fieldId, actualAcres }) => ({
+						fieldId,
+						actualAcres,
+					})),
+				},
+				products: {
+					create: products.map(
+						({ productName, perAcreRate, totalAcres, price }) => ({
+							name: productName,
+							perAcreRate,
+							totalAcres,
+							price,
+						}),
+					),
+				},
+				applicationFees: {
+					create: applicationFees.map(
+						({ description, rateUoM, perAcre }) => ({
+							description,
+							rateUoM,
+							perAcre,
+						}),
+					),
+				},
+				Notification: {
+					create: {
+						userId: applicatorId,
+						type: 'JOB_REQUEST',
+					},
+				},
+			},
+			include: {
+				grower: {
+					select: {
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+						phoneNumber: true,
+					},
+				},
+				fieldWorker: { select: { fullName: true } },
+				farm: {
+					select: {
+						name: true,
+						state: { select: { id: true, name: true } },
+						county: true,
+						township: true,
+						zipCode: true,
+					},
+				},
+				fields: {
+					select: {
+						actualAcres: true,
+						field: {
+							select: { name: true, acres: true, crop: true },
+						},
+					},
+				},
+				products: {
+					select: {
+						product: {
+							select: { productName: true, perAcreRate: true },
+						},
+						totalAcres: true,
+						price: true,
+					},
+				},
+				applicationFees: true,
+			},
+		});
+
+		await sendPushNotifications({
+			userIds: applicatorId,
+			title: `Job Confirmation`,
+			message: `${user.firstName} ${user.lastName} added a job that needs your confirmation.`,
+			notificationType: 'JOB_CREATED',
+		});
+		return job;
+	}
 };
 
 // Get job list by applicator with filters
@@ -1582,7 +1754,7 @@ const getJobsPendingFromGrowers = async (
 // };
 
 const updatePendingJobStatus = async (
-	data: { userId: number; status: JobStatus }, // fieldWorkerId optional
+	data: { status: JobStatus; rejectionReason: string }, // fieldWorkerId optional
 	jobId: number,
 	user: User,
 ) => {
@@ -1619,6 +1791,7 @@ const updatePendingJobStatus = async (
 				where: whereCondition,
 				data: {
 					status: data.status,
+					rejectionReason: data.rejectionReason,
 				},
 				select: {
 					applicatorId: true,
@@ -1825,6 +1998,93 @@ const addOpenForBiddingJob = async (user: User, data: CreateJob) => {
 		return job;
 	}
 };
+
+const upcomingApplications = async (
+	userId: number,
+	options: PaginateOptions & {
+		month?: string;
+	},
+) => {
+	const currentDate = new Date();
+	// Month names array for converting string month to number
+	const monthNames = [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December',
+	];
+
+	let monthFilter = {}; // Default empty filter
+
+	if (options.month) {
+		const selectedMonth = monthNames.indexOf(options.month) + 1; // Get month number (1-12)
+
+		if (selectedMonth >= 1 && selectedMonth <= 12) {
+			const year = currentDate.getFullYear(); // Get current year
+			const startOfMonth = new Date(year, selectedMonth - 1, 1);
+			console.log(startOfMonth, 'startOfMonth');
+			const endOfMonth = new Date(year, selectedMonth, 0, 23, 59, 59);
+			monthFilter = {
+				startDate: {
+					gte: startOfMonth,
+					lte: endOfMonth,
+				},
+			};
+		}
+	}
+	const allJobsApplications = await prisma.job.findMany({
+		where: {
+			applicatorId: userId,
+			...monthFilter, // if user wants to get selected month upcoming jobs
+		},
+		select: {
+			id: true,
+			startDate: true,
+			farm: {
+				select: {
+					name: true,
+				},
+			},
+			fields: {
+				select: {
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+		},
+	});
+	// Final response format
+	const formattedJobs = allJobsApplications.map((job) => ({
+		jobId: job.id,
+		farmName: job.farm.name,
+		startDate: job.startDate || new Date(),
+		fields: job.fields.map((fieldJob) => ({
+			acres: fieldJob.field.acres,
+			name: fieldJob.field.name, // Crop ki jagah Job Title return karna
+			crop: fieldJob.field.crop, // Crop ki jagah Job Title return karna
+		})),
+	}));
+	const upcomingJobApplication = formattedJobs.filter(
+		(job) =>
+			new Date(job.startDate).toISOString().split('T')[0] >=
+			currentDate.toISOString().split('T')[0],
+	);
+	return upcomingJobApplication;
+};
+
 const getHeadersData = async (
 	currentUser: User,
 	options: { date: string; type: string },
@@ -2106,5 +2366,6 @@ export default {
 	getJobByPilot,
 	getAssignedJobs,
 	addOpenForBiddingJob,
+	upcomingApplications,
 	getHeadersData,
 };

@@ -112,18 +112,22 @@ router
 		validateSchema(jobValidation.pilotJobsParamSchema),
 		jobController.getJobByPilot,
 	);
-	router
+router
 	.route('/create/open-for-bidding')
 	.post(
 		verifyToken,
 		validateSchema(jobValidation.createJobSchema),
 		jobController.addOpenForBiddingJob,
 	);
+router
+	.route('/upcomping-applications')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.monthParamsSchema),
+		jobController.upcomingApplications,
+	);
+
 	router
 	.route('/applcator-headers')
-.get(
-		verifyToken,
-		authorize("APPLICATOR"),
-		jobController.getHeadersData,
-	);
+.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
 export default router;

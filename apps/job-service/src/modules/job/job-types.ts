@@ -11,7 +11,13 @@ interface CreateJob {
 	fields: { fieldId: number; actualAcres?: number }[]; // List of fields (Required)
 	sensitiveAreas?: string; // Optional sensitive areas info
 	adjacentCrops?: string; // Optional adjacent crops info
-	products: { productId: number; totalAcres: number; price: number }[]; // Job products (Required)
+	products: {
+		productId: number;
+		productName?: string;
+		totalAcres: number;
+		price: number;
+		perAcreRate?: number;
+	}[]; // Job products (Required)
 	applicationFees?: {
 		description: string;
 		rateUoM: number;

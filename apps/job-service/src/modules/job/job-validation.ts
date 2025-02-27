@@ -58,7 +58,9 @@ const createJobSchema = Joi.object({
 		products: Joi.array()
 			.items(
 				Joi.object({
-					productId: Joi.number().integer().positive().required(),
+					productName: Joi.string().min(1).max(50).optional(),
+					productId: Joi.number().integer().positive().optional(),
+					perAcreRate: Joi.number().integer().positive().optional(),
 					totalAcres: Joi.number().precision(2).positive().required(),
 					price: Joi.number().precision(2).positive().required(),
 				}),
@@ -115,8 +117,12 @@ const jobStatusParamSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
-		// userId: Joi.number().integer().positive().required(),
 		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED').required(),
+		rejectionReason: Joi.string().min(1).max(300).when('status', {
+			is: 'REJECTED',
+			then: Joi.required(),
+			otherwise: Joi.forbidden(),
+		}),
 	}).required(),
 });
 
@@ -129,7 +135,11 @@ const pilotJobsParamSchema: Schema = Joi.object({
 		page: Joi.number().integer().min(1).default(1),
 	}).optional(),
 });
-
+const monthParamsSchema: Schema = Joi.object({
+	query: Joi.object({
+		month: Joi.string().max(500).optional(),
+	}).optional(),
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -137,4 +147,5 @@ export default {
 	jobSourceParamSchema,
 	jobStatusParamSchema,
 	pilotJobsParamSchema,
+	monthParamsSchema,
 };

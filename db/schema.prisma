@@ -194,6 +194,7 @@ model Job {
   adjacentCrops       String?
   specialInstructions String?
   attachments         Json?
+  rejectionReason     String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   fields              FieldJob[]
@@ -241,13 +242,15 @@ model FieldJob {
 }
 
 model JobProduct {
-  id         Int     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   jobId      Int
-  productId  Int
+  // name        String?
+  productId  Int?
+  // perAcreRate Decimal?
   totalAcres Decimal
   price      Decimal
-  job        Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  product    Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }
