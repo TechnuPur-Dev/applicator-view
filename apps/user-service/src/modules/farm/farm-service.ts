@@ -474,7 +474,7 @@ const uploadFarmImage = async (
 	const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 	await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
 		blobHTTPHeaders: {
-			blobContentType: 'image/jpeg', // Adjust based on file type
+			blobContentType: 'image/webp', // Adjust based on file type
 		},
 	});
 
