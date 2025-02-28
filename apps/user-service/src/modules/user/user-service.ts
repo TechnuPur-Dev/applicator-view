@@ -548,43 +548,88 @@ const deleteApplicator = async (growerId: number, applicatorId: number) => {
 };
 
 
-const getPendingInvites = async (userId: number) => {
-	const pendingInvites = await prisma.applicatorGrower.findMany({
-		where: {
-			OR: [{ applicatorId: userId }, { growerId: userId }],
-			inviteStatus: 'PENDING',
-		},
-		include: {
-			grower: {
-				include: {
-					state: {
-						select: {
-							id: true,
-							name: true,
+const getPendingInvites = async (user: User) => {
+	if(user.role === 'APPLICATOR'){
+		const pendingInvites = await prisma.applicatorGrower.findMany({
+			where: {
+				// OR: [{ applicatorId: userId }, { growerId: userId }],
+				applicatorId:user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator:'GROWER' // user who sent invite to join platform 
+			},
+			include: {
+				grower: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
 						},
 					},
-				},
-				omit: {
-					password: true,
-				},
-			},
-			applicator: {
-				include: {
-					state: {
-						select: {
-							id: true,
-							name: true,
-						},
+					omit: {
+						password: true,
 					},
 				},
-				omit: {
-					password: true,
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
 				},
 			},
-		},
-	});
+		});
+	
+		return pendingInvites;
+	}
+	if(user.role === 'GROWER'){
+		const pendingInvites = await prisma.applicatorGrower.findMany({
+			where: {
+				// OR: [{ applicatorId: userId }, { growerId: userId }],
+				growerId:user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator:'APPLICATOR' // user who sent invite to join platform 
+			},
+			include: {
+				grower: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+			},
+		});
+	
+		return pendingInvites;
+	}
 
-	return pendingInvites;
 };
 
 const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
@@ -745,7 +790,7 @@ const getApplicatorByEmail = async (
 // };
 const sendInviteToApplicator = async (
 	userEmail: string,
-	grower: User,
+	user: User,
 	data:{
 		canManageFarms:boolean
 		farmPermission:{
@@ -756,7 +801,8 @@ const sendInviteToApplicator = async (
 	}
 ) => {
 	
-
+	if (user.role !== 'GROWER')
+		return 'You are not allowed to perform this action.';
 	const applicatorExist = await prisma.user.findFirst({
 		where: {
 			email: {
@@ -775,10 +821,11 @@ const sendInviteToApplicator = async (
 	await prisma.applicatorGrower.create({
 		data: {
 			applicatorId: applicatorExist.id,
-			growerId: grower.id,
+			growerId: user.id,
 			applicatorFirstName: applicatorExist.firstName,
 			applicatorLastName: applicatorExist.lastName,
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			inviteInitiator: "GROWER",
 			canManageFarms:data.canManageFarms
 		},
 	});
@@ -844,6 +891,8 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 		},
 		data: {
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			inviteInitiator: "APPLICATOR", // to update inviteInitiator
+
 		},
 	});
 
@@ -964,7 +1013,127 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 		totalAcres: totalAcresByGrower,
 	};
 };
+const getPendingInvitesFromUser = async (user: User,type:string,options: PaginateOptions,) => {
+	const limit =
+	options.limit && parseInt(options.limit, 10) > 0
+		? parseInt(options.limit, 10)
+		: 10;
+// Set the page number, default to 1 if not specified or invalid
+const page =
+	options.page && parseInt(options.page, 10) > 0
+		? parseInt(options.page, 10)
+		: 1;
+// Calculate the number of users to skip based on the current page and limit
+const skip = (page - 1) * limit;
+	//if pending invites from grower get by applicator 
+	if(type === 'GROWER'){
+		const pendingInvites = await prisma.applicatorGrower.findMany({
+			where: {
+				// OR: [{ applicatorId: userId }, { growerId: userId }],
+				applicatorId:user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator:'APPLICATOR' // user who sent invite to join platform 
+			},
+			include: {
+				grower: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+			},
+			skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+		});
+		const totalResults = pendingInvites.length
+		const totalPages = Math.ceil(totalResults / limit);
+		return {
+			result:pendingInvites,
+			page,
+			limit,
+			totalPages,
+			totalResults,
+		};
+	}
+		//if pending invites from applicator get by grower 
+	if(type === 'APPLICATOR'){
+		const pendingInvites = await prisma.applicatorGrower.findMany({
+			where: {
+				// OR: [{ applicatorId: userId }, { growerId: userId }],
+				growerId:user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator:'GROWER' // user who sent invite to join platform 
+			},
+			include: {
+				grower: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+			},
+			skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+		});
+	
+	  const totalResults = pendingInvites.length
+		const totalPages = Math.ceil(totalResults / limit);
+		return {
+			result:pendingInvites,
+			page,
+			limit,
+			totalPages,
+			totalResults,
+		};
+	}
 
+};
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -983,5 +1152,6 @@ export default {
 	sendInviteToGrower,
 	getGrowerById,
 	getApplicatorByEmail,
-	deleteApplicator
+	deleteApplicator,
+	getPendingInvitesFromUser
 };

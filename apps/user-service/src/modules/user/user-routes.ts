@@ -108,4 +108,12 @@ router
 		validateSchema(userValidation.paramsSchema),
 		userController.getGrowerById,
 	);
+	router
+	.route('/invites/pending-from/:type')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.paramsSchemaForType),
+		userController.getPendingInvitesFromUser,
+	);
+	
 export default router;

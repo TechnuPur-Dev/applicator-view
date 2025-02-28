@@ -30,12 +30,26 @@ const paramsSchema: Schema = Joi.object({
 		id: Joi.number().integer().positive(),
 		growerId: Joi.number().integer().positive(),
 		applicatorId: Joi.number().integer().positive(),
+		type: Joi.string()
+			.valid('APPLICATOR', 'GROWER',)
+			.required(),
+	
 
 	})
-		.or('id', 'growerId','applicatorId') // At least one must be present
+		.or('id', 'growerId','applicatorId','type') // At least one must be present
 		.required(),
 });
-
+const paramsSchemaForType: Schema = Joi.object({
+	params: Joi.object({
+		type: Joi.string()
+			.valid('APPLICATOR', 'GROWER')
+			.required(),
+	}).required(),
+	query: Joi.object({
+		limit: Joi.number().integer().min(1).default(10),
+		page: Joi.number().integer().min(1).default(1),
+	}).optional(),
+});
 const verifyEmailAndSendOTPSchema: Schema = Joi.object({
 	params: Joi.object({
 		email: Joi.string().email().required(),
@@ -83,5 +97,6 @@ export default {
 	updateArchiveStatus,
 	updateInviteStatusSchema,
 	sendInviteSchema,
-	searchApplicatorByEmail
+	searchApplicatorByEmail,
+	paramsSchemaForType
 };
