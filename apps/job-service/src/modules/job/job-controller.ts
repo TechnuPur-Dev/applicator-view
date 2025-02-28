@@ -211,12 +211,10 @@ const upcomingApplications = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getHeadersData = catchAsync(async (req: Request, res: Response) => {
-	const applicatorId = req.payload.id;
-	const options = pick(req.query, ['date', 'type']) as {
-		date: string;
-		type: string;
-	};
-	const result = await jobService.getHeadersData(applicatorId, options);
+	const currentUser = req.user;
+
+	const options = pick(req.query, ['date', 'type']) as {date:string,type:string};
+	const result = await jobService.getHeadersData(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
 

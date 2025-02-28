@@ -127,7 +127,7 @@ router
 		jobController.upcomingApplications,
 	);
 
-router
-	.route('/applcator-dashboard-headers')
-	.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
+	router
+	.route('/applcator-headers')
+.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
 export default router;
