@@ -1,4 +1,5 @@
 interface CreateFarmParams {
+	farmImageUrl: string;
 	name: string;
 	stateId: number;
 	county: string;

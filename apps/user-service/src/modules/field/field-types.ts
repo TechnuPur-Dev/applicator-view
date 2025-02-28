@@ -1,4 +1,5 @@
 interface field {
+	fieldImageUrl: string;
 	name: string;
 	crop: string;
 	acres: string;

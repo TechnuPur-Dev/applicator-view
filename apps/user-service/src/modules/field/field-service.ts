@@ -209,8 +209,17 @@ const getAllFields = async () => {
 const createField = async (createdById: number, data: field, user: User) => {
 	// Only accept the fields sent by the frontend
 	const { role, id: userId } = user;
-	const { name, crop, acres, legal, latitude, longitude, farmId, config } =
-		data;
+	const {
+		fieldImageUrl,
+		name,
+		crop,
+		acres,
+		legal,
+		latitude,
+		longitude,
+		farmId,
+		config,
+	} = data;
 	const farm = await prisma.farm.findUnique({
 		where: {
 			id: data.farmId,
@@ -237,6 +246,7 @@ const createField = async (createdById: number, data: field, user: User) => {
 		if (farm?.growerId === userId) {
 			const field = await prisma.field.create({
 				data: {
+					fieldImageUrl,
 					name,
 					crop,
 					acres,
@@ -267,6 +277,7 @@ const createField = async (createdById: number, data: field, user: User) => {
 		if (hasEditPermission) {
 			const field = await prisma.field.create({
 				data: {
+					fieldImageUrl,
 					name,
 					crop,
 					acres,
