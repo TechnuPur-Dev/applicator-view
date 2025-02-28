@@ -13,15 +13,15 @@ const createGrowerSchema: Schema = Joi.object({
 		email: Joi.string().email().required(), // Valid email address
 		phoneNumber: phoneNumberSchema.required(), // International phone number format
 		address1: Joi.string().max(100).required(), // Address line 1
-		address2: Joi.string().max(100).optional(), // Address line 2
+		address2: Joi.string().max(100).optional().allow(''), // Address line 2
 		stateId: Joi.number().integer().positive().required(), // StateId
 		county: Joi.string().max(50).required(), // County name
 		township: Joi.string().max(50).required(), // Township name
 		zipCode: Joi.string()
 			.pattern(/^\d{5}(-\d{4})?$/)
 			.required(), // ZIP code in standard formats
-		bio: Joi.string().max(500).optional(), // Short biography
-		additionalInfo: Joi.string().max(500).optional(), // Additional information as a flexible object
+		bio: Joi.string().max(500).optional().allow(''), // Short biography
+		additionalInfo: Joi.string().max(500).optional().allow(''), // Additional information as a flexible object
 	}).required(),
 });
 

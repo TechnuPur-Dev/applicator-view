@@ -1,12 +1,13 @@
 import Joi, { Schema } from 'joi';
 
 // Regular Expressions
-const PHONE_REGEX = /^\+(?:[0-9] ?){6,14}[0-9]$/;
+// const PHONE_REGEX = /^\+(?:[0-9] ?){6,14}[0-9]$/;
 const USERNAME_REGEX = /^[a-zA-Z0-9_]*$/;
 const PASSWORD_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 
 // Individual Schemas
-const phoneNumberSchema: Schema = Joi.string().pattern(PHONE_REGEX).required();
+// const phoneNumberSchema: Schema = Joi.string().pattern(PHONE_REGEX).required(); Removed Regex for phone number temporarily for demo
+const phoneNumberSchema: Schema = Joi.string().required();
 const userNameSchema: Schema = Joi.string()
 	.pattern(USERNAME_REGEX)
 	.min(4)
