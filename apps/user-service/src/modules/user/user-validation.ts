@@ -29,8 +29,10 @@ const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
 		id: Joi.number().integer().positive(),
 		growerId: Joi.number().integer().positive(),
+		applicatorId: Joi.number().integer().positive(),
+
 	})
-		.or('id', 'growerId') // At least one must be present
+		.or('id', 'growerId','applicatorId') // At least one must be present
 		.required(),
 });
 
@@ -59,8 +61,9 @@ const sendInviteSchema: Schema = Joi.object({
 	params: Joi.object({
 		applicatorId: Joi.number().integer().positive(),
 		growerId: Joi.number().integer().positive(),
+		// email: Joi.string().required(),
 	})
-		.or('applicatorId', 'growerId') // At least one must be present
+		.or('applicatorId', 'growerId',) // At least one must be present
 		.required(),
 });
 

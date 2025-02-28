@@ -127,7 +127,10 @@ router
 		jobController.upcomingApplications,
 	);
 
+router
+	.route('/applcator-dashboard-headers')
+	.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
 	router
-	.route('/applcator-headers')
-.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
+	.route('/get-rejectedjobs')
+	.get(verifyToken, jobController.getRejectedJobs);
 export default router;

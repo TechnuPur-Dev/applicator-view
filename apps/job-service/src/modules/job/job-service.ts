@@ -2343,7 +2343,19 @@ const getHeadersData = async (
 	}
 	return result;
 };
+const getRejectedJobs = async (user: User) => {
+	if(user.role === "APPLICATOR"){
+		return await prisma.job.findMany({
+			where: { applicatorId:user.id, status: 'REJECTED',source:'APPLICATOR' },
+		});
+	}
+	if(user.role === "GROWER"){
+		return await prisma.job.findMany({
+			where: { growerId:user.id, status: 'REJECTED' , source:'GROWER'},
+		});
+	}
 
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -2368,4 +2380,5 @@ export default {
 	addOpenForBiddingJob,
 	upcomingApplications,
 	getHeadersData,
+	getRejectedJobs
 };

@@ -531,6 +531,22 @@ const deleteGrower = async (growerId: number, applicatorId: number) => {
 		message: 'Grower deleted successfully',
 	};
 };
+const deleteApplicator = async (growerId: number, applicatorId: number) => {
+
+	await prisma.applicatorGrower.delete({
+		where: {
+			applicatorId_growerId: {
+				growerId,
+				applicatorId,
+			},
+		},
+	});
+
+	return {
+		message: 'applicator deleted successfully',
+	};
+};
+
 
 const getPendingInvites = async (userId: number) => {
 	const pendingInvites = await prisma.applicatorGrower.findMany({
@@ -728,58 +744,64 @@ const getApplicatorByEmail = async (
 // 	};
 // };
 const sendInviteToApplicator = async (
-	applicatorId: number,
+	userEmail: string,
 	grower: User,
+	data:{
+		canManageFarms:boolean
+		farmPermission:{
+			farmId: number;
+			canView: boolean;
+			canEdit: boolean;
+		}[]
+	}
 ) => {
-	// Update the inviteStatus field
+	
 
-	const applicatorExist = await prisma.user.findUnique({
-	    where:{
-			id:applicatorId
-		}	
+	const applicatorExist = await prisma.user.findFirst({
+		where: {
+			email: {
+				equals: userEmail,
+				mode: 'insensitive',
+			},
+			role: 'APPLICATOR',
+		},	
 	})
 	if (!applicatorExist) {
 		throw new ApiError(
 			httpStatus.CONFLICT,
-			'applicator with this Id not found.',
+			'applicator with this email not found.',
 		);
 	}
-	const user = await prisma.applicatorGrower.create({
+	await prisma.applicatorGrower.create({
 		data: {
 			applicatorId: applicatorExist.id,
 			growerId: grower.id,
 			applicatorFirstName: applicatorExist.firstName,
 			applicatorLastName: applicatorExist.lastName,
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			canManageFarms:data.canManageFarms
 		},
 	});
-	// const user = await prisma.applicatorGrower.update({
-	// 	where: {
-	// 		applicatorId_growerId: {
-	// 			applicatorId,
-	// 			growerId,
-	// 		},
-	// 	},
-	// 	include: {
-	// 		// Move include here
-	// 		applicator: {
-	// 			select: {
-	// 				email: true,
-	// 			},
-	// 		},
-	// 	},
-	// 	data: {
-	// 		inviteStatus: 'PENDING', // Only updating the inviteStatus field
-	// 	},
-	// });
-
+   // save farm permission as well
+	await prisma.$transaction(
+		data.farmPermission.map((farm) =>
+			prisma.farmPermission.create({
+				data: {
+					farmId: farm.farmId,
+					applicatorId: applicatorExist.id, // Use the existing applicator ID
+					canView: farm.canView,
+					canEdit: farm.canEdit,
+				},
+			})
+		)
+	);
 	const subject = 'Email Invitation';
 	const message = `
 You are invited to join our platform!<br><br>
 If you did not expect this invitation, please ignore this email.
 `;
-	if (user) {
-		const email = applicatorExist?.email;
+	if (applicatorExist) {
+		const email = userEmail;
 
 		// const email = user?.applicator?.email;
 
@@ -790,7 +812,7 @@ If you did not expect this invitation, please ignore this email.
 		const html = await mailHtmlTemplate(subject, message);
 
 		await sendEmail({
-			emailTo: email,
+			emailTo: userEmail,
 			subject,
 			text: 'Request Invitation',
 			html,
@@ -960,5 +982,6 @@ export default {
 	sendInviteToApplicator,
 	sendInviteToGrower,
 	getGrowerById,
-	getApplicatorByEmail
+	getApplicatorByEmail,
+	deleteApplicator
 };
