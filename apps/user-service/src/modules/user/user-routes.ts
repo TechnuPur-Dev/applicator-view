@@ -63,6 +63,13 @@ router
 		validateSchema(userValidation.paramsSchema),
 		userController.deleteGrower,
 	);
+	router
+	.route('/delete-applicator/by-grower/:applicatorId')
+	.delete(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.deleteApplicator,
+	);
 router
 	.route('/update/invite-status')
 	.put(
@@ -74,10 +81,9 @@ router
 	.route('/invites/pending')
 	.get(verifyToken, userController.getPendingInvites);
 router
-	.route('/applicator/invite/:applicatorId')
+	.route('/applicator/invite/:email')
 	.put(
 		verifyToken,
-		validateSchema(userValidation.sendInviteSchema),
 		userController.sendInviteToApplicator,
 	);
 router

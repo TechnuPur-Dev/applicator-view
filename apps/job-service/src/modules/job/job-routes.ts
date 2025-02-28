@@ -130,4 +130,7 @@ router
 router
 	.route('/applcator-dashboard-headers')
 	.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
+	router
+	.route('/get-rejectedjobs')
+	.get(verifyToken, jobController.getRejectedJobs);
 export default router;

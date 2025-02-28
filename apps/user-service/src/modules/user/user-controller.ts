@@ -95,6 +95,12 @@ const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.deleteGrower(growerId, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
+const deleteApplicator = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = +req.params.applicatorId;
+	const growerId = req.payload.id;
+	const result = await userService.deleteApplicator(growerId,applicatorId);
+	res.status(httpStatus.OK).json(result);
+});
 const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
@@ -125,10 +131,12 @@ const getApplicatorByEmail = catchAsync(async (req: Request, res: Response) => {
 const sendInviteToApplicator = catchAsync(
 	async (req: Request, res: Response) => {
 		const grower = req.user
-		const applicatorId = +req.params.applicatorId;
+		const email = req.params.email;
+		const data = req.body
 		const result = await userService.sendInviteToApplicator(
-			applicatorId,
+			email,
 			grower,
+			data
 		);
 		res.status(httpStatus.OK).json(result);
 	},
@@ -166,5 +174,6 @@ export default {
 	sendInviteToApplicator,
 	sendInviteToGrower,
 	getGrowerById,
-	getApplicatorByEmail
+	getApplicatorByEmail,
+	deleteApplicator
 };

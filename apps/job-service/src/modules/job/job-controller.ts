@@ -219,7 +219,11 @@ const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getHeadersData(applicatorId, options);
 	res.status(httpStatus.OK).json(result);
 });
-
+const getRejectedJobs = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user
+	const result = await jobService.getRejectedJobs(user);
+	res.status(httpStatus.OK).json({ result });
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -244,4 +248,5 @@ export default {
 	addOpenForBiddingJob,
 	upcomingApplications,
 	getHeadersData,
+	getRejectedJobs
 };
