@@ -2542,6 +2542,132 @@ const getRejectedJobs = async (user: User, options: PaginateOptions) => {
 		};
 	}
 };
+
+// service for Job
+const getBiddingJobById = async (user: User, jobId: number) => {
+	const { id, role } = user;
+	const whereCondition: {
+		id: number;
+		applicatorId?: number;
+		growerId?: number;
+		source: JobSource;
+	} = { id: jobId, source: 'BIDDING' };
+
+	// if (role === 'APPLICATOR') {
+	// 	whereCondition.applicatorId = id;
+	// }
+	if (role === 'GROWER') {
+		whereCondition.growerId = id;
+	}
+	const job = await prisma.job.findUnique({
+		where: whereCondition,
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+					businessName: true,
+				},
+			},
+			applicator: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+					businessName: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					id: true,
+					farmImageUrl: true,
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							id: true,
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			products: {
+				select: {
+					id: true,
+					totalAcres: true,
+					price: true,
+					product: {
+						select: {
+							id: true,
+							productName: true,
+							perAcreRate: true,
+						},
+					},
+				},
+			},
+			applicationFees: true,
+		},
+		omit: {
+			applicatorId: true,
+			fieldWorkerId: true,
+			farmId: true,
+		},
+	});
+	// Check if user is null
+	if (!job) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'No job found for the given job Id.',
+		);
+	}
+	const fields = await prisma.field.findMany({
+		where: {
+			farmId: job.farm.id,
+		},
+		select: {
+			acres: true,
+		},
+	});
+	// Format the job object with conditional removal of applicator or grower
+	const formattedJob = (({ applicator, grower, ...job }) => ({
+		...job,
+		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
+		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		),
+		farm: {
+			...job.farm,
+			totalAcres: fields.reduce(
+				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
+				0,
+			),
+		},
+	}))(job);
+
+	return formattedJob;
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -2567,4 +2693,5 @@ export default {
 	upcomingApplications,
 	getHeadersData,
 	getRejectedJobs,
+	getBiddingJobById,
 };

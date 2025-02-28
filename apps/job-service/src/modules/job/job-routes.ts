@@ -133,4 +133,11 @@ router
 router
 	.route('/get-rejectedjobs')
 	.get(verifyToken, jobController.getRejectedJobs);
+router
+	.route('/get/open-job/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getBiddingJobById,
+	);
 export default router;
