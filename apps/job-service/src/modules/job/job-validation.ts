@@ -96,7 +96,6 @@ const updateJobSchema = Joi.object({
 
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
-		// applicatorId: Joi.number().integer().positive(),
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 });

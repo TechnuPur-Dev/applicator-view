@@ -140,4 +140,11 @@ router
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getBiddingJobById,
 	);
+router // TODO: Update service accroding to the business logic
+	.route('/get/job-invoice/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getJobInvoice,
+	);
 export default router;
