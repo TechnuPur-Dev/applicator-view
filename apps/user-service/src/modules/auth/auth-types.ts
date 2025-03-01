@@ -24,6 +24,7 @@ interface LoginUser {
 	email: string;
 	password: string;
 	deviceToken?: string;
+	role: UserRole;
 }
 interface verifyOTPAndRegisterEmail {
 	email: string;

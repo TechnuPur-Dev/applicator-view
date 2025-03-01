@@ -91,7 +91,7 @@ const registerUser = async (data: RegisterUser) => {
 	return user;
 };
 const loginUser = async (data: LoginUser) => {
-	const { email, password, deviceToken } = data;
+	const { email, password, deviceToken, role } = data;
 
 	const user = await prisma.user.findFirst({
 		where: {
@@ -99,6 +99,7 @@ const loginUser = async (data: LoginUser) => {
 				equals: email,
 				mode: 'insensitive',
 			},
+			role,
 		},
 		include: {
 			state: {
