@@ -100,6 +100,16 @@ const loginUser = async (data: LoginUser) => {
 				mode: 'insensitive',
 			},
 		},
+		include: {
+			state: {
+				select: {
+					name: true,
+				},
+			},
+		},
+		omit: {
+			updatedAt: true,
+		},
 	});
 
 	if (!user) {
@@ -141,9 +151,9 @@ const loginUser = async (data: LoginUser) => {
 		const accessToken = await signAccessToken(user.id);
 
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { password, ...userWithoutPassword } = user; // Exclude password
+		const { password, state, ...userWithoutPassword } = user; // Exclude password
 		return {
-			user: { ...userWithoutPassword },
+			user: { ...userWithoutPassword, state: state?.name },
 			accessToken,
 		};
 	}

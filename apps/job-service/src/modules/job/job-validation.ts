@@ -30,7 +30,8 @@ const createJobSchema = Joi.object({
 
 		// Date validation
 		startDate: Joi.date().iso().required(),
-		endDate: Joi.date().iso().greater(Joi.ref('startDate')).required(),
+		endDate: Joi.date().iso().min(Joi.ref('startDate')).required(),
+		// endDate: Joi.date().iso().greater(Joi.ref('startDate')).required(),
 
 		// Optional description & instructions
 		description: Joi.string().max(500).allow('').optional(),
