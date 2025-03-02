@@ -68,11 +68,13 @@ const createGrower = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllGrowersByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page']);
 
 		const applicatorId = req.payload.id;
-		const result =
-			await userService.getAllGrowersByApplicator(applicatorId,options);
+		const result = await userService.getAllGrowersByApplicator(
+			applicatorId,
+			options,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -98,15 +100,18 @@ const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 const deleteApplicator = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = +req.params.applicatorId;
 	const growerId = req.payload.id;
-	const result = await userService.deleteApplicator(growerId,applicatorId);
+	const result = await userService.deleteApplicator(growerId, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
 const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page']);
 
 		const growerId = req.payload.id;
-		const result = await userService.getAllApplicatorsByGrower(growerId,options);
+		const result = await userService.getAllApplicatorsByGrower(
+			growerId,
+			options,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -130,13 +135,13 @@ const getApplicatorByEmail = catchAsync(async (req: Request, res: Response) => {
 });
 const sendInviteToApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const grower = req.user
+		const grower = req.user;
 		const email = req.params.email;
-		const data = req.body
+		const data = req.body;
 		const result = await userService.sendInviteToApplicator(
 			email,
 			grower,
-			data
+			data,
 		);
 		res.status(httpStatus.OK).json(result);
 	},
@@ -158,11 +163,22 @@ const getGrowerById = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-const getPendingInvitesFromUser = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user;
-	const type = req.params.type
-	const options = pick(req.query, ['limit', 'page']);
-	const result = await userService.getPendingInvitesFromUser(user,type,options);
+const getPendingInvitesFromUser = catchAsync(
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const type = req.params.type;
+		const options = pick(req.query, ['limit', 'page']);
+		const result = await userService.getPendingInvitesFromUser(
+			user,
+			type,
+			options,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+const verifyInviteToken = catchAsync(async (req: Request, res: Response) => {
+	const { token } = req.body;
+	const result = await userService.verifyInviteToken(token);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -184,5 +200,6 @@ export default {
 	getGrowerById,
 	getApplicatorByEmail,
 	deleteApplicator,
-	getPendingInvitesFromUser
+	getPendingInvitesFromUser,
+	verifyInviteToken,
 };

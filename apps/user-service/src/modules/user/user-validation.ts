@@ -83,6 +83,11 @@ const searchApplicatorByEmail: Schema = Joi.object({
 		page: Joi.number().integer().positive().optional(),
 	}).required(),
 });
+const verifyInviteToken: Schema = Joi.object({
+	body: Joi.object({
+		token: Joi.string().required(), // Assuming this is a URL
+	}).required(),
+});
 export default {
 	createGrowerSchema,
 	paramsSchema,
@@ -92,4 +97,5 @@ export default {
 	sendInviteSchema,
 	searchApplicatorByEmail,
 	paramsSchemaForType,
+	verifyInviteToken,
 };

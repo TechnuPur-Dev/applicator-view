@@ -81,6 +81,8 @@ model ApplicatorWorker {
   lastLogin              DateTime?
   isActive               Boolean      @default(true)
   inviteStatus           InviteStatus @default(NOT_SENT)
+  inviteToken            String?      @unique
+  // expiresAt              DateTime? // Optional: Invite expiration time
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   applicator             User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
@@ -98,6 +100,8 @@ model ApplicatorGrower {
   growerFirstName        String?
   growerLastName         String?
   inviteStatus           InviteStatus     @default(NOT_SENT)
+  inviteToken            String?          @unique
+  // expiresAt              DateTime? // Optional: Invite expiration time
   inviteInitiator        InviteInitiator? // NEW FIELD: Who sent the invite?
   isArchivedByApplicator Boolean          @default(false)
   isArchivedByGrower     Boolean          @default(false)

@@ -112,5 +112,10 @@ router
 		validateSchema(userValidation.paramsSchemaForType),
 		userController.getPendingInvitesFromUser,
 	);
-
+router
+	.route('/verify/invite-token')
+	.post(
+		validateSchema(userValidation.verifyInviteToken),
+		userController.verifyInviteToken,
+	);
 export default router;

@@ -11,6 +11,7 @@ import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
+import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -263,7 +264,8 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 // create grower
 const createGrower = async (data: UpdateUser, userId: number) => {
 	const { firstName, lastName } = data;
-
+	// Generate Token
+	const token = generateInviteToken('GROWER');
 	const [grower] = await prisma.$transaction(async (prisma) => {
 		const grower = await prisma.user.create({
 			data: {
@@ -282,10 +284,31 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 				growerId: grower.id,
 				growerFirstName: firstName,
 				growerLastName: lastName,
+				inviteStatus: 'PENDING',
+				inviteInitiator: 'APPLICATOR',
+				inviteToken: token,
 			},
 		});
 
 		return [grower];
+	});
+	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const subject = 'Invitation Email';
+	const message = `
+  You are invited to join our platform!<br><br>
+  Click the link below to join.<br><br>
+  ${inviteLink}<br><br>
+  If you did not expect this invitation, please ignore this email.
+`;
+	// Construct invite link
+
+	const html = await mailHtmlTemplate(subject, message);
+
+	await sendEmail({
+		emailTo: data.email,
+		subject,
+		text: 'Request Invitation',
+		html,
 	});
 
 	return grower;
@@ -532,7 +555,6 @@ const deleteGrower = async (growerId: number, applicatorId: number) => {
 	};
 };
 const deleteApplicator = async (growerId: number, applicatorId: number) => {
-
 	await prisma.applicatorGrower.delete({
 		where: {
 			applicatorId_growerId: {
@@ -547,15 +569,14 @@ const deleteApplicator = async (growerId: number, applicatorId: number) => {
 	};
 };
 
-
 const getPendingInvites = async (user: User) => {
-	if(user.role === 'APPLICATOR'){
+	if (user.role === 'APPLICATOR') {
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: {
 				// OR: [{ applicatorId: userId }, { growerId: userId }],
-				applicatorId:user.id,
+				applicatorId: user.id,
 				inviteStatus: 'PENDING',
-				inviteInitiator:'GROWER' // user who sent invite to join platform 
+				inviteInitiator: 'GROWER', // user who sent invite to join platform
 			},
 			include: {
 				grower: {
@@ -586,50 +607,49 @@ const getPendingInvites = async (user: User) => {
 				},
 			},
 		});
-	
-		return pendingInvites;
-	}
-	if(user.role === 'GROWER'){
-		const pendingInvites = await prisma.applicatorGrower.findMany({
-			where: {
-				// OR: [{ applicatorId: userId }, { growerId: userId }],
-				growerId:user.id,
-				inviteStatus: 'PENDING',
-				inviteInitiator:'APPLICATOR' // user who sent invite to join platform 
-			},
-			include: {
-				grower: {
-					include: {
-						state: {
-							select: {
-								id: true,
-								name: true,
-							},
-						},
-					},
-					omit: {
-						password: true,
-					},
-				},
-				applicator: {
-					include: {
-						state: {
-							select: {
-								id: true,
-								name: true,
-							},
-						},
-					},
-					omit: {
-						password: true,
-					},
-				},
-			},
-		});
-	
-		return pendingInvites;
-	}
 
+		return pendingInvites;
+	}
+	if (user.role === 'GROWER') {
+		const pendingInvites = await prisma.applicatorGrower.findMany({
+			where: {
+				// OR: [{ applicatorId: userId }, { growerId: userId }],
+				growerId: user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator: 'APPLICATOR', // user who sent invite to join platform
+			},
+			include: {
+				grower: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+					},
+				},
+			},
+		});
+
+		return pendingInvites;
+	}
 };
 
 const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
@@ -697,7 +717,7 @@ const getApplicatorByEmail = async (
 				contains: email, // Case-insensitive partial match
 				mode: 'insensitive',
 			},
-			role:'APPLICATOR',
+			role: 'APPLICATOR',
 			NOT: {
 				// Exclude users already connected by grower with ACCEPTED or PENDING statuses
 				applicators: {
@@ -727,9 +747,8 @@ const getApplicatorByEmail = async (
 			email: {
 				contains: email,
 				mode: 'insensitive',
-				
 			},
-			role:'APPLICATOR',
+			role: 'APPLICATOR',
 			NOT: {
 				applicators: {
 					some: {
@@ -767,7 +786,7 @@ const getApplicatorByEmail = async (
 // 					name: true,
 // 				},
 // 			},
-			
+
 // 		},
 // 		omit: {
 // 			password: true, // Exclude sensitive data
@@ -782,7 +801,6 @@ const getApplicatorByEmail = async (
 // 		);
 // 	}
 
-
 // 	// Add total acres to the grower object
 // 	return {
 // 		...applicator,
@@ -791,16 +809,15 @@ const getApplicatorByEmail = async (
 const sendInviteToApplicator = async (
 	userEmail: string,
 	user: User,
-	data:{
-		canManageFarms:boolean
-		farmPermission:{
+	data: {
+		canManageFarms: boolean;
+		farmPermission: {
 			farmId: number;
 			canView: boolean;
 			canEdit: boolean;
-		}[]
-	}
+		}[];
+	},
 ) => {
-	
 	if (user.role !== 'GROWER')
 		return 'You are not allowed to perform this action.';
 	const applicatorExist = await prisma.user.findFirst({
@@ -810,8 +827,8 @@ const sendInviteToApplicator = async (
 				mode: 'insensitive',
 			},
 			role: 'APPLICATOR',
-		},	
-	})
+		},
+	});
 	if (!applicatorExist) {
 		throw new ApiError(
 			httpStatus.CONFLICT,
@@ -825,11 +842,11 @@ const sendInviteToApplicator = async (
 			applicatorFirstName: applicatorExist.firstName,
 			applicatorLastName: applicatorExist.lastName,
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
-			inviteInitiator: "GROWER",
-			canManageFarms:data.canManageFarms
+			inviteInitiator: 'GROWER',
+			canManageFarms: data.canManageFarms,
 		},
 	});
-   // save farm permission as well
+	// save farm permission as well
 	await prisma.$transaction(
 		data.farmPermission.map((farm) =>
 			prisma.farmPermission.create({
@@ -839,8 +856,8 @@ const sendInviteToApplicator = async (
 					canView: farm.canView,
 					canEdit: farm.canEdit,
 				},
-			})
-		)
+			}),
+		),
 	);
 	const subject = 'Email Invitation';
 	const message = `
@@ -891,8 +908,7 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 		},
 		data: {
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
-			inviteInitiator: "APPLICATOR", // to update inviteInitiator
-
+			inviteInitiator: 'APPLICATOR', // to update inviteInitiator
 		},
 	});
 
@@ -1013,26 +1029,30 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 		totalAcres: totalAcresByGrower,
 	};
 };
-const getPendingInvitesFromUser = async (user: User,type:string,options: PaginateOptions,) => {
+const getPendingInvitesFromUser = async (
+	user: User,
+	type: string,
+	options: PaginateOptions,
+) => {
 	const limit =
-	options.limit && parseInt(options.limit, 10) > 0
-		? parseInt(options.limit, 10)
-		: 10;
-// Set the page number, default to 1 if not specified or invalid
-const page =
-	options.page && parseInt(options.page, 10) > 0
-		? parseInt(options.page, 10)
-		: 1;
-// Calculate the number of users to skip based on the current page and limit
-const skip = (page - 1) * limit;
-	//if pending invites from grower get by applicator 
-	if(type === 'GROWER'){
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+	//if pending invites from grower get by applicator
+	if (type === 'GROWER') {
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: {
 				// OR: [{ applicatorId: userId }, { growerId: userId }],
-				applicatorId:user.id,
+				applicatorId: user.id,
 				inviteStatus: 'PENDING',
-				inviteInitiator:'APPLICATOR' // user who sent invite to join platform 
+				inviteInitiator: 'APPLICATOR', // user who sent invite to join platform
 			},
 			include: {
 				grower: {
@@ -1063,29 +1083,29 @@ const skip = (page - 1) * limit;
 				},
 			},
 			skip,
-		take: limit,
-		orderBy: {
-			id: 'desc',
-		},
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 		});
-		const totalResults = pendingInvites.length
+		const totalResults = pendingInvites.length;
 		const totalPages = Math.ceil(totalResults / limit);
 		return {
-			result:pendingInvites,
+			result: pendingInvites,
 			page,
 			limit,
 			totalPages,
 			totalResults,
 		};
 	}
-		//if pending invites from applicator get by grower 
-	if(type === 'APPLICATOR'){
+	//if pending invites from applicator get by grower
+	if (type === 'APPLICATOR') {
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: {
 				// OR: [{ applicatorId: userId }, { growerId: userId }],
-				growerId:user.id,
+				growerId: user.id,
 				inviteStatus: 'PENDING',
-				inviteInitiator:'GROWER' // user who sent invite to join platform 
+				inviteInitiator: 'GROWER', // user who sent invite to join platform
 			},
 			include: {
 				grower: {
@@ -1116,23 +1136,134 @@ const skip = (page - 1) * limit;
 				},
 			},
 			skip,
-		take: limit,
-		orderBy: {
-			id: 'desc',
-		},
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 		});
-	
-	  const totalResults = pendingInvites.length
+
+		const totalResults = pendingInvites.length;
 		const totalPages = Math.ceil(totalResults / limit);
 		return {
-			result:pendingInvites,
+			result: pendingInvites,
 			page,
 			limit,
 			totalPages,
 			totalResults,
 		};
+	}
+};
+const verifyInviteToken = async (token: string) => {
+	// Verify token and extract role
+	const role = verifyInvite(token);
+	if (!role) {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'Invalid or expired token.',
+		);
 	}
 
+	let user = null;
+
+	// Fetch user based on role
+	if (role === 'GROWER') {
+		const invite = await prisma.applicatorGrower.findUnique({
+			where: {
+				inviteToken: token,
+				grower: {
+					profileStatus: 'INCOMPLETE',
+				},
+			},
+			select: {
+				grower: {
+					include: {
+						state: {
+							select: {
+								name: true,
+							},
+						},
+					},
+					omit: {
+						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
+						createdAt: true,
+						updatedAt: true,
+					},
+				},
+			},
+		});
+		user = invite?.grower;
+	} else if (role === 'APPLICATOR') {
+		const invite = await prisma.applicatorGrower.findUnique({
+			where: {
+				inviteToken: token,
+				applicator: {
+					profileStatus: 'INCOMPLETE',
+				},
+			},
+			select: {
+				applicator: {
+					omit: {
+						updatedAt: true,
+						createdAt: true,
+						password: true,
+					},
+					include: {
+						state: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
+			},
+		});
+		user = invite?.applicator;
+	} else if (role === 'WORKER') {
+		const invite = await prisma.applicatorWorker.findUnique({
+			where: {
+				inviteToken: token,
+				worker: {
+					profileStatus: 'INCOMPLETE',
+				},
+			},
+			select: {
+				worker: {
+					omit: {
+						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
+						createdAt: true,
+						updatedAt: true,
+					},
+					include: {
+						state: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
+			},
+		});
+		user = invite?.worker;
+	} else {
+		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
+	}
+
+	// If no user is found, throw an error
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'User not found or invite expired.',
+		);
+	}
+	const { state } = user;
+	// Return only the role-specific user data
+	return { ...user, state: state?.name };
 };
 export default {
 	uploadProfileImage,
@@ -1153,5 +1284,6 @@ export default {
 	getGrowerById,
 	getApplicatorByEmail,
 	deleteApplicator,
-	getPendingInvitesFromUser
+	getPendingInvitesFromUser,
+	verifyInviteToken,
 };
