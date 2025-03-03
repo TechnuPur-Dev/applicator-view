@@ -81,12 +81,22 @@ const uploadProfileImage = async (
 // to update user profile
 const updateProfile = async (data: UpdateUser, userId: number) => {
 	let { password } = data;
+	const { firstName, lastName } = data;
 	// hash the password only if it is provided
 	if (password) {
 		const hashedPassword = await hashPassword(data.password);
 		password = hashedPassword;
 	}
-	console.log(password);
+	// Construct fullName if firstName or lastName is updated
+	let fullName: string | undefined;
+	if (firstName || lastName) {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { firstName: true, lastName: true },
+		});
+		fullName =
+			`${firstName || user?.firstName || ''} ${lastName || user?.lastName || ''}`.trim();
+	}
 
 	const udpatedUser = await prisma.user.update({
 		where: {
@@ -95,6 +105,7 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 		data: {
 			...data,
 			password,
+			fullName,
 			profileStatus: 'COMPLETE',
 		},
 		include: {

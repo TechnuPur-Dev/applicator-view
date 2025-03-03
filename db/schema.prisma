@@ -247,15 +247,15 @@ model FieldJob {
 }
 
 model JobProduct {
-  id         Int      @id @default(autoincrement())
-  jobId      Int
-  // name        String?
-  productId  Int?
-  // perAcreRate Decimal?
-  totalAcres Decimal
-  price      Decimal
-  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  product    Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  jobId       Int
+  name        String?
+  productId   Int?
+  perAcreRate Decimal?
+  totalAcres  Decimal
+  price       Decimal
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }

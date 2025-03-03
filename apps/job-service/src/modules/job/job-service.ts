@@ -198,28 +198,19 @@ const createJob = async (user: User, data: CreateJob) => {
 		if (typeof applicatorId !== 'number') {
 			throw new Error('applicatorId is required and must be a number');
 		}
-		// const hasFarmPermission = await prisma.applicatorGrower.count({
-		// 	where: {
-		// 		growerId: user.id,
-		// 		applicatorId,
-		// 		grower: {
-		// 			farms: {
-		// 				some: {
-		// 					id: farmId,
-		// 					permissions: {
-		// 						some: { applicatorId: user.id, canView: true },
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// });
-		// if (!hasFarmPermission) {
-		// 	throw new ApiError(
-		// 		httpStatus.FORBIDDEN,
-		// 		'You do not have permission to access this farm.',
-		// 	);
-		// }
+		const hasFarmPermission = await prisma.applicatorGrower.count({
+			where: {
+				growerId: user.id,
+				applicatorId,
+			},
+		});
+
+		if (!hasFarmPermission) {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'You do not have permission to access this farm.',
+			);
+		}
 
 		// const productIds = products.map(({ productId }) => productId);
 		// const productCount = await prisma.product.count({
@@ -277,11 +268,11 @@ const createJob = async (user: User, data: CreateJob) => {
 				},
 				products: {
 					create: products.map(
-						({ productName, perAcreRate, totalAcres, price }) => ({
+						({ productName, perAcreRate, totalAcres }) => ({
 							name: productName,
 							perAcreRate,
 							totalAcres,
-							price,
+							price: (totalAcres ?? 0) * (perAcreRate ?? 0), // Handle possible undefined values
 						}),
 					),
 				},
@@ -336,6 +327,8 @@ const createJob = async (user: User, data: CreateJob) => {
 						},
 						totalAcres: true,
 						price: true,
+						name: true,
+						perAcreRate: true,
 					},
 				},
 				applicationFees: true,
@@ -612,6 +605,8 @@ const getJobById = async (user: User, jobId: number) => {
 					id: true,
 					totalAcres: true,
 					price: true,
+					name: true,
+					perAcreRate: true,
 					product: {
 						select: {
 							id: true,
@@ -2617,6 +2612,8 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					id: true,
 					totalAcres: true,
 					price: true,
+					name: true,
+					perAcreRate: true,
 					product: {
 						select: {
 							id: true,
