@@ -110,7 +110,12 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 			stateId: true,
 		},
 	});
-	return udpatedUser;
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { state } = udpatedUser; // Exclude password
+	return {
+		...udpatedUser,
+		state: state?.name,
+	};
 };
 
 // service for user
@@ -1187,7 +1192,6 @@ const verifyInviteToken = async (token: string) => {
 						password: true,
 						businessName: true,
 						experience: true,
-						stateId: true,
 						createdAt: true,
 						updatedAt: true,
 					},
@@ -1235,7 +1239,6 @@ const verifyInviteToken = async (token: string) => {
 						password: true,
 						businessName: true,
 						experience: true,
-						stateId: true,
 						createdAt: true,
 						updatedAt: true,
 					},
