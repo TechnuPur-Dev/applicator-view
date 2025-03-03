@@ -140,6 +140,14 @@ const monthParamsSchema: Schema = Joi.object({
 		month: Joi.string().max(500).optional(),
 	}).optional(),
 });
+const headerStatsSchema: Schema = Joi.object({
+	query: Joi.object({
+		date: Joi.date().iso().required(),
+		type: Joi.string()
+		.valid('dashboard', 'myJobs', 'openJobs', 'pendingJobApprovals')
+		.required(),
+	}).required(),
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -148,4 +156,5 @@ export default {
 	jobStatusParamSchema,
 	pilotJobsParamSchema,
 	monthParamsSchema,
+	headerStatsSchema
 };
