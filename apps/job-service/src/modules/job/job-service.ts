@@ -2094,8 +2094,10 @@ const getHeadersData = async (
 	let result;
 
 	if (options.date) {
-		const [year, month, day] = options.date.split('-').map(Number);
+		const dateObj = new Date(options.date);
+		const dateStr = dateObj.toISOString();
 
+		const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
 		if (!year || !month || !day) {
 			throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid date format.');
 		}

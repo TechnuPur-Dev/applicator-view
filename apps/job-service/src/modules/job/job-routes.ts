@@ -129,7 +129,7 @@ router
 
 router
 	.route('/headers-stats')
-	.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
+	.get(verifyToken, authorize('APPLICATOR'), validateSchema(jobValidation.headerStatsSchema),jobController.getHeadersData);
 router
 	.route('/get-rejectedjobs')
 	.get(verifyToken, jobController.getRejectedJobs);
