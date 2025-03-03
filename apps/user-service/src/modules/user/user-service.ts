@@ -851,6 +851,8 @@ const sendInviteToApplicator = async (
 			'applicator with this email not found.',
 		);
 	}
+	const token = generateInviteToken('GROWER');
+
 	await prisma.applicatorGrower.create({
 		data: {
 			applicatorId: applicatorExist.id,
@@ -875,10 +877,13 @@ const sendInviteToApplicator = async (
 			}),
 		),
 	);
-	const subject = 'Email Invitation';
+	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const subject = 'Invitation Email';
 	const message = `
-You are invited to join our platform!<br><br>
-If you did not expect this invitation, please ignore this email.
+  You are invited to join our platform!<br><br>
+  Click the link below to join.<br><br>
+  ${inviteLink}<br><br>
+  If you did not expect this invitation, please ignore this email.
 `;
 	if (applicatorExist) {
 		const email = userEmail;
@@ -904,6 +909,8 @@ If you did not expect this invitation, please ignore this email.
 };
 const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 	// Update the inviteStatus field
+	const token = generateInviteToken('GROWER');
+
 	const { id: applicatorId, role } = currentUser;
 	if (role !== 'APPLICATOR')
 		return 'You are not allowed to perform this action.';
@@ -925,12 +932,16 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 		data: {
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
 			inviteInitiator: 'APPLICATOR', // to update inviteInitiator
+			inviteToken: token,
 		},
 	});
 
-	const subject = 'Email Invitation';
+	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
+  Click the link below to join.<br><br>
+  ${inviteLink}<br><br>
   If you did not expect this invitation, please ignore this email.
 `;
 	if (user) {

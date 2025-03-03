@@ -239,6 +239,13 @@ const getJobInvoice = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getJobInvoice(currentUser, id);
 	res.status(httpStatus.OK).json(result);
 });
+const acceptJobThroughEmail = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.params.jobId;
+		const result = await jobService.acceptJobThroughEmail(id);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -266,4 +273,5 @@ export default {
 	getRejectedJobs,
 	getBiddingJobById,
 	getJobInvoice,
+	acceptJobThroughEmail,
 };

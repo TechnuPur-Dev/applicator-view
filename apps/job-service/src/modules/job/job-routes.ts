@@ -129,7 +129,12 @@ router
 
 router
 	.route('/headers-stats')
-	.get(verifyToken, authorize('APPLICATOR'), validateSchema(jobValidation.headerStatsSchema),jobController.getHeadersData);
+	.get(
+		verifyToken,
+		authorize('APPLICATOR'),
+		validateSchema(jobValidation.headerStatsSchema),
+		jobController.getHeadersData,
+	);
 router
 	.route('/get-rejectedjobs')
 	.get(verifyToken, jobController.getRejectedJobs);
@@ -147,4 +152,11 @@ router // TODO: Update service accroding to the business logic
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobInvoice,
 	);
+router
+	.route('/accept/by-email/:jobId')
+	.put(
+		validateSchema(jobValidation.paramsSchema),
+		jobController.acceptJobThroughEmail,
+	);
+
 export default router;

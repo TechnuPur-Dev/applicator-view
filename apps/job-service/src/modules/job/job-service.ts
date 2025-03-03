@@ -14,6 +14,8 @@ import { User, PaginateOptions } from '../../../../../shared/types/global';
 // import config from '../../../../../shared/config/env-config';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
+import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
+import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -168,6 +170,26 @@ const createJob = async (user: User, data: CreateJob) => {
 				},
 				applicationFees: true,
 			},
+		});
+		const inviteLink = `https://grower-ac.netlify.app/#/growerJob?token=${job.id}`;
+		const subject = 'Job Confirmation';
+		const message = `
+	  ${user.firstName} ${user.lastName} added a job that needs your confirmation.!<br><br>
+	  Click the link below to accept it.<br><br>
+	  ${inviteLink}<br><br>
+	  If you did not expect this invitation, please ignore this email.
+	`;
+
+		const email = job?.grower?.email;
+		if (!email) {
+			throw new Error('Email address is not available for the grower.');
+		}
+		const html = await mailHtmlTemplate(subject, message);
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Job Confirmation',
+			html,
 		});
 
 		await sendPushNotifications({
@@ -2788,6 +2810,31 @@ const getJobInvoice = async (user: User, jobId: number) => {
 
 	return formattedJob;
 };
+
+const acceptJobThroughEmail = async (jobId: number) => {
+	const whereCondition: {
+		id: number;
+		status: JobStatus;
+	} = { id: jobId, status: 'PENDING' };
+
+	const job = await prisma.job.update({
+		where: whereCondition,
+		data: {
+			status: 'READY_TO_SPRAY',
+		},
+		select: { id: true },
+	});
+	if (!job) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'Invalid data or request has already been accepted.',
+		);
+	}
+
+	return {
+		message: 'Job accepted successfully.',
+	};
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -2815,4 +2862,5 @@ export default {
 	getRejectedJobs,
 	getBiddingJobById,
 	getJobInvoice,
+	acceptJobThroughEmail,
 };

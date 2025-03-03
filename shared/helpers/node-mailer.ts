@@ -67,7 +67,7 @@ const mailHtmlTemplate = async (
           <thead>
             <tr>
               <th style="background-color:rgb(243, 243, 243); padding: 20px; text-align: center;">
-                <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Logo" style="max-width: 100px;">
+                <img src="https://goatbolbstorage.blob.core.windows.net/acre-connect/logo.png" alt="Logo" style="max-width: 100px;">
               </th>
             </tr>
           </thead>
