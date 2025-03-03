@@ -68,11 +68,13 @@ const createGrower = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllGrowersByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page']);
 
 		const applicatorId = req.payload.id;
-		const result =
-			await userService.getAllGrowersByApplicator(applicatorId,options);
+		const result = await userService.getAllGrowersByApplicator(
+			applicatorId,
+			options,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -84,8 +86,8 @@ const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
-	const userId = req.payload.id;
-	const result = await userService.getPendingInvites(userId);
+	const user = req.user;
+	const result = await userService.getPendingInvites(user);
 	res.status(httpStatus.OK).json({ result: result });
 });
 
@@ -95,12 +97,21 @@ const deleteGrower = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.deleteGrower(growerId, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
+const deleteApplicator = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = +req.params.applicatorId;
+	const growerId = req.payload.id;
+	const result = await userService.deleteApplicator(growerId, applicatorId);
+	res.status(httpStatus.OK).json(result);
+});
 const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page']);
 
 		const growerId = req.payload.id;
-		const result = await userService.getAllApplicatorsByGrower(growerId,options);
+		const result = await userService.getAllApplicatorsByGrower(
+			growerId,
+			options,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -124,11 +135,13 @@ const getApplicatorByEmail = catchAsync(async (req: Request, res: Response) => {
 });
 const sendInviteToApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const grower = req.user
-		const applicatorId = +req.params.applicatorId;
+		const grower = req.user;
+		const email = req.params.email;
+		const data = req.body;
 		const result = await userService.sendInviteToApplicator(
-			applicatorId,
+			email,
 			grower,
+			data,
 		);
 		res.status(httpStatus.OK).json(result);
 	},
@@ -149,6 +162,25 @@ const getGrowerById = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.getGrowerById(applicatorId, growerId);
 	res.status(httpStatus.OK).json(result);
 });
+
+const getPendingInvitesFromUser = catchAsync(
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const type = req.params.type;
+		const options = pick(req.query, ['limit', 'page']);
+		const result = await userService.getPendingInvitesFromUser(
+			user,
+			type,
+			options,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+const verifyInviteToken = catchAsync(async (req: Request, res: Response) => {
+	const { token } = req.body;
+	const result = await userService.verifyInviteToken(token);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -166,5 +198,8 @@ export default {
 	sendInviteToApplicator,
 	sendInviteToGrower,
 	getGrowerById,
-	getApplicatorByEmail
+	getApplicatorByEmail,
+	deleteApplicator,
+	getPendingInvitesFromUser,
+	verifyInviteToken,
 };

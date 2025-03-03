@@ -35,14 +35,14 @@ router
 		validateSchema(userValidation.verifyEmailAndSendOTPSchema),
 		userController.getGrowerByEmail,
 	);
-	router
+router
 	.route('/applicator/email/:email')
 	.get(
 		verifyToken,
 		validateSchema(userValidation.searchApplicatorByEmail),
 		userController.getApplicatorByEmail,
 	);
-	
+
 router
 	.route('/grower/create')
 	.post(
@@ -64,6 +64,13 @@ router
 		userController.deleteGrower,
 	);
 router
+	.route('/delete-applicator/by-grower/:applicatorId')
+	.delete(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.deleteApplicator,
+	);
+router
 	.route('/update/invite-status')
 	.put(
 		verifyToken,
@@ -74,12 +81,8 @@ router
 	.route('/invites/pending')
 	.get(verifyToken, userController.getPendingInvites);
 router
-	.route('/applicator/invite/:applicatorId')
-	.put(
-		verifyToken,
-		validateSchema(userValidation.sendInviteSchema),
-		userController.sendInviteToApplicator,
-	);
+	.route('/applicator/invite/:email')
+	.put(verifyToken, userController.sendInviteToApplicator);
 router
 	.route('/grower/invite/:growerId')
 	.put(
@@ -101,5 +104,18 @@ router
 		verifyToken,
 		validateSchema(userValidation.paramsSchema),
 		userController.getGrowerById,
+	);
+router
+	.route('/invites/pending-from/:type')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.paramsSchemaForType),
+		userController.getPendingInvitesFromUser,
+	);
+router
+	.route('/verify/invite-token')
+	.post(
+		validateSchema(userValidation.verifyInviteToken),
+		userController.verifyInviteToken,
 	);
 export default router;

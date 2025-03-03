@@ -91,7 +91,7 @@ const registerUser = async (data: RegisterUser) => {
 	return user;
 };
 const loginUser = async (data: LoginUser) => {
-	const { email, password ,deviceToken} = data;
+	const { email, password, deviceToken, role } = data;
 
 	const user = await prisma.user.findFirst({
 		where: {
@@ -99,6 +99,17 @@ const loginUser = async (data: LoginUser) => {
 				equals: email,
 				mode: 'insensitive',
 			},
+			role,
+		},
+		include: {
+			state: {
+				select: {
+					name: true,
+				},
+			},
+		},
+		omit: {
+			updatedAt: true,
 		},
 	});
 
@@ -126,14 +137,12 @@ const loginUser = async (data: LoginUser) => {
 			const existingDeviceToken = await prisma.deviceToken.findFirst({
 				where: { userId: user.id },
 			});
-		
+
 			if (existingDeviceToken) {
 				await prisma.deviceToken.update({
 					where: { id: existingDeviceToken.id },
 					data: { token: deviceToken },
-					
 				});
-				
 			} else {
 				await prisma.deviceToken.create({
 					data: { userId: user.id, token: deviceToken },
@@ -143,9 +152,9 @@ const loginUser = async (data: LoginUser) => {
 		const accessToken = await signAccessToken(user.id);
 
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { password, ...userWithoutPassword } = user; // Exclude password
+		const { password, state, ...userWithoutPassword } = user; // Exclude password
 		return {
-			user: { ...userWithoutPassword },
+			user: { ...userWithoutPassword, state: state?.name },
 			accessToken,
 		};
 	}

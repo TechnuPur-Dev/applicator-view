@@ -96,7 +96,7 @@ const uploadFarmImage = catchAsync(async (req: Request, res: Response) => {
 	try {
 		// Decode Base64 file
 		const base64Data = file.replace(
-			/^data:(image|application)\/(jpeg|png|pdf);base64,/,
+			/^data:(image|application)\/[a-zA-Z0-9+.-]+;base64,/,
 			'',
 		);
 		const fileBuffer = Buffer.from(base64Data, 'base64');

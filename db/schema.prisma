@@ -81,6 +81,8 @@ model ApplicatorWorker {
   lastLogin              DateTime?
   isActive               Boolean      @default(true)
   inviteStatus           InviteStatus @default(NOT_SENT)
+  inviteToken            String?      @unique
+  // expiresAt              DateTime? // Optional: Invite expiration time
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   applicator             User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
@@ -90,17 +92,20 @@ model ApplicatorWorker {
 }
 
 model ApplicatorGrower {
-  id                     Int          @id @default(autoincrement())
+  id                     Int              @id @default(autoincrement())
   applicatorId           Int
   growerId               Int
   applicatorFirstName    String?
   applicatorLastName     String?
   growerFirstName        String?
   growerLastName         String?
-  inviteStatus           InviteStatus @default(NOT_SENT)
-  isArchivedByApplicator Boolean      @default(false)
-  isArchivedByGrower     Boolean      @default(false)
-  canManageFarms         Boolean      @default(true)
+  inviteStatus           InviteStatus     @default(NOT_SENT)
+  inviteToken            String?          @unique
+  // expiresAt              DateTime? // Optional: Invite expiration time
+  inviteInitiator        InviteInitiator? // NEW FIELD: Who sent the invite?
+  isArchivedByApplicator Boolean          @default(false)
+  isArchivedByGrower     Boolean          @default(false)
+  canManageFarms         Boolean          @default(true)
 
   applicator User @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   grower     User @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -510,4 +515,9 @@ enum JobStatus {
   PENDING
   REJECTED
   OPEN_FOR_BIDDING
+}
+
+enum InviteInitiator {
+  APPLICATOR
+  GROWER
 }

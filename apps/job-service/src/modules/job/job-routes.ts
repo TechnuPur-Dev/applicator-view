@@ -127,7 +127,24 @@ router
 		jobController.upcomingApplications,
 	);
 
-	router
-	.route('/applcator-headers')
-.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
+router
+	.route('/headers-stats')
+	.get(verifyToken, authorize('APPLICATOR'), jobController.getHeadersData);
+router
+	.route('/get-rejectedjobs')
+	.get(verifyToken, jobController.getRejectedJobs);
+router
+	.route('/get/open-job/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getBiddingJobById,
+	);
+router // TODO: Update service accroding to the business logic
+	.route('/get/job-invoice/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getJobInvoice,
+	);
 export default router;

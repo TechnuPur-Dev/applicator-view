@@ -22,11 +22,12 @@ const verifyOTPAndRegisterEmail = catchAsync(async (req, res) => {
 });
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
-	const { email, password, deviceToken } = req.body; // Destructure body
+	const { email, password, deviceToken, role } = req.body; // Destructure body
 	const result = await authService.loginUser({
 		email,
 		password,
 		deviceToken,
+		role,
 	});
 	res.status(httpStatus.OK).json(result);
 });
