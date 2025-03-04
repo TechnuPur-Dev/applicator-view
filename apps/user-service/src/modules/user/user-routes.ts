@@ -118,8 +118,8 @@ router
 		validateSchema(userValidation.verifyInviteToken),
 		userController.verifyInviteToken,
 	);
-	router
-	.route('/accept/invite-status')
+router
+	.route('/accept/invite-email')
 	.put(
 		validateSchema(userValidation.verifyInviteToken),
 		userController.acceptInviteThroughtEmail,

@@ -1294,6 +1294,10 @@ const acceptInviteThroughtEmail = async (token: string) => {
 	await prisma.applicatorGrower.update({
 		where: {
 			inviteToken: token,
+			inviteStatus: 'PENDING',
+			grower: {
+				profileStatus: 'INCOMPLETE',
+			},
 		},
 		data: {
 			inviteStatus: 'ACCEPTED',
