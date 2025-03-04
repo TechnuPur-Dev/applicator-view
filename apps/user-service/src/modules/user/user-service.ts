@@ -1290,6 +1290,19 @@ const verifyInviteToken = async (token: string) => {
 	// Return only the role-specific user data
 	return { ...user, state: state?.name };
 };
+const acceptInviteThroughtEmail = async (token: string) => {
+	await prisma.applicatorGrower.update({
+		where: {
+			inviteToken: token,
+		},
+		data: {
+			inviteStatus: 'ACCEPTED',
+		},
+	});
+	return {
+		message: 'Invite accepted successfully.',
+	};
+};
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -1311,4 +1324,5 @@ export default {
 	deleteApplicator,
 	getPendingInvitesFromUser,
 	verifyInviteToken,
+	acceptInviteThroughtEmail,
 };

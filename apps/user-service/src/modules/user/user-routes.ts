@@ -118,4 +118,10 @@ router
 		validateSchema(userValidation.verifyInviteToken),
 		userController.verifyInviteToken,
 	);
+	router
+	.route('/accept/invite-status')
+	.put(
+		validateSchema(userValidation.verifyInviteToken),
+		userController.acceptInviteThroughtEmail,
+	);
 export default router;
