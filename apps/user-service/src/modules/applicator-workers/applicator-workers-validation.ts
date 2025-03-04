@@ -2,7 +2,7 @@ import Joi, { Schema } from 'joi';
 import {
 	phoneNumberSchema,
 	// passwordSchema,
-	inviteStatusSchema,
+	// inviteStatusSchema,
 } from '../../../../../shared/utils/joi-common-validations';
 
 const workerTypeSchema: Schema = Joi.string()

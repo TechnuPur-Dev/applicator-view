@@ -1055,9 +1055,9 @@ const getJobs = async (
 		...job,
 		...(job.applicator
 			? {
-				applicatorFullName: job.applicator.fullName,
-				applicatorBusinessName: job.applicator.businessName,
-			}
+					applicatorFullName: job.applicator.fullName,
+					applicatorBusinessName: job.applicator.businessName,
+				}
 			: {}), // Applicator values as key-value pair
 		...(job.farm ? { farmName: job.farm.name } : {}), // Farm values as key-value pair
 		// applicator: undefined, // Remove original object
@@ -2261,11 +2261,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.date
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -2299,11 +2299,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.date
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -2315,11 +2315,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.date
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -2712,7 +2712,14 @@ const getJobInvoice = async (user: User, jobId: number) => {
 					email: true,
 					phoneNumber: true,
 					businessName: true,
-					address1: true
+					address1: true,
+					state: {
+						select: {
+							name: true,
+						},
+					},
+					county: true,
+					township: true,
 				},
 			},
 			grower: {
@@ -2722,26 +2729,33 @@ const getJobInvoice = async (user: User, jobId: number) => {
 					fullName: true,
 					email: true,
 					phoneNumber: true,
-					businessName: true,
-					address1: true
+					address1: true,
+					state: {
+						select: {
+							name: true,
+						},
+					},
+					county: true,
+					township: true,
 				},
 			},
-
 			farm: {
 				select: {
 					id: true,
-					farmImageUrl: true,
 					name: true,
-					state: true,
+					state: {
+						select: {
+							name: true,
+						},
+					},
 					county: true,
 					township: true,
 					zipCode: true,
-
 				},
 			},
 			products: {
 				select: {
-					id: true,
+					name: true,
 					totalAcres: true,
 					price: true,
 					product: {
@@ -2757,15 +2771,21 @@ const getJobInvoice = async (user: User, jobId: number) => {
 				select: {
 					description: true,
 					rateUoM: true,
-					perAcre: true
-				}
-
-
+					perAcre: true,
+				},
 			},
 		},
 		omit: {
 			applicatorId: true,
 			fieldWorkerId: true,
+			growerId: true,
+			description: true,
+			sensitiveAreas: true,
+			specialInstructions: true,
+			adjacentCrops: true,
+			attachments: true,
+			rejectionReason: true,
+			createdAt: true,
 			farmId: true,
 		},
 	});
@@ -2788,15 +2808,19 @@ const getJobInvoice = async (user: User, jobId: number) => {
 	const afAmountTotal = job.applicationFees.reduce(
 		(sum, fee) => sum + (fee.rateUoM ? fee.rateUoM.toNumber() : 0),
 		0,
-	)
+	);
 	const productAmountTotal = job.products.reduce(
 		(sum, p) => sum + (p.price ? p.price.toNumber() : 0),
 		0,
-	)
+	);
 	const totalAmount = afAmountTotal + productAmountTotal;
+	const { applicator, grower } = job;
+
 	// Format the job objects
 	const formattedJob = (({ ...job }) => ({
 		...job,
+		applicator: { ...applicator, state: applicator?.state?.name },
+		grower: { ...grower, state: grower?.state?.name },
 		// ...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		// ...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
 		invoiceId: job.id,
