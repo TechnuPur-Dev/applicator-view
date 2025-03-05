@@ -122,7 +122,7 @@ router.route('/dashboard/weather').get(verifyToken, userController.getWeather);
 router
 	.route('/respond/invite-email')
 	.put(
-		validateSchema(userValidation.verifyInviteToken),
+		validateSchema(userValidation.respondInviteToken),
 		userController.acceptOrRejectInviteThroughEmail,
 	);
 export default router;

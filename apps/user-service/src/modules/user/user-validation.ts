@@ -86,6 +86,11 @@ const searchApplicatorByEmail: Schema = Joi.object({
 const verifyInviteToken: Schema = Joi.object({
 	body: Joi.object({
 		token: Joi.string().required(), // Assuming this is a URL
+	}).required(),
+});
+const respondInviteToken: Schema = Joi.object({
+	body: Joi.object({
+		token: Joi.string().required(), // Assuming this is a URL
 		status: Joi.string().valid('ACCEPTED', 'REJECTED').required(), // Assuming this is a URL
 	}).required(),
 });
@@ -99,4 +104,5 @@ export default {
 	searchApplicatorByEmail,
 	paramsSchemaForType,
 	verifyInviteToken,
+	respondInviteToken,
 };
