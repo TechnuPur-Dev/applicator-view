@@ -184,10 +184,13 @@ const getWeather = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.getWeather(user);
 	res.status(httpStatus.OK).json(result);
 });
-const acceptInviteThroughtEmail = catchAsync(
+const acceptOrRejectInviteThroughEmail = catchAsync(
 	async (req: Request, res: Response) => {
-		const { token } = req.body;
-		const result = await userService.acceptInviteThroughtEmail(token);
+		const { token, status } = req.body;
+		const result = await userService.acceptOrRejectInviteThroughEmail(
+			token,
+			status,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -213,5 +216,5 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
-	acceptInviteThroughtEmail,
+	acceptOrRejectInviteThroughEmail,
 };

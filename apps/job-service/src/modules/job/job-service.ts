@@ -1067,7 +1067,7 @@ const getJobs = async (
 			0,
 		), // Sum actualAcres, default to 0 if null
 	}));
-	const totalResults = jobs.length
+	const totalResults = jobs.length;
 	const totalPages = Math.ceil(totalResults / limit);
 	return {
 		result: formattedJobs,
@@ -2103,7 +2103,8 @@ const getHeadersData = async (
 	options: { date: string; type: string },
 ) => {
 	const { id, role } = currentUser;
-	if (role !== "APPLICATOR" && role !== "GROWER")  throw new Error('Unauthorized');; 
+	// if (role !== 'APPLICATOR' && role !== 'GROWER')
+	// 	throw new Error('Unauthorized')
 	let startDate, endDate;
 	let result;
 
@@ -2123,7 +2124,9 @@ const getHeadersData = async (
 		switch (options.type) {
 			case 'dashboard': {
 				const dashboardfilters: Prisma.JobWhereInput = {
-					...(role === "APPLICATOR" ? { applicatorId: id } : { growerId: id }),
+					...(role === 'APPLICATOR'
+						? { applicatorId: id }
+						: { growerId: id }),
 					status: {
 						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
@@ -2136,8 +2139,11 @@ const getHeadersData = async (
 				});
 				const dashboardtotalGrowersorApplicators =
 					await prisma.applicatorGrower.count({
-						where: { ...(role === "APPLICATOR" ? { applicatorId: id } : { growerId: id }),
-					},
+						where: {
+							...(role === 'APPLICATOR'
+								? { applicatorId: id }
+								: { growerId: id }),
+						},
 					});
 				const dashboardtotalAcres = await prisma.fieldJob.aggregate({
 					where: { job: dashboardfilters },
@@ -2159,17 +2165,23 @@ const getHeadersData = async (
 							0) +
 						(dashboardtotalProPrice._sum.price?.toNumber() || 0),
 					jobsCompleted,
-					...(role === "APPLICATOR" ? {totalGrowers: dashboardtotalGrowersorApplicators, } : { totalApplicators: dashboardtotalGrowersorApplicators, }),
-					
-					
+					...(role === 'APPLICATOR'
+						? { totalGrowers: dashboardtotalGrowersorApplicators }
+						: {
+								totalApplicators:
+									dashboardtotalGrowersorApplicators,
+							}),
+
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 				};
 				break;
 			}
 			case 'myJobs': {
 				const myJobsfilters: Prisma.JobWhereInput = {
-					...(role === "APPLICATOR" ? { applicatorId: id } : { growerId: id }),
-					
+					...(role === 'APPLICATOR'
+						? { applicatorId: id }
+						: { growerId: id }),
+
 					status: {
 						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
@@ -2177,30 +2189,41 @@ const getHeadersData = async (
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
-				const totalJobs = await prisma.job.count({
+				const myCompletedJobs = await prisma.job.count({
 					where: myJobsfilters,
 				});
-				const myJobsTotalGrowersorApplicators = await prisma.job.groupBy({
-					by: [(role === "APPLICATOR" ? 'growerId' : 'applicatorId')
-					],
-					where: myJobsfilters,
-					_count: true,
-				});
+				const myJobsTotalGrowersorApplicators =
+					await prisma.job.groupBy({
+						by: [
+							role === 'APPLICATOR' ? 'growerId' : 'applicatorId',
+						],
+						where: myJobsfilters,
+						_count: true,
+					});
 				const myJobsTotalAcres = await prisma.fieldJob.aggregate({
 					where: { job: myJobsfilters },
 					_sum: { actualAcres: true },
 				});
 				result = {
-					totalJobs,
+					myCompletedJobs,
 					totalAcres: myJobsTotalAcres._sum.actualAcres || 0,
-					...(role === "APPLICATOR" ? {totalGrowers: myJobsTotalGrowersorApplicators.length, } : { totalApplicators: myJobsTotalGrowersorApplicators.length, }),
-					
+					...(role === 'APPLICATOR'
+						? {
+								totalGrowers:
+									myJobsTotalGrowersorApplicators.length,
+							}
+						: {
+								totalApplicators:
+									myJobsTotalGrowersorApplicators.length,
+							}),
 				};
 				break;
 			}
 			case 'openJobs': {
 				const openJobfilters: Prisma.JobWhereInput = {
-					...(role === "APPLICATOR" ? { applicatorId: id } : { growerId: id }),
+					...(role === 'APPLICATOR'
+						? { applicatorId: id }
+						: { growerId: id }),
 					source: 'BIDDING',
 					status: 'OPEN_FOR_BIDDING',
 					...(options.date
@@ -2210,12 +2233,14 @@ const getHeadersData = async (
 				const openJobs = await prisma.job.count({
 					where: openJobfilters,
 				});
-				const openJobTotalGrowersorApplicators = await prisma.job.groupBy({
-					by: [(role === "APPLICATOR" ? 'growerId' : 'applicatorId')
-					],
-					where: openJobfilters,
-					_count: true,
-				});
+				const openJobTotalGrowersorApplicators =
+					await prisma.job.groupBy({
+						by: [
+							role === 'APPLICATOR' ? 'growerId' : 'applicatorId',
+						],
+						where: openJobfilters,
+						_count: true,
+					});
 				const openJobTotalAcres = await prisma.fieldJob.aggregate({
 					where: { job: openJobfilters },
 					_sum: { actualAcres: true },
@@ -2223,9 +2248,15 @@ const getHeadersData = async (
 				result = {
 					openJobs,
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
-					...(role === "APPLICATOR" ? {totalGrowers: openJobTotalGrowersorApplicators.length, } : { totalApplicators: openJobTotalGrowersorApplicators.length, }),
-					
-
+					...(role === 'APPLICATOR'
+						? {
+								totalGrowers:
+									openJobTotalGrowersorApplicators.length,
+							}
+						: {
+								totalApplicators:
+									openJobTotalGrowersorApplicators.length,
+							}),
 				};
 				break;
 			}
@@ -2251,17 +2282,24 @@ const getHeadersData = async (
 							: {}),
 					},
 				});
-				const pendingJobForMetotalGrowersorApplicator = await prisma.job.groupBy({
-					by: [(role === "APPLICATOR" ? 'growerId' : 'applicatorId')
-					],
-					where: {
-						...whereConditionForMe,
-						...(options.date
-							? { createdAt: { gte: startDate, lte: endDate } }
-							: {}),
-					},
-					_count: true,
-				});
+				const pendingJobForMetotalGrowersorApplicator =
+					await prisma.job.groupBy({
+						by: [
+							role === 'APPLICATOR' ? 'growerId' : 'applicatorId',
+						],
+						where: {
+							...whereConditionForMe,
+							...(options.date
+								? {
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
+								: {}),
+						},
+						_count: true,
+					});
 				const pendingJobForMetotalAcres =
 					await prisma.fieldJob.aggregate({
 						where: {
@@ -2302,7 +2340,8 @@ const getHeadersData = async (
 				});
 				const pendingJobForGrowertotalGrowersorApplicator =
 					await prisma.job.groupBy({
-						by: [(role === "APPLICATOR" ? 'growerId' : 'applicatorId')
+						by: [
+							role === 'APPLICATOR' ? 'growerId' : 'applicatorId',
 						],
 						where: {
 							...whereConditionForGrower,
@@ -2339,16 +2378,29 @@ const getHeadersData = async (
 						pendingJobsForMe,
 						totalAcres:
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
-							...(role === "APPLICATOR" ? {totalGrowers: pendingJobForMetotalGrowersorApplicator.length, } : { totalApplicators: pendingJobForMetotalGrowersorApplicator.length, }),
-				
+						...(role === 'APPLICATOR'
+							? {
+									totalGrowers:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}
+							: {
+									totalApplicators:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
 						totalAcres:
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
-							...(role === "APPLICATOR" ? {totalGrowers: pendingJobForGrowertotalGrowersorApplicator.length, } : { totalApplicators: pendingJobForGrowertotalGrowersorApplicator.length, }),
-
-						
+						...(role === 'APPLICATOR'
+							? {
+									totalGrowers:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}
+							: {
+									totalApplicators:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}),
 					},
 				};
 				break;

@@ -120,9 +120,9 @@ router
 	);
 router.route('/dashboard/weather').get(verifyToken, userController.getWeather);
 router
-	.route('/accept/invite-email')
+	.route('/respond/invite-email')
 	.put(
 		validateSchema(userValidation.verifyInviteToken),
-		userController.acceptInviteThroughtEmail,
+		userController.acceptOrRejectInviteThroughEmail,
 	);
 export default router;

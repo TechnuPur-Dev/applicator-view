@@ -13,6 +13,7 @@ import { hashPassword } from '../../helper/bcrypt';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
 import axios from 'axios';
+import { InviteStatus } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -1580,7 +1581,10 @@ const getWeather = async (user: User) => {
 	return { weather: formattedWeather };
 };
 
-const acceptInviteThroughtEmail = async (token: string) => {
+const acceptOrRejectInviteThroughEmail = async (
+	token: string,
+	inviteStatus: InviteStatus,
+) => {
 	await prisma.applicatorGrower.update({
 		where: {
 			inviteToken: token,
@@ -1590,11 +1594,11 @@ const acceptInviteThroughtEmail = async (token: string) => {
 			},
 		},
 		data: {
-			inviteStatus: 'ACCEPTED',
+			inviteStatus,
 		},
 	});
 	return {
-		message: 'Invite accepted successfully.',
+		message: 'Invite status updated successfully.',
 	};
 };
 export default {
@@ -1619,5 +1623,5 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
-	acceptInviteThroughtEmail,
+	acceptOrRejectInviteThroughEmail,
 };
