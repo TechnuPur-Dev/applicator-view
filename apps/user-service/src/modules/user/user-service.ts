@@ -1552,13 +1552,16 @@ const getWeather = async (user: User) => {
 					weekday: 'long',
 				}),
 				date: item.dt_txt,
-				temperature: item.main.temp,
+				minTemp: item.main.temp,  // Initialize minTemp with first value
+				maxTemp: item.main.temp,  // Initialize maxTemp with first value
 				description: item.weather[0].description,
 				hourly: [],
 				aqi: null, // AQI will be added later
 			};
 		}
-
+    // Update min and max temperature for the day it is basically the range of temperator according to designe 
+    groupedWeather[date].minTemp = Math.min(groupedWeather[date].minTemp, item.main.temp);
+    groupedWeather[date].maxTemp = Math.max(groupedWeather[date].maxTemp, item.main.temp);
 		// Add hourly weather data
 		groupedWeather[date].hourly.push({
 			time: time12,
