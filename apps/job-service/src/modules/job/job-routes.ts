@@ -131,7 +131,6 @@ router
 	.route('/headers-stats')
 	.get(
 		verifyToken,
-		authorize('APPLICATOR'),
 		validateSchema(jobValidation.headerStatsSchema),
 		jobController.getHeadersData,
 	);
