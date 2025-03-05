@@ -12,7 +12,7 @@ import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
-
+import axios from 'axios';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -1290,6 +1290,74 @@ const verifyInviteToken = async (token: string) => {
 	// Return only the role-specific user data
 	return { ...user, state: state?.name };
 };
+const getWeather = async (user: User) => {
+	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
+	const userData = await prisma.user.findUnique({
+		where: { id: user.id },
+		select: { township: true },
+	});
+
+	// Get latitude & longitude from OpenWeather Geocoding API
+	const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${userData?.township}&limit=1&appid=${OPEN_WEATHER_API_KEY}`;
+	const geoResponse = await axios.get(geoUrl);
+	const { lat, lon } = geoResponse.data[0]; // Extract latitude & longitude
+
+	// Fetch 5-day weather forecast because 7 day weather forcast with per hour is paid(one call api )
+	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
+	const weatherResponse = await axios.get(weatherUrl);
+	const weatherData = weatherResponse.data.list;
+	// Fetch Air Quality Index data
+	const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution/forecast?lat=${lat}&lon=${lon}&appid=${OPEN_WEATHER_API_KEY}`;
+	const aqiResponse = await axios.get(aqiUrl);
+	const aqiData = aqiResponse.data.list;
+
+	// Group weather data by date
+	const groupedWeather: Record<string, any> = {};
+
+	weatherData.forEach((item: any) => {
+		const date = item.dt_txt.split(' ')[0]; // Extract date (YYYY-MM-DD)
+		const time24 = item.dt_txt.split(' ')[1].slice(0, 5); // Extract time (HH:mm)
+
+		// Convert time to 12-hour format
+		const [hour, minute] = time24.split(':');
+		const hour12 = (parseInt(hour) % 12) || 12;
+		const ampm = parseInt(hour) >= 12 ? 'PM' : 'AM';
+		const time12 = `${hour12}:${minute} ${ampm}`;
+
+		if (!groupedWeather[date]) {
+			groupedWeather[date] = {
+				day: new Date(item.dt_txt).toLocaleDateString('en-US', { weekday: 'long' }),
+				date: item.dt_txt,
+				temperature: item.main.temp,
+				description: item.weather[0].description,
+				hourly: [],
+				aqi: null, // AQI will be added later
+			};
+		}
+
+		// Add hourly weather data
+		groupedWeather[date].hourly.push({
+			time: time12,
+			temperature: item.main.temp,
+			description: item.weather[0].description,
+		});
+	});
+
+	// Match AQI data with respective dates
+	aqiData.forEach((aqiItem: any) => {
+		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split("T")[0];
+		if (groupedWeather[aqiDate]) {
+			groupedWeather[aqiDate].aqi = aqiItem.main.aqi * 10; // Scale AQI
+		}
+	});
+
+	// Convert object to array
+	const formattedWeather = Object.values(groupedWeather);
+
+	return { weather: formattedWeather };
+};
+
+
 const acceptInviteThroughtEmail = async (token: string) => {
 	await prisma.applicatorGrower.update({
 		where: {
@@ -1328,5 +1396,6 @@ export default {
 	deleteApplicator,
 	getPendingInvitesFromUser,
 	verifyInviteToken,
+	getWeather,
 	acceptInviteThroughtEmail,
 };

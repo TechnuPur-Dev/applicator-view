@@ -118,6 +118,12 @@ router
 		validateSchema(userValidation.verifyInviteToken),
 		userController.verifyInviteToken,
 	);
+	router
+	.route('/dashboard/weather')
+	.get(
+		verifyToken,
+		userController.getWeather,
+	)
 router
 	.route('/accept/invite-email')
 	.put(
