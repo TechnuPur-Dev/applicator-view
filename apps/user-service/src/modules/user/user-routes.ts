@@ -78,7 +78,7 @@ router
 		userController.updateInviteStatus,
 	);
 router
-	.route('/invites/pending')
+	.route('/pending-invites/from-me')
 	.get(verifyToken, userController.getPendingInvites);
 router
 	.route('/applicator/invite/:email')
@@ -106,11 +106,11 @@ router
 		userController.getGrowerById,
 	);
 router
-	.route('/invites/pending-from/:type')
+	.route('/pending-invites/from-others')
 	.get(
 		verifyToken,
 		validateSchema(userValidation.paramsSchemaForType),
-		userController.getPendingInvitesFromUser,
+		userController.getPendingInvitesFromOthers,
 	);
 router
 	.route('/verify/invite-token')
@@ -118,12 +118,7 @@ router
 		validateSchema(userValidation.verifyInviteToken),
 		userController.verifyInviteToken,
 	);
-	router
-	.route('/dashboard/weather')
-	.get(
-		verifyToken,
-		userController.getWeather,
-	)
+router.route('/dashboard/weather').get(verifyToken, userController.getWeather);
 router
 	.route('/accept/invite-email')
 	.put(

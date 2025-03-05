@@ -585,16 +585,30 @@ const deleteApplicator = async (growerId: number, applicatorId: number) => {
 	};
 };
 
-const getPendingInvites = async (user: User) => {
+const getPendingInvites = async (user: User, options: PaginateOptions) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
 	if (user.role === 'APPLICATOR') {
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: {
-				// OR: [{ applicatorId: userId }, { growerId: userId }],
 				applicatorId: user.id,
 				inviteStatus: 'PENDING',
 				inviteInitiator: 'GROWER', // user who sent invite to join platform
 			},
-			include: {
+			select: {
+				growerFirstName: true,
+				growerLastName: true,
+				inviteStatus: true,
+				isArchivedByApplicator: true,
 				grower: {
 					include: {
 						state: {
@@ -603,51 +617,98 @@ const getPendingInvites = async (user: User) => {
 								name: true,
 							},
 						},
-					},
-					omit: {
-						password: true,
-					},
-				},
-				applicator: {
-					include: {
-						state: {
-							select: {
-								id: true,
-								name: true,
+						farms: {
+							where: {
+								permissions: {
+									some: {
+										applicatorId: user.id,
+									},
+								},
+							},
+							include: {
+								permissions: true,
+								fields: true,
+								state: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
 							},
 						},
 					},
 					omit: {
 						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
 					},
 				},
 			},
+			skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
 		});
+		// Calculate total acres for each grower
+		const enrichedGrowers = pendingInvites.map((grower) => {
+			const totalAcresByGrower = grower.grower?.farms.reduce(
+				(totalGrowerAcres, farm) => {
+					const totalAcresByFarm = farm.fields.reduce(
+						(totalFarmAcres, field) => {
+							return (
+								totalFarmAcres +
+								parseFloat(field.acres?.toString() || '0')
+							);
+						},
+						0,
+					);
+					return totalGrowerAcres + totalAcresByFarm;
+				},
+				0,
+			);
 
-		return pendingInvites;
+			// Return the grower object without farms
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { farms, ...growerWithoutFarms } = grower.grower || {};
+
+			return {
+				...grower,
+				grower: {
+					...growerWithoutFarms,
+				},
+				totalAcres: totalAcresByGrower,
+			};
+		});
+		const totalResults = await prisma.applicatorGrower.count({
+			where: {
+				applicatorId: user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator: 'GROWER', // user who sent invite to join platform
+			},
+		});
+		const totalPages = Math.ceil(totalResults / limit);
+		return {
+			result: enrichedGrowers,
+			page,
+			limit,
+			totalPages,
+			totalResults,
+		};
 	}
 	if (user.role === 'GROWER') {
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: {
-				// OR: [{ applicatorId: userId }, { growerId: userId }],
 				growerId: user.id,
 				inviteStatus: 'PENDING',
 				inviteInitiator: 'APPLICATOR', // user who sent invite to join platform
 			},
-			include: {
-				grower: {
-					include: {
-						state: {
-							select: {
-								id: true,
-								name: true,
-							},
-						},
-					},
-					omit: {
-						password: true,
-					},
-				},
+			select: {
+				applicatorFirstName: true,
+				applicatorLastName: true,
+				inviteStatus: true,
+				isArchivedByGrower: true,
 				applicator: {
 					include: {
 						state: {
@@ -656,15 +717,80 @@ const getPendingInvites = async (user: User) => {
 								name: true,
 							},
 						},
+						farms: {
+							include: {
+								permissions: true,
+								fields: true,
+								state: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+						},
 					},
 					omit: {
 						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
 					},
 				},
 			},
+			skip,
+			take: limit,
+			orderBy: {
+				id: 'desc',
+			},
+		});
+		// Calculate total acres for each grower
+		const enrichedApplicators = pendingInvites.map((applicator) => {
+			const totalAcresByGrower = applicator.applicator?.farms.reduce(
+				(totalApplicatorAcres, farm) => {
+					const totalAcresByFarm = farm.fields.reduce(
+						(totalFarmAcres, field) => {
+							return (
+								totalFarmAcres +
+								parseFloat(field.acres?.toString() || '0')
+							);
+						},
+						0,
+					);
+					return totalApplicatorAcres + totalAcresByFarm;
+				},
+				0,
+			);
+
+			// Return the grower object without farms
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { farms, ...growerWithoutFarms } =
+				applicator.applicator || {};
+
+			return {
+				...applicator,
+				grower: {
+					...growerWithoutFarms,
+				},
+				totalAcres: totalAcresByGrower,
+			};
 		});
 
-		return pendingInvites;
+		const totalResults = await prisma.applicatorGrower.count({
+			where: {
+				growerId: user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator: 'APPLICATOR', // user who sent invite to join platform
+			},
+		});
+		const totalPages = Math.ceil(totalResults / limit);
+		return {
+			result: enrichedApplicators,
+			page,
+			limit,
+			totalPages,
+			totalResults,
+		};
 	}
 };
 
@@ -1056,9 +1182,8 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 		totalAcres: totalAcresByGrower,
 	};
 };
-const getPendingInvitesFromUser = async (
+const getPendingInvitesFromOthers = async (
 	user: User,
-	type: string,
 	options: PaginateOptions,
 ) => {
 	const limit =
@@ -1072,6 +1197,9 @@ const getPendingInvitesFromUser = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
+	// Determine the invite type based on the user's role
+	const isApplicator = user.role === 'APPLICATOR';
+	const type = isApplicator ? 'GROWER' : 'APPLICATOR';
 	//if pending invites from grower get by applicator
 	if (type === 'GROWER') {
 		const pendingInvites = await prisma.applicatorGrower.findMany({
@@ -1081,7 +1209,11 @@ const getPendingInvitesFromUser = async (
 				inviteStatus: 'PENDING',
 				inviteInitiator: 'APPLICATOR', // user who sent invite to join platform
 			},
-			include: {
+			select: {
+				growerFirstName: true,
+				growerLastName: true,
+				inviteStatus: true,
+				isArchivedByApplicator: true,
 				grower: {
 					include: {
 						state: {
@@ -1090,22 +1222,31 @@ const getPendingInvitesFromUser = async (
 								name: true,
 							},
 						},
-					},
-					omit: {
-						password: true,
-					},
-				},
-				applicator: {
-					include: {
-						state: {
-							select: {
-								id: true,
-								name: true,
+						farms: {
+							where: {
+								permissions: {
+									some: {
+										applicatorId: user.id,
+									},
+								},
+							},
+							include: {
+								permissions: true,
+								fields: true,
+								state: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
 							},
 						},
 					},
 					omit: {
 						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
 					},
 				},
 			},
@@ -1115,10 +1256,46 @@ const getPendingInvitesFromUser = async (
 				id: 'desc',
 			},
 		});
-		const totalResults = pendingInvites.length;
+		// Calculate total acres for each grower
+		const enrichedGrowers = pendingInvites.map((grower) => {
+			const totalAcresByGrower = grower.grower?.farms.reduce(
+				(totalGrowerAcres, farm) => {
+					const totalAcresByFarm = farm.fields.reduce(
+						(totalFarmAcres, field) => {
+							return (
+								totalFarmAcres +
+								parseFloat(field.acres?.toString() || '0')
+							);
+						},
+						0,
+					);
+					return totalGrowerAcres + totalAcresByFarm;
+				},
+				0,
+			);
+
+			// Return the grower object without farms
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { farms, ...growerWithoutFarms } = grower.grower || {};
+
+			return {
+				...grower,
+				grower: {
+					...growerWithoutFarms,
+				},
+				totalAcres: totalAcresByGrower,
+			};
+		});
+		const totalResults = await prisma.applicatorGrower.count({
+			where: {
+				applicatorId: user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator: 'APPLICATOR', // user who sent invite to join platform
+			},
+		});
 		const totalPages = Math.ceil(totalResults / limit);
 		return {
-			result: pendingInvites,
+			result: enrichedGrowers,
 			page,
 			limit,
 			totalPages,
@@ -1134,20 +1311,11 @@ const getPendingInvitesFromUser = async (
 				inviteStatus: 'PENDING',
 				inviteInitiator: 'GROWER', // user who sent invite to join platform
 			},
-			include: {
-				grower: {
-					include: {
-						state: {
-							select: {
-								id: true,
-								name: true,
-							},
-						},
-					},
-					omit: {
-						password: true,
-					},
-				},
+			select: {
+				applicatorFirstName: true,
+				applicatorLastName: true,
+				inviteStatus: true,
+				isArchivedByGrower: true,
 				applicator: {
 					include: {
 						state: {
@@ -1156,9 +1324,24 @@ const getPendingInvitesFromUser = async (
 								name: true,
 							},
 						},
+						farms: {
+							include: {
+								permissions: true,
+								fields: true,
+								state: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+						},
 					},
 					omit: {
 						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
 					},
 				},
 			},
@@ -1169,10 +1352,48 @@ const getPendingInvitesFromUser = async (
 			},
 		});
 
-		const totalResults = pendingInvites.length;
+		// Calculate total acres for each grower
+		const enrichedApplicators = pendingInvites.map((applicator) => {
+			const totalAcresByGrower = applicator.applicator?.farms.reduce(
+				(totalApplicatorAcres, farm) => {
+					const totalAcresByFarm = farm.fields.reduce(
+						(totalFarmAcres, field) => {
+							return (
+								totalFarmAcres +
+								parseFloat(field.acres?.toString() || '0')
+							);
+						},
+						0,
+					);
+					return totalApplicatorAcres + totalAcresByFarm;
+				},
+				0,
+			);
+
+			// Return the grower object without farms
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { farms, ...growerWithoutFarms } =
+				applicator.applicator || {};
+
+			return {
+				...applicator,
+				grower: {
+					...growerWithoutFarms,
+				},
+				totalAcres: totalAcresByGrower,
+			};
+		});
+
+		const totalResults = await prisma.applicatorGrower.count({
+			where: {
+				growerId: user.id,
+				inviteStatus: 'PENDING',
+				inviteInitiator: 'GROWER', // user who sent invite to join platform
+			},
+		});
 		const totalPages = Math.ceil(totalResults / limit);
 		return {
-			result: pendingInvites,
+			result: enrichedApplicators,
 			page,
 			limit,
 			totalPages,
@@ -1320,13 +1541,15 @@ const getWeather = async (user: User) => {
 
 		// Convert time to 12-hour format
 		const [hour, minute] = time24.split(':');
-		const hour12 = (parseInt(hour) % 12) || 12;
+		const hour12 = parseInt(hour) % 12 || 12;
 		const ampm = parseInt(hour) >= 12 ? 'PM' : 'AM';
 		const time12 = `${hour12}:${minute} ${ampm}`;
 
 		if (!groupedWeather[date]) {
 			groupedWeather[date] = {
-				day: new Date(item.dt_txt).toLocaleDateString('en-US', { weekday: 'long' }),
+				day: new Date(item.dt_txt).toLocaleDateString('en-US', {
+					weekday: 'long',
+				}),
 				date: item.dt_txt,
 				temperature: item.main.temp,
 				description: item.weather[0].description,
@@ -1345,7 +1568,7 @@ const getWeather = async (user: User) => {
 
 	// Match AQI data with respective dates
 	aqiData.forEach((aqiItem: any) => {
-		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split("T")[0];
+		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split('T')[0];
 		if (groupedWeather[aqiDate]) {
 			groupedWeather[aqiDate].aqi = aqiItem.main.aqi * 10; // Scale AQI
 		}
@@ -1356,7 +1579,6 @@ const getWeather = async (user: User) => {
 
 	return { weather: formattedWeather };
 };
-
 
 const acceptInviteThroughtEmail = async (token: string) => {
 	await prisma.applicatorGrower.update({
@@ -1394,7 +1616,7 @@ export default {
 	getGrowerById,
 	getApplicatorByEmail,
 	deleteApplicator,
-	getPendingInvitesFromUser,
+	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
 	acceptInviteThroughtEmail,
