@@ -186,6 +186,11 @@ const getWeather = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.getWeather(user);
 	res.status(httpStatus.OK).json(result);
 });
+const acceptInviteThroughtEmail = catchAsync(async (req: Request, res: Response) => {
+	const { token } = req.body;
+	const result = await userService.acceptInviteThroughtEmail(token);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -207,5 +212,6 @@ export default {
 	deleteApplicator,
 	getPendingInvitesFromUser,
 	verifyInviteToken,
-	getWeather
+	getWeather,
+	acceptInviteThroughtEmail
 };

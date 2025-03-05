@@ -123,5 +123,11 @@ router
 	.get(
 		verifyToken,
 		userController.getWeather,
+	)
+router
+	.route('/accept/invite-email')
+	.put(
+		validateSchema(userValidation.verifyInviteToken),
+		userController.acceptInviteThroughtEmail,
 	);
 export default router;

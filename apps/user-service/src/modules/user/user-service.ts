@@ -1358,6 +1358,23 @@ const getWeather = async (user: User) => {
 };
 
 
+const acceptInviteThroughtEmail = async (token: string) => {
+	await prisma.applicatorGrower.update({
+		where: {
+			inviteToken: token,
+			inviteStatus: 'PENDING',
+			grower: {
+				profileStatus: 'INCOMPLETE',
+			},
+		},
+		data: {
+			inviteStatus: 'ACCEPTED',
+		},
+	});
+	return {
+		message: 'Invite accepted successfully.',
+	};
+};
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -1379,5 +1396,6 @@ export default {
 	deleteApplicator,
 	getPendingInvitesFromUser,
 	verifyInviteToken,
-	getWeather
+	getWeather,
+	acceptInviteThroughtEmail,
 };
