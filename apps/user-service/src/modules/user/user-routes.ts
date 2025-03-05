@@ -118,4 +118,10 @@ router
 		validateSchema(userValidation.verifyInviteToken),
 		userController.verifyInviteToken,
 	);
+	router
+	.route('/dashboard/weather')
+	.get(
+		verifyToken,
+		userController.getWeather,
+	);
 export default router;
