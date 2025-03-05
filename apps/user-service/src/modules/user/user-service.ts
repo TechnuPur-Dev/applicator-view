@@ -1328,13 +1328,16 @@ const getWeather = async (user: User) => {
 			groupedWeather[date] = {
 				day: new Date(item.dt_txt).toLocaleDateString('en-US', { weekday: 'long' }),
 				date: item.dt_txt,
-				temperature: item.main.temp,
+				minTemp: item.main.temp,  // Initialize minTemp with first value
+				maxTemp: item.main.temp,  // Initialize maxTemp with first value
 				description: item.weather[0].description,
 				hourly: [],
 				aqi: null, // AQI will be added later
 			};
 		}
-
+    // Update min and max temperature for the day it is basically the range of temperator according to designe 
+    groupedWeather[date].minTemp = Math.min(groupedWeather[date].minTemp, item.main.temp);
+    groupedWeather[date].maxTemp = Math.max(groupedWeather[date].maxTemp, item.main.temp);
 		// Add hourly weather data
 		groupedWeather[date].hourly.push({
 			time: time12,
@@ -1345,7 +1348,7 @@ const getWeather = async (user: User) => {
 
 	// Match AQI data with respective dates
 	aqiData.forEach((aqiItem: any) => {
-		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split("T")[0];
+		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split("T")[0]; //to get general AQI sacle accoridng to US
 		if (groupedWeather[aqiDate]) {
 			groupedWeather[aqiDate].aqi = aqiItem.main.aqi * 10; // Scale AQI
 		}
