@@ -69,7 +69,6 @@ const createGrower = catchAsync(async (req: Request, res: Response) => {
 const getAllGrowersByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
 		const options = pick(req.query, ['limit', 'page']);
-
 		const applicatorId = req.payload.id;
 		const result = await userService.getAllGrowersByApplicator(
 			applicatorId,
@@ -87,8 +86,9 @@ const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 });
 const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const result = await userService.getPendingInvites(user);
-	res.status(httpStatus.OK).json({ result: result });
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await userService.getPendingInvites(user, options);
+	res.status(httpStatus.OK).json(result);
 });
 
 const deleteGrower = catchAsync(async (req: Request, res: Response) => {
@@ -163,14 +163,12 @@ const getGrowerById = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-const getPendingInvitesFromUser = catchAsync(
+const getPendingInvitesFromOthers = catchAsync(
 	async (req: Request, res: Response) => {
 		const user = req.user;
-		const type = req.params.type;
 		const options = pick(req.query, ['limit', 'page']);
-		const result = await userService.getPendingInvitesFromUser(
+		const result = await userService.getPendingInvitesFromOthers(
 			user,
-			type,
 			options,
 		);
 		res.status(httpStatus.OK).json(result);
@@ -182,15 +180,17 @@ const verifyInviteToken = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getWeather = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user
+	const user = req.user;
 	const result = await userService.getWeather(user);
 	res.status(httpStatus.OK).json(result);
 });
-const acceptInviteThroughtEmail = catchAsync(async (req: Request, res: Response) => {
-	const { token } = req.body;
-	const result = await userService.acceptInviteThroughtEmail(token);
-	res.status(httpStatus.OK).json(result);
-});
+const acceptInviteThroughtEmail = catchAsync(
+	async (req: Request, res: Response) => {
+		const { token } = req.body;
+		const result = await userService.acceptInviteThroughtEmail(token);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -210,8 +210,8 @@ export default {
 	getGrowerById,
 	getApplicatorByEmail,
 	deleteApplicator,
-	getPendingInvitesFromUser,
+	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
-	acceptInviteThroughtEmail
+	acceptInviteThroughtEmail,
 };

@@ -35,9 +35,9 @@ const paramsSchema: Schema = Joi.object({
 		.required(),
 });
 const paramsSchemaForType: Schema = Joi.object({
-	params: Joi.object({
-		type: Joi.string().valid('APPLICATOR', 'GROWER').required(),
-	}).required(),
+	// params: Joi.object({
+	// 	type: Joi.string().valid('APPLICATOR', 'GROWER').required(),
+	// }).required(),
 	query: Joi.object({
 		limit: Joi.number().integer().min(1).default(10),
 		page: Joi.number().integer().min(1).default(1),

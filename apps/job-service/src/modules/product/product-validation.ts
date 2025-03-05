@@ -53,9 +53,9 @@ const productSchema: Schema = Joi.object({
 		ticketPricePerMonth: Joi.object().required(),
 		jobPrice: Joi.number().positive().precision(2).required(),
 		ticketPrice: Joi.number().positive().precision(2).required(),
-		personalProtectiveEquipment: Joi.string().allow('').max(50).optional(),
-		preHarvestInterval: Joi.string().allow('').max(50).optional(),
-		comments: Joi.string().allow('').max(50).optional(),
+		personalProtectiveEquipment: Joi.string().allow('').max(300).optional(),
+		preHarvestInterval: Joi.string().allow('').max(300).optional(),
+		comments: Joi.string().allow('').max(300).optional(),
 	}).required(),
 });
 
