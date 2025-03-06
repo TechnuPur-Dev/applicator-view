@@ -142,10 +142,17 @@ const monthParamsSchema: Schema = Joi.object({
 });
 const headerStatsSchema: Schema = Joi.object({
 	query: Joi.object({
-		date: Joi.date().iso().required(),
 		type: Joi.string()
-		.valid('dashboard', 'myJobs', 'openJobs', 'pendingJobApprovals')
-		.required(),
+			.valid('dashboard', 'myJobs', 'openJobs', 'pendingJobApprovals')
+			.required(),
+	}).required(),
+	body: Joi.object({
+		startDate: Joi.date().iso().required(),
+		endDate: Joi.date()
+			.iso()
+			.min(Joi.ref('startDate'))
+			.optional()
+			.allow(null),
 	}).required(),
 });
 export default {
@@ -156,5 +163,5 @@ export default {
 	jobStatusParamSchema,
 	pilotJobsParamSchema,
 	monthParamsSchema,
-	headerStatsSchema
+	headerStatsSchema,
 };
