@@ -181,7 +181,8 @@ const verifyInviteToken = catchAsync(async (req: Request, res: Response) => {
 });
 const getWeather = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const result = await userService.getWeather(user);
+	const options = pick(req.query, ['city']);
+	const result = await userService.getWeather(user, options);
 	res.status(httpStatus.OK).json(result);
 });
 const acceptOrRejectInviteThroughEmail = catchAsync(

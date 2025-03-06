@@ -33,4 +33,12 @@ router
 		validateSchema(authValidation.verifyEmailAndSendOTPSchema),
 		authController.resendOTP,
 	);
+
+router
+	.route('/accept-invite/sign-up')
+	.put(
+		validateSchema(authValidation.acceptInviteAndSignUp),
+		authController.acceptInviteAndSignUp,
+	);
+
 export default router;
