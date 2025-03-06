@@ -34,5 +34,8 @@ interface PaginateOptions {
 	limit?: string;
 	page?: string;
 }
+interface city {
+	city?:string
+}
 
-export { User, PaginateOptions }; // Makes the file an external module
+export { User, PaginateOptions ,city}; // Makes the file an external module
