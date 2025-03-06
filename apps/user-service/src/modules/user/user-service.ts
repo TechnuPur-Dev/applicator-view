@@ -1430,6 +1430,16 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				applicator: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
 				grower: {
 					include: {
 						state: {
@@ -1458,6 +1468,16 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				grower: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
 				applicator: {
 					omit: {
 						updatedAt: true,
@@ -1484,6 +1504,16 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				applicator: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
 				worker: {
 					omit: {
 						password: true,
