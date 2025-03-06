@@ -16,6 +16,7 @@ import { User, PaginateOptions } from '../../../../../shared/types/global';
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
+import { error } from 'console';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -2100,7 +2101,8 @@ const upcomingApplications = async (
 
 const getHeadersData = async (
 	currentUser: User,
-	options: { date: string; type: string },
+	options: { type: string },
+	data: { startDate: Date; endDate: Date },
 ) => {
 	const { id, role } = currentUser;
 	// if (role !== 'APPLICATOR' && role !== 'GROWER')
@@ -2108,18 +2110,11 @@ const getHeadersData = async (
 	let startDate, endDate;
 	let result;
 
-	if (options.date) {
-		const dateObj = new Date(options.date);
-		const dateStr = dateObj.toISOString();
+	const endDateObj = data.endDate ? data.endDate : new Date().toISOString();
 
-		const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
-		if (!year || !month || !day) {
-			throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid date format.');
-		}
+	startDate = data.startDate;
+	endDate = endDateObj;
 
-		startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-		endDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
-	}
 	if (options.type) {
 		switch (options.type) {
 			case 'dashboard': {
@@ -2130,7 +2125,7 @@ const getHeadersData = async (
 					status: {
 						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
-					...(options.date
+					...(data.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
@@ -2185,7 +2180,7 @@ const getHeadersData = async (
 					status: {
 						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
-					...(options.date
+					...(data.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
@@ -2226,7 +2221,7 @@ const getHeadersData = async (
 						: { growerId: id }),
 					source: 'BIDDING',
 					status: 'OPEN_FOR_BIDDING',
-					...(options.date
+					...(data.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
@@ -2277,7 +2272,7 @@ const getHeadersData = async (
 				const pendingJobsForMe = await prisma.job.count({
 					where: {
 						...whereConditionForMe,
-						...(options.date
+						...(data.startDate
 							? { createdAt: { gte: startDate, lte: endDate } }
 							: {}),
 					},
@@ -2289,7 +2284,7 @@ const getHeadersData = async (
 						],
 						where: {
 							...whereConditionForMe,
-							...(options.date
+							...(data.startDate
 								? {
 										createdAt: {
 											gte: startDate,
@@ -2305,7 +2300,7 @@ const getHeadersData = async (
 						where: {
 							job: {
 								...whereConditionForMe,
-								...(options.date
+								...(data.startDate
 									? {
 											createdAt: {
 												gte: startDate,
@@ -2333,7 +2328,7 @@ const getHeadersData = async (
 				const pendingJobsForGrower = await prisma.job.count({
 					where: {
 						...whereConditionForGrower,
-						...(options.date
+						...(data.startDate
 							? { createdAt: { gte: startDate, lte: endDate } }
 							: {}),
 					},
@@ -2345,7 +2340,7 @@ const getHeadersData = async (
 						],
 						where: {
 							...whereConditionForGrower,
-							...(options.date
+							...(data.startDate
 								? {
 										createdAt: {
 											gte: startDate,
@@ -2361,7 +2356,7 @@ const getHeadersData = async (
 						where: {
 							job: {
 								...whereConditionForGrower,
-								...(options.date
+								...(data.startDate
 									? {
 											createdAt: {
 												gte: startDate,
