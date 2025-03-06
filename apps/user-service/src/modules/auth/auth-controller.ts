@@ -31,9 +31,17 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 	});
 	res.status(httpStatus.OK).json(result);
 });
+const resendOTP = catchAsync(
+	async (req: Request, res: Response) => {
+		const { email } = req.body; // Destructure body
+		const result = await authService.resendOTP(email);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	registerUser,
 	verifyEmailAndSendOTP,
 	verifyOTPAndRegisterEmail,
 	loginUser,
+	resendOTP
 };

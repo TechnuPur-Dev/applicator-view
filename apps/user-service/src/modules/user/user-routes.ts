@@ -125,4 +125,14 @@ router
 		validateSchema(userValidation.respondInviteToken),
 		userController.acceptOrRejectInviteThroughEmail,
 	);
+	router
+	.route('/applicator/resend-invite/:email')
+	.put(verifyToken, userController.resendInviteToApplicator);
+router
+	.route('/grower/resend-invite/:growerId')
+	.put(
+		verifyToken,
+		validateSchema(userValidation.sendInviteSchema),
+		userController.resendInviteToGrower,
+	);
 export default router;

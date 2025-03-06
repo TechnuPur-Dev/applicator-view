@@ -27,5 +27,10 @@ router
 router
 	.route('/login')
 	.post(validateSchema(authValidation.loginSchema), authController.loginUser);
-
+	router
+	.route('/resend-otp')
+	.post(
+		validateSchema(authValidation.verifyEmailAndSendOTPSchema),
+		authController.resendOTP,
+	);
 export default router;

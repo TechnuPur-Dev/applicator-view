@@ -1604,6 +1604,131 @@ const acceptOrRejectInviteThroughEmail = async (
 		message: 'Invite status updated successfully.',
 	};
 };
+const resendInviteToApplicator = async (userEmail: string, user: User) => {
+    if (user.role !== 'GROWER') {
+        return 'You are not allowed to perform this action.';
+    }
+
+    const applicatorExist = await prisma.user.findFirst({
+        where: {
+            email: {
+                equals: userEmail,
+                mode: 'insensitive',
+            },
+            role: 'APPLICATOR',
+        },
+    });
+
+    if (!applicatorExist) {
+        throw new Error(
+            'Applicator with this email not found.'
+        );
+    }
+
+    const existingInvite = await prisma.applicatorGrower.findFirst({
+        where: {
+            applicatorId: applicatorExist.id,
+            growerId: user.id,
+        },
+    });
+
+    if (!existingInvite) {
+        throw new Error(
+            'No previous invitation found. Please send a new invite.'
+        );
+    }
+
+    const token = generateInviteToken('GROWER');
+
+    await prisma.applicatorGrower.update({
+        where: {
+            id: existingInvite.id,
+        },
+        data: {
+            inviteStatus: 'PENDING',
+        },
+    });
+
+    const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+    const subject = 'Resend Invitation Email';
+    const message = `
+        You are invited to join our platform!<br><br>
+        Click the link below to join.<br><br>
+        <a href="${inviteLink}">${inviteLink}</a><br><br>
+        If you did not expect this invitation, please ignore this email.
+    `;
+
+    const html = await mailHtmlTemplate(subject, message);
+
+    await sendEmail({
+        emailTo: userEmail,
+        subject,
+        text: 'Resend Invitation',
+        html,
+    });
+
+    return {
+        message: 'Invite resent successfully.',
+    };
+};
+const resendInviteToGrower = async (currentUser: User, growerId: number) => {
+    const { id: applicatorId, role } = currentUser;
+    if (role !== 'APPLICATOR') {
+        return 'You are not allowed to perform this action.';
+    }
+
+ 
+    const token = generateInviteToken('GROWER');
+
+   const updatedInvite = await prisma.applicatorGrower.update({
+        where: {
+            applicatorId_growerId: {
+                applicatorId,
+                growerId,
+            },
+        },
+        data: {
+            inviteStatus: 'PENDING',
+            inviteInitiator: 'APPLICATOR',
+            inviteToken: token,
+        },
+        include: {
+            grower: {
+                select: {
+                    email: true,
+                },
+            },
+        },
+    });
+
+    const email = updatedInvite?.grower?.email;
+    if (!email) {
+        throw new Error('Email address is not available for the grower.');
+    }
+
+    const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+    const subject = 'Resend Invitation Email';
+    const message = `
+        You are invited to join our platform!<br><br>
+        Click the link below to join.<br><br>
+        <a href="${inviteLink}">${inviteLink}</a><br><br>
+        If you did not expect this invitation, please ignore this email.
+    `;
+
+    const html = await mailHtmlTemplate(subject, message);
+
+    await sendEmail({
+        emailTo: email,
+        subject,
+        text: 'Resend Invitation',
+        html,
+    });
+
+    return {
+        message: 'Invite resent successfully.',
+    };
+};
+
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -1627,4 +1752,6 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
+	resendInviteToApplicator,
+	resendInviteToGrower
 };

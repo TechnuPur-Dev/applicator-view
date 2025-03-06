@@ -194,6 +194,24 @@ const acceptOrRejectInviteThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+const resendInviteToApplicator = catchAsync(
+	async (req: Request, res: Response) => {
+		const grower = req.user;
+		const email = req.params.email;
+		const result = await userService.resendInviteToApplicator(
+			email,
+			grower
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+
+const resendInviteToGrower = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const growerId = +req.params.growerId;
+	const result = await userService.resendInviteToGrower(user, growerId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -217,4 +235,6 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
+	resendInviteToApplicator,
+	resendInviteToGrower
 };
