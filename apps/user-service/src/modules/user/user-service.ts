@@ -313,7 +313,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 
 		return [grower];
 	});
-	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
 	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
@@ -1008,7 +1008,7 @@ const sendInviteToApplicator = async (
 			}),
 		),
 	);
-	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const inviteLink = `https://applicator-ac.netlify.app/#/invitationView?token=${token}`;
 	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
@@ -1069,7 +1069,7 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 		},
 	});
 
-	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
 	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
