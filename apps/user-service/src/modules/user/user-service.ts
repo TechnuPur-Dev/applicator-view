@@ -10,10 +10,9 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adj
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
-import { PaginateOptions, User } from '../../../../../shared/types/global';
+import { PaginateOptions, User ,city} from '../../../../../shared/types/global';
 import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
 import axios from 'axios';
-import { InviteStatus } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -1512,7 +1511,7 @@ const verifyInviteToken = async (token: string) => {
 	// Return only the role-specific user data
 	return { ...user, state: state?.name };
 };
-const getWeather = async (user: User) => {
+const getWeather = async (user: User,options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
 	const userData = await prisma.user.findUnique({
 		where: { id: user.id },
@@ -1520,12 +1519,12 @@ const getWeather = async (user: User) => {
 	});
 
 	// Get latitude & longitude from OpenWeather Geocoding API
-	const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${userData?.township}&limit=1&appid=${OPEN_WEATHER_API_KEY}`;
+	const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${options.city ? options.city : userData?.township}&limit=1&appid=${OPEN_WEATHER_API_KEY}`;
 	const geoResponse = await axios.get(geoUrl);
 	const { lat, lon } = geoResponse.data[0]; // Extract latitude & longitude
 
 	// Fetch 5-day weather forecast because 7 day weather forcast with per hour is paid(one call api )
-	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
+	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${options.city ? options.city : userData?.township}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
 	const weatherResponse = await axios.get(weatherUrl);
 	const weatherData = weatherResponse.data.list;
 	// Fetch Air Quality Index data
@@ -1557,18 +1556,21 @@ const getWeather = async (user: User) => {
 				description: item.weather[0].description,
 				hourly: [],
 				aqi: null, // AQI will be added later
+				city: options.city || userData?.township,
 			};
 		}
     // Update min and max temperature for the day it is basically the range of temperator according to designe 
     groupedWeather[date].minTemp = Math.min(groupedWeather[date].minTemp, item.main.temp);
     groupedWeather[date].maxTemp = Math.max(groupedWeather[date].maxTemp, item.main.temp);
 		// Add hourly weather data
-		groupedWeather[date].hourly.push({
-			time: time12,
-			temperature: item.main.temp,
-			description: item.weather[0].description,
-		});
-	});
+		if (parseInt(hour) % 1 === 0) { // Ye condition ensure karegi ke har 1-hour ka data add ho
+            groupedWeather[date].hourly.push({
+                time: time12,
+                temperature: item.main.temp,
+                description: item.weather[0].description,
+            });
+        }
+    });
 
 	// Match AQI data with respective dates
 	aqiData.forEach((aqiItem: any) => {
@@ -1584,10 +1586,7 @@ const getWeather = async (user: User) => {
 	return { weather: formattedWeather };
 };
 
-const acceptOrRejectInviteThroughEmail = async (
-	token: string,
-	inviteStatus: InviteStatus,
-) => {
+const acceptInviteThroughtEmail = async (token: string) => {
 	await prisma.applicatorGrower.update({
 		where: {
 			inviteToken: token,
@@ -1597,11 +1596,11 @@ const acceptOrRejectInviteThroughEmail = async (
 			},
 		},
 		data: {
-			inviteStatus,
+			inviteStatus: 'ACCEPTED',
 		},
 	});
 	return {
-		message: 'Invite status updated successfully.',
+		message: 'Invite accepted successfully.',
 	};
 };
 export default {
@@ -1626,5 +1625,5 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
-	acceptOrRejectInviteThroughEmail,
+	acceptInviteThroughtEmail,
 };
