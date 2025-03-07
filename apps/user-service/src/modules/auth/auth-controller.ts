@@ -31,9 +31,18 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 	});
 	res.status(httpStatus.OK).json(result);
 });
+// Controller to update user profile
+const acceptInviteAndSignUp = catchAsync(
+	async (req: Request, res: Response) => {
+		const data = req.body;
+		const result = await authService.acceptInviteAndSignUp(data);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	registerUser,
 	verifyEmailAndSendOTP,
 	verifyOTPAndRegisterEmail,
 	loginUser,
+	acceptInviteAndSignUp,
 };

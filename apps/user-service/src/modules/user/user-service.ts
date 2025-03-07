@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UpdateUser, UpdateStatus, UpdateArchiveStatus } from './user-types';
@@ -10,9 +11,13 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adj
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
-import { PaginateOptions, User ,city} from '../../../../../shared/types/global';
+import {
+	PaginateOptions,
+	User,
+	city,
+} from '../../../../../shared/types/global';
 import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
-import axios from 'axios';
+import { InviteStatus } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -308,7 +313,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 
 		return [grower];
 	});
-	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
 	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
@@ -1003,7 +1008,7 @@ const sendInviteToApplicator = async (
 			}),
 		),
 	);
-	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const inviteLink = `https://applicator-ac.netlify.app/#/invitationView?token=${token}`;
 	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
@@ -1034,10 +1039,9 @@ const sendInviteToApplicator = async (
 	}
 };
 const sendInviteToGrower = async (currentUser: User, growerId: number) => {
-	// Update the inviteStatus field
+	const { id: applicatorId, role } = currentUser;
 	const token = generateInviteToken('GROWER');
 
-	const { id: applicatorId, role } = currentUser;
 	if (role !== 'APPLICATOR')
 		return 'You are not allowed to perform this action.';
 	const user = await prisma.applicatorGrower.update({
@@ -1046,6 +1050,14 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 				applicatorId,
 				growerId,
 			},
+			inviteStatus: {
+				in: ['NOT_SENT', 'REJECTED'],
+			},
+		},
+		data: {
+			inviteStatus: 'PENDING', // Only updating the inviteStatus field
+			inviteInitiator: 'APPLICATOR', // to update inviteInitiator
+			inviteToken: token,
 		},
 		include: {
 			// Move include here
@@ -1055,14 +1067,9 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
 				},
 			},
 		},
-		data: {
-			inviteStatus: 'PENDING', // Only updating the inviteStatus field
-			inviteInitiator: 'APPLICATOR', // to update inviteInitiator
-			inviteToken: token,
-		},
 	});
 
-	const inviteLink = `https://grower-ac.netlify.app/#/signup?token=${token}`;
+	const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
 	const subject = 'Invitation Email';
 	const message = `
   You are invited to join our platform!<br><br>
@@ -1412,6 +1419,8 @@ const verifyInviteToken = async (token: string) => {
 	}
 
 	let user = null;
+	let applicator = null;
+	let grower = null;
 
 	// Fetch user based on role
 	if (role === 'GROWER') {
@@ -1423,6 +1432,16 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				applicator: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
 				grower: {
 					include: {
 						state: {
@@ -1442,6 +1461,7 @@ const verifyInviteToken = async (token: string) => {
 			},
 		});
 		user = invite?.grower;
+		applicator = invite?.applicator;
 	} else if (role === 'APPLICATOR') {
 		const invite = await prisma.applicatorGrower.findUnique({
 			where: {
@@ -1451,6 +1471,16 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				grower: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
 				applicator: {
 					omit: {
 						updatedAt: true,
@@ -1468,6 +1498,7 @@ const verifyInviteToken = async (token: string) => {
 			},
 		});
 		user = invite?.applicator;
+		grower = invite?.grower;
 	} else if (role === 'WORKER') {
 		const invite = await prisma.applicatorWorker.findUnique({
 			where: {
@@ -1477,6 +1508,16 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				applicator: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
 				worker: {
 					omit: {
 						password: true,
@@ -1496,6 +1537,7 @@ const verifyInviteToken = async (token: string) => {
 			},
 		});
 		user = invite?.worker;
+		applicator = invite?.applicator;
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
@@ -1509,9 +1551,9 @@ const verifyInviteToken = async (token: string) => {
 	}
 	const { state } = user;
 	// Return only the role-specific user data
-	return { ...user, state: state?.name };
+	return { ...user, state: state?.name, applicator, grower };
 };
-const getWeather = async (user: User,options: city) => {
+const getWeather = async (user: User, options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
 	const userData = await prisma.user.findUnique({
 		where: { id: user.id },
@@ -1551,26 +1593,33 @@ const getWeather = async (user: User,options: city) => {
 					weekday: 'long',
 				}),
 				date: item.dt_txt,
-				minTemp: item.main.temp,  // Initialize minTemp with first value
-				maxTemp: item.main.temp,  // Initialize maxTemp with first value
+				minTemp: item.main.temp, // Initialize minTemp with first value
+				maxTemp: item.main.temp, // Initialize maxTemp with first value
 				description: item.weather[0].description,
 				hourly: [],
 				aqi: null, // AQI will be added later
 				city: options.city || userData?.township,
 			};
 		}
-    // Update min and max temperature for the day it is basically the range of temperator according to designe 
-    groupedWeather[date].minTemp = Math.min(groupedWeather[date].minTemp, item.main.temp);
-    groupedWeather[date].maxTemp = Math.max(groupedWeather[date].maxTemp, item.main.temp);
+		// Update min and max temperature for the day it is basically the range of temperator according to designe
+		groupedWeather[date].minTemp = Math.min(
+			groupedWeather[date].minTemp,
+			item.main.temp,
+		);
+		groupedWeather[date].maxTemp = Math.max(
+			groupedWeather[date].maxTemp,
+			item.main.temp,
+		);
 		// Add hourly weather data
-		if (parseInt(hour) % 1 === 0) { // Ye condition ensure karegi ke har 1-hour ka data add ho
-            groupedWeather[date].hourly.push({
-                time: time12,
-                temperature: item.main.temp,
-                description: item.weather[0].description,
-            });
-        }
-    });
+		if (parseInt(hour) % 1 === 0) {
+			// Ye condition ensure karegi ke har 1-hour ka data add ho
+			groupedWeather[date].hourly.push({
+				time: time12,
+				temperature: item.main.temp,
+				description: item.weather[0].description,
+			});
+		}
+	});
 
 	// Match AQI data with respective dates
 	aqiData.forEach((aqiItem: any) => {
@@ -1586,7 +1635,10 @@ const getWeather = async (user: User,options: city) => {
 	return { weather: formattedWeather };
 };
 
-const acceptInviteThroughtEmail = async (token: string) => {
+const acceptOrRejectInviteThroughEmail = async (
+	token: string,
+	inviteStatus: InviteStatus,
+) => {
 	await prisma.applicatorGrower.update({
 		where: {
 			inviteToken: token,
@@ -1596,11 +1648,11 @@ const acceptInviteThroughtEmail = async (token: string) => {
 			},
 		},
 		data: {
-			inviteStatus: 'ACCEPTED',
+			inviteStatus,
 		},
 	});
 	return {
-		message: 'Invite accepted successfully.',
+		message: 'Invite status updated successfully.',
 	};
 };
 export default {
@@ -1625,5 +1677,5 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
-	acceptInviteThroughtEmail,
+	acceptOrRejectInviteThroughEmail,
 };

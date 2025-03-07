@@ -212,9 +212,10 @@ const upcomingApplications = catchAsync(async (req: Request, res: Response) => {
 
 const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const options = pick(req.query, ['date', 'type']) as {
-		date: string;
+	const options = pick(req.query, ['type', 'startDate', 'endDate']) as {
 		type: string;
+		startDate: Date;
+		endDate: Date;
 	};
 	const result = await jobService.getHeadersData(currentUser, options);
 	res.status(httpStatus.OK).json(result);

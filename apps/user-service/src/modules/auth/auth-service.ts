@@ -12,8 +12,10 @@ import {
 	RegisterUser,
 	LoginUser,
 	verifyOTPAndRegisterEmail,
+	signUpUserSchema,
 } from './auth-types';
 import { generateOTP } from '../../utils/generate-otp';
+import { verifyInvite } from '../../helper/invite-token';
 
 // Service for verifying phone and sending OTP
 const registerUser = async (data: RegisterUser) => {
@@ -270,9 +272,104 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 	};
 };
 
+// to update user profile
+const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
+	let { password } = data;
+	const { token, firstName, lastName } = data;
+
+	// Verify token and extract role
+	const role = verifyInvite(token);
+	if (!role) {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'Invalid or expired token.',
+		);
+	}
+
+	// Hash password if provided
+	if (password) {
+		password = await hashPassword(password);
+	}
+
+	// Determine the user based on role and update accordingly
+	if (role === 'GROWER') {
+		await prisma.applicatorGrower.update({
+			where: {
+				inviteToken: token,
+				grower: { profileStatus: 'INCOMPLETE' },
+			},
+			data: {
+				inviteStatus: 'ACCEPTED',
+				grower: {
+					update: {
+						...data,
+						password,
+						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
+						profileStatus: 'COMPLETE',
+						joiningDate: new Date(),
+					},
+				},
+			},
+			select: {
+				grower: { include: { state: { select: { name: true } } } },
+			},
+		});
+	} else if (role === 'APPLICATOR') {
+		await prisma.applicatorGrower.update({
+			where: {
+				inviteToken: token,
+				applicator: { profileStatus: 'INCOMPLETE' },
+			},
+			data: {
+				inviteStatus: 'ACCEPTED',
+				applicator: {
+					update: {
+						...data,
+						password,
+						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
+						profileStatus: 'COMPLETE',
+						joiningDate: new Date(),
+					},
+				},
+			},
+			select: {
+				applicator: { include: { state: { select: { name: true } } } },
+			},
+		});
+	} else if (role === 'WORKER') {
+		await prisma.applicatorWorker.update({
+			where: {
+				inviteToken: token,
+				worker: { profileStatus: 'INCOMPLETE' },
+			},
+			data: {
+				inviteStatus: 'ACCEPTED',
+				worker: {
+					update: {
+						...data,
+						password,
+						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
+						profileStatus: 'COMPLETE',
+						joiningDate: new Date(),
+					},
+				},
+			},
+			select: {
+				worker: { include: { state: { select: { name: true } } } },
+			},
+		});
+	} else {
+		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
+	}
+	return {
+		message: 'Invite accepted successfully.',
+	};
+};
+
 export default {
 	registerUser,
 	loginUser,
 	verifyEmailAndSendOTP,
 	verifyOTPAndRegisterEmail,
+	acceptInviteAndSignUp,
 };

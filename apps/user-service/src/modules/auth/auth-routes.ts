@@ -28,4 +28,11 @@ router
 	.route('/login')
 	.post(validateSchema(authValidation.loginSchema), authController.loginUser);
 
+router
+	.route('/accept-invite/sign-up')
+	.put(
+		validateSchema(authValidation.acceptInviteAndSignUp),
+		authController.acceptInviteAndSignUp,
+	);
+
 export default router;

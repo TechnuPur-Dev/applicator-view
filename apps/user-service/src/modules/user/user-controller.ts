@@ -182,19 +182,19 @@ const verifyInviteToken = catchAsync(async (req: Request, res: Response) => {
 const getWeather = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const options = pick(req.query, ['city']);
-	const result = await userService.getWeather(user,options);
+	const result = await userService.getWeather(user, options);
 	res.status(httpStatus.OK).json(result);
 });
-// const acceptOrRejectInviteThroughEmail = catchAsync(
-// 	async (req: Request, res: Response) => {
-// 		const { token, status } = req.body;
-// 		const result = await userService.acceptOrRejectInviteThroughEmail(
-// 			token,
-// 			status,
-// 		);
-// 		res.status(httpStatus.OK).json(result);
-// 	},
-// );
+const acceptOrRejectInviteThroughEmail = catchAsync(
+	async (req: Request, res: Response) => {
+		const { token, status } = req.body;
+		const result = await userService.acceptOrRejectInviteThroughEmail(
+			token,
+			status,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -217,5 +217,5 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
-	// acceptOrRejectInviteThroughEmail,
+	acceptOrRejectInviteThroughEmail,
 };
