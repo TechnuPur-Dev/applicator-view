@@ -56,6 +56,7 @@ const loginSchema: Schema = Joi.object({
 
 const acceptInviteAndSignUp: Schema = Joi.object({
 	body: Joi.object({
+		token: Joi.string().required(), // Assuming this is a URL
 		profileImage: Joi.string().optional(), // Assuming this is a URL
 		thumbnailProfileImage: Joi.string().optional(), // Assuming this is a URL
 		firstName: Joi.string().min(1).max(50).required(), // First name with minimum and maximum length
