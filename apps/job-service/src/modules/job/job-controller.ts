@@ -247,6 +247,36 @@ const acceptJobThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+const getMyJobsByPilot = catchAsync(async (req: Request, res: Response) => {
+	const pilotId = req.payload.id;
+	// const pilotId = +req.params.pilotId;
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await jobService.getMyJobsByPilot(
+		pilotId,
+		options,
+	);
+	res.status(httpStatus.OK).json(result);
+});
+const getPilotPendingJobs = catchAsync(async (req: Request, res: Response) => {
+	const pilotId = req.payload.id;
+	// const pilotId = +req.params.pilotId;
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await jobService.getPilotPendingJobs(
+		pilotId,
+		options,
+	);
+	res.status(httpStatus.OK).json(result);
+});
+const getPilotRejectedJobs = catchAsync(async (req: Request, res: Response) => {
+	const pilotId = req.payload.id;
+	// const pilotId = +req.params.pilotId;
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await jobService.getPilotRejectedJobs(
+		pilotId,
+		options,
+	);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -275,4 +305,7 @@ export default {
 	getBiddingJobById,
 	getJobInvoice,
 	acceptJobThroughEmail,
+	getMyJobsByPilot,
+	getPilotPendingJobs,
+	getPilotRejectedJobs
 };
