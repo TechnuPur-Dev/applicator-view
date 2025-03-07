@@ -1419,6 +1419,8 @@ const verifyInviteToken = async (token: string) => {
 	}
 
 	let user = null;
+	let applicator = null;
+	let grower = null;
 
 	// Fetch user based on role
 	if (role === 'GROWER') {
@@ -1459,6 +1461,7 @@ const verifyInviteToken = async (token: string) => {
 			},
 		});
 		user = invite?.grower;
+		applicator = invite?.applicator;
 	} else if (role === 'APPLICATOR') {
 		const invite = await prisma.applicatorGrower.findUnique({
 			where: {
@@ -1495,6 +1498,7 @@ const verifyInviteToken = async (token: string) => {
 			},
 		});
 		user = invite?.applicator;
+		grower = invite?.grower;
 	} else if (role === 'WORKER') {
 		const invite = await prisma.applicatorWorker.findUnique({
 			where: {
@@ -1533,6 +1537,7 @@ const verifyInviteToken = async (token: string) => {
 			},
 		});
 		user = invite?.worker;
+		applicator = invite?.applicator;
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
@@ -1546,7 +1551,7 @@ const verifyInviteToken = async (token: string) => {
 	}
 	const { state } = user;
 	// Return only the role-specific user data
-	return { ...user, state: state?.name };
+	return { ...user, state: state?.name, applicator, grower };
 };
 const getWeather = async (user: User, options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
