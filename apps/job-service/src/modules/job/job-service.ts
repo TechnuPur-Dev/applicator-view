@@ -2100,8 +2100,7 @@ const upcomingApplications = async (
 
 const getHeadersData = async (
 	currentUser: User,
-	options: { type: string },
-	data: { startDate: Date; endDate: Date },
+	options: { type: string; startDate: Date; endDate: Date },
 ) => {
 	const { id, role } = currentUser;
 	// if (role !== 'APPLICATOR' && role !== 'GROWER')
@@ -2109,9 +2108,11 @@ const getHeadersData = async (
 
 	let result;
 
-	const endDateObj = data.endDate ? data.endDate : new Date().toISOString();
+	const endDateObj = options.endDate
+		? options.endDate
+		: new Date().toISOString();
 
-	const startDate = data.startDate;
+	const startDate = options.startDate;
 	const endDate = endDateObj;
 
 	if (options.type) {
@@ -2124,7 +2125,7 @@ const getHeadersData = async (
 					status: {
 						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
-					...(data.startDate
+					...(options.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
@@ -2179,7 +2180,7 @@ const getHeadersData = async (
 					status: {
 						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
-					...(data.startDate
+					...(options.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
@@ -2220,7 +2221,7 @@ const getHeadersData = async (
 						: { growerId: id }),
 					source: 'BIDDING',
 					status: 'OPEN_FOR_BIDDING',
-					...(data.startDate
+					...(options.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
 						: {}),
 				};
@@ -2271,7 +2272,7 @@ const getHeadersData = async (
 				const pendingJobsForMe = await prisma.job.count({
 					where: {
 						...whereConditionForMe,
-						...(data.startDate
+						...(options.startDate
 							? { createdAt: { gte: startDate, lte: endDate } }
 							: {}),
 					},
@@ -2283,7 +2284,7 @@ const getHeadersData = async (
 						],
 						where: {
 							...whereConditionForMe,
-							...(data.startDate
+							...(options.startDate
 								? {
 										createdAt: {
 											gte: startDate,
@@ -2299,7 +2300,7 @@ const getHeadersData = async (
 						where: {
 							job: {
 								...whereConditionForMe,
-								...(data.startDate
+								...(options.startDate
 									? {
 											createdAt: {
 												gte: startDate,
@@ -2327,7 +2328,7 @@ const getHeadersData = async (
 				const pendingJobsForGrower = await prisma.job.count({
 					where: {
 						...whereConditionForGrower,
-						...(data.startDate
+						...(options.startDate
 							? { createdAt: { gte: startDate, lte: endDate } }
 							: {}),
 					},
@@ -2339,7 +2340,7 @@ const getHeadersData = async (
 						],
 						where: {
 							...whereConditionForGrower,
-							...(data.startDate
+							...(options.startDate
 								? {
 										createdAt: {
 											gte: startDate,
@@ -2355,7 +2356,7 @@ const getHeadersData = async (
 						where: {
 							job: {
 								...whereConditionForGrower,
-								...(data.startDate
+								...(options.startDate
 									? {
 											createdAt: {
 												gte: startDate,

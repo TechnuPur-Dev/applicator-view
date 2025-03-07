@@ -145,8 +145,6 @@ const headerStatsSchema: Schema = Joi.object({
 		type: Joi.string()
 			.valid('dashboard', 'myJobs', 'openJobs', 'pendingJobApprovals')
 			.required(),
-	}).required(),
-	body: Joi.object({
 		startDate: Joi.date().iso().required(),
 		endDate: Joi.date()
 			.iso()
