@@ -67,15 +67,15 @@ const acceptInviteAndSignUp: Schema = Joi.object({
 		businessName: Joi.string().max(100).optional(), // Business name with a maximum length
 		experience: Joi.number().min(0).max(50).optional(), // Experience in years
 		address1: Joi.string().max(100).required(), // Address line 1
-		address2: Joi.string().max(100).optional(), // Address line 2
+		address2: Joi.string().max(100).optional().allow(''), // Address line 2
 		stateId: Joi.number().integer().positive().required(), // State name
 		county: Joi.string().max(50).required(), // County name
 		township: Joi.string().max(50).required(), // Township name
 		zipCode: Joi.string()
 			.pattern(/^\d{5}(-\d{4})?$/)
 			.required(), // ZIP code in standard formats
-		bio: Joi.string().max(500).optional(), // Short biography
-		additionalInfo: Joi.string().max(500).optional(), // Additional information as a flexible object
+		bio: Joi.string().max(500).optional().allow(''), // Short biography
+		additionalInfo: Joi.string().max(500).optional().allow(''), // Additional information as a flexible object
 	}).required(),
 });
 
