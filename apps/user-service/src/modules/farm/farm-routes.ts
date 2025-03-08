@@ -61,4 +61,6 @@ router
 		farmController.uploadFarmImage,
 	);
 
+router.route('/get-all/by-grower').get(verifyToken, farmController.getAllFarms);
+
 export default router;

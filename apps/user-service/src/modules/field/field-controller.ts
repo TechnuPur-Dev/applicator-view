@@ -25,8 +25,8 @@ const updateFieldById = catchAsync(async (req: Request, res: Response) => {
 });
 // Controller to get fieldList
 const getAllFields = catchAsync(async (req: Request, res: Response) => {
-	const fieldData = await fieldService.getAllFields();
-	res.status(httpStatus.OK).json({ result: fieldData });
+	const result = await fieldService.getAllFields();
+	res.status(httpStatus.OK).json({ result });
 });
 
 // Controller to delete field by ID
