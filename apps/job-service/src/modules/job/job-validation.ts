@@ -152,10 +152,7 @@ const headerStatsSchema: Schema = Joi.object({
 			.optional()
 			.allow(null),
 	}).required(),
-	body: Joi.object({
-		startDate: Joi.date().iso().required(),
-		endDate: Joi.date().iso().min(Joi.ref('startDate')).optional().allow(null),
-	}).required(),
+	
 	})
 
 export default {

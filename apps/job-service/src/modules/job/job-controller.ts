@@ -218,7 +218,7 @@ const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 		endDate: Date;
 	};
 	const data = req.body;
-	const result = await jobService.getHeadersData(currentUser, options,data);
+	const result = await jobService.getHeadersData(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getRejectedJobs = catchAsync(async (req: Request, res: Response) => {
