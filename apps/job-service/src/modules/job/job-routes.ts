@@ -157,5 +157,23 @@ router
 		validateSchema(jobValidation.paramsSchema),
 		jobController.acceptJobThroughEmail,
 	);
-
+	router
+	.route('/pilot/get-myjobs')
+	.get(
+		verifyToken,
+		jobController.getMyJobsByPilot,
+	);
+	
+	router 
+	.route('/pilot/get-pendingjobs')
+	.get(
+		verifyToken,
+		jobController.getPilotPendingJobs,
+	);
+	router 
+	.route('/pilot/get-rejectedjobs')
+	.get(
+		verifyToken,
+		jobController.getPilotRejectedJobs,
+	);
 export default router;
