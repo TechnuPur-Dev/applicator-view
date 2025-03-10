@@ -100,7 +100,7 @@ model ApplicatorGrower {
   applicatorLastName     String?
   growerFirstName        String?
   growerLastName         String?
-  inviteStatus           InviteStatus     @default(NOT_SENT)
+  inviteStatus           InviteStatus     @default(PENDING)
   inviteToken            String?          @unique
   // expiresAt              DateTime? // Optional: Invite expiration time
   inviteInitiator        InviteInitiator? // NEW FIELD: Who sent the invite?
@@ -191,7 +191,7 @@ model Job {
   status              JobStatus           @default(PENDING)
   growerId            Int?
   applicatorId        Int?
-  fieldWorkerId       Int?
+  fieldWorkerId       Int? // Pilot assigned to this job
   startDate           DateTime?
   endDate             DateTime?
   description         String?
@@ -200,7 +200,9 @@ model Job {
   adjacentCrops       String?
   specialInstructions String?
   attachments         Json?
-  rejectionReason     String?
+  rejectionReason     String? // General job rejection reason by grower/applicator
+  // pilotRejectionReason String? // Pilot's rejection reason
+  // pilotJobStatus       PilotJobStatus? // Pilot's rejection reason
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   fields              FieldJob[]
@@ -488,9 +490,11 @@ enum InviteStatus {
 }
 
 enum ViewTable {
+  APPLICATOR
   GROWER
   JOB
-  APPLICATOR
+  PENDING_JOB
+  REJECTED_JOB
   PRODUCT
   WORKER
   USER_ADMIN
@@ -510,6 +514,7 @@ enum JobSource {
 enum JobStatus {
   TO_BE_MAPPED
   READY_TO_SPRAY
+  // IN_PROGRESS
   SPRAYED
   INVOICED
   PAID
@@ -517,6 +522,13 @@ enum JobStatus {
   REJECTED
   OPEN_FOR_BIDDING
 }
+
+// enum PilotJobStatus {
+//   NOT_ASSIGNED
+//   PENDING
+//   ACCEPTED
+//   REJECTED
+// }
 
 enum InviteInitiator {
   APPLICATOR

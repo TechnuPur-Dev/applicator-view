@@ -78,9 +78,10 @@ const getPilotSupportTicket = catchAsync(
 );
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const Id = +req.payload.id;
-		const result = await supportTicketService.getAllJobsByApplicator(Id);
-		res.status(httpStatus.OK).json({ result: result });
+		const userId = +req.payload.id;
+		const result =
+			await supportTicketService.getAllJobsByApplicator(userId);
+		res.status(httpStatus.OK).json({ result });
 	},
 );
 export default {

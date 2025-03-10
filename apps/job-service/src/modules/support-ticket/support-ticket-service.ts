@@ -302,6 +302,9 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 	const jobs = await prisma.job.findMany({
 		where: {
 			applicatorId,
+			status: {
+				in: ['READY_TO_SPRAY'],
+			},
 		},
 		select: {
 			id: true,
