@@ -240,8 +240,7 @@ const getPilotSupportTicket = async (
 		},
 		select: {
 			worker: true,
-		}
-		
+		},
 	});
 	const workerIds = workers.map((item) => item.worker.id);
 	console.log(workerIds, 'workers');
@@ -297,7 +296,23 @@ const getPilotSupportTicket = async (
 		totalResults,
 	};
 };
+// Get job list by applicator with filters
+const getAllJobsByApplicator = async (applicatorId: number) => {
+	// Fetch jobs
+	const jobs = await prisma.job.findMany({
+		where: {
+			applicatorId,
+		},
+		select: {
+			id: true,
+			title: true,
+		},
+	});
 
+	// Calculate total acres for each job
+
+	return jobs;
+};
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -308,4 +323,5 @@ export default {
 	updateSupportTicket,
 	getMySupportTicket,
 	getPilotSupportTicket,
+	getAllJobsByApplicator,
 };

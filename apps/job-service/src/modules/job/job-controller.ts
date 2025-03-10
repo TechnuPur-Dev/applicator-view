@@ -217,6 +217,7 @@ const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 		startDate: Date;
 		endDate: Date;
 	};
+	const data = req.body;
 	const result = await jobService.getHeadersData(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });

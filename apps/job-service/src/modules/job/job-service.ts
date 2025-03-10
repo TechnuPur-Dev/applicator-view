@@ -16,6 +16,7 @@ import { User, PaginateOptions } from '../../../../../shared/types/global';
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
+import { error } from 'console';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {

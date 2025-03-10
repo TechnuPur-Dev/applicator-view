@@ -271,6 +271,56 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 		accessToken,
 	};
 };
+const resendOTP = async (email: string) => {
+    const user = await prisma.user.findFirst({
+        where: {
+            email: {
+                equals: email,
+                mode: 'insensitive',
+            },
+            profileStatus: 'COMPLETE',
+        },
+        select: { id: true },
+    });
+
+    if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'No account found with this email.');
+    }
+
+    const { otp, expiryTime } = generateOTP();
+
+    await prisma.otp.upsert({
+        where: { email },
+        create: {
+            email,
+            otp,
+            expiredAt: expiryTime,
+        },
+        update: {
+            otp,
+            expiredAt: expiryTime,
+            createdAt: new Date(),
+        },
+    });
+
+    const subject = 'Resend OTP Verification';
+    const message = `
+        Please use the following OTP to verify your account:<br><br>
+        <strong style="color: black; font-size: 1.5em;">${otp}</strong><br><br>
+        This OTP is valid till ${expiryTime}.<br>
+        If you did not request this, please ignore this email.
+    `;
+    const html = await mailHtmlTemplate(subject, message);
+
+    await sendEmail({
+        emailTo: email,
+        subject,
+        text: 'Request Verification',
+        html,
+    });
+
+    return { otp };
+};
 
 // to update user profile
 const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
@@ -371,5 +421,6 @@ export default {
 	loginUser,
 	verifyEmailAndSendOTP,
 	verifyOTPAndRegisterEmail,
+	resendOTP,
 	acceptInviteAndSignUp,
 };

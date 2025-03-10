@@ -1655,6 +1655,8 @@ const acceptOrRejectInviteThroughEmail = async (
 		message: 'Invite status updated successfully.',
 	};
 };
+
+
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -1678,4 +1680,5 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
+	
 };

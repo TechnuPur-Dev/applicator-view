@@ -125,4 +125,5 @@ router
 		validateSchema(userValidation.respondInviteToken),
 		userController.acceptOrRejectInviteThroughEmail,
 	);
+	
 export default router;

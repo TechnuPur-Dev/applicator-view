@@ -152,7 +152,9 @@ const headerStatsSchema: Schema = Joi.object({
 			.optional()
 			.allow(null),
 	}).required(),
-});
+	
+	})
+
 export default {
 	createJobSchema,
 	paramsSchema,

@@ -195,6 +195,7 @@ const acceptOrRejectInviteThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -218,4 +219,5 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
+	
 };
