@@ -47,4 +47,10 @@ router
 router
 	.route('/pilot-ticktes')
 	.get(verifyToken, supportTicketController.getPilotSupportTicket);
+	router
+	.route('/my-jobs')
+	.get(
+		verifyToken,
+		supportTicketController.getAllJobsByApplicator,
+	);
 export default router;
