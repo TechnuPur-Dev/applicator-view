@@ -316,6 +316,17 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 
 	return jobs;
 };
+const deleteTicket = async (ticketId: number) => {
+	await prisma.supportTicket.delete({
+		where: {
+			id: ticketId,
+		},
+	});
+
+	return {
+		message: 'Support Ticket deleted successfully.',
+	};
+};
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -327,4 +338,5 @@ export default {
 	getMySupportTicket,
 	getPilotSupportTicket,
 	getAllJobsByApplicator,
+	deleteTicket
 };
