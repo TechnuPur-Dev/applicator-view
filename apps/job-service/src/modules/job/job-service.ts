@@ -874,6 +874,7 @@ const getApplicatorListForGrower = async (growerId: number) => {
 	const applicators = await prisma.applicatorGrower.findMany({
 		where: {
 			growerId,
+			inviteStatus: 'ACCEPTED',
 		},
 		select: {
 			applicator: {
@@ -3018,9 +3019,9 @@ const getPilotPendingJobs = async (
 
 	const jobs = await prisma.job.findMany({
 		where: {
-			 fieldWorkerId: pilotId ,
-			 status:'PENDING'
-			},
+			fieldWorkerId: pilotId,
+			status: 'PENDING',
+		},
 		include: {
 			applicator: {
 				select: {
@@ -3098,9 +3099,9 @@ const getPilotRejectedJobs = async (
 
 	const jobs = await prisma.job.findMany({
 		where: {
-			 fieldWorkerId: pilotId ,
-			 status:'REJECTED'
-			},
+			fieldWorkerId: pilotId,
+			status: 'REJECTED',
+		},
 		include: {
 			applicator: {
 				select: {
@@ -3188,5 +3189,5 @@ export default {
 	acceptJobThroughEmail,
 	getMyJobsByPilot,
 	getPilotPendingJobs,
-	getPilotRejectedJobs
+	getPilotRejectedJobs,
 };
