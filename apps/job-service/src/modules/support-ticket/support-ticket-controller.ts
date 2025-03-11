@@ -84,6 +84,11 @@ const getAllJobsByApplicator = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
+const deleteTicket = catchAsync(async (req: Request, res: Response) => {
+	const ticketId = +req.params.ticketId;
+	const result = await supportTicketService.deleteTicket(ticketId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -95,4 +100,5 @@ export default {
 	getMySupportTicket,
 	getPilotSupportTicket,
 	getAllJobsByApplicator,
+	deleteTicket
 };
