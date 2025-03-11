@@ -94,7 +94,7 @@ model ApplicatorWorker {
 
 model ApplicatorGrower {
   id                     Int              @id @default(autoincrement())
-  applicatorId           Int
+  applicatorId           Int?
   growerId               Int
   applicatorFirstName    String?
   applicatorLastName     String?
@@ -107,36 +107,39 @@ model ApplicatorGrower {
   isArchivedByApplicator Boolean          @default(false)
   isArchivedByGrower     Boolean          @default(false)
   canManageFarms         Boolean          @default(false)
+  email                  String? // Store invited email to handle the case when applicator does notexists in the system
 
-  applicator User @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  grower     User @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  applicator User? @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  grower     User  @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  pendingFarmPermission PendingFarmPermission[]
 
   @@unique([applicatorId, growerId])
 }
 
 model Farm {
-  id           Int              @id @default(autoincrement())
-  name         String?
-  farmImageUrl String?
-  createdById  Int
-  growerId     Int
-  stateId      Int
-  county       String?
-  township     String?
-  zipCode      String?
-  isActive     Boolean
-  config       Json?
-  state        State            @relation(fields: [stateId], references: [id])
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  createdBy    User             @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  grower       User             @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
-  permissions  FarmPermission[]
-  fields       Field[]
-  jobs         Job[]
+  id                    Int                     @id @default(autoincrement())
+  name                  String?
+  farmImageUrl          String?
+  createdById           Int
+  growerId              Int
+  stateId               Int
+  county                String?
+  township              String?
+  zipCode               String?
+  isActive              Boolean
+  config                Json?
+  state                 State                   @relation(fields: [stateId], references: [id])
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  createdBy             User                    @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  grower                User                    @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
+  permissions           FarmPermission[]
+  fields                Field[]
+  jobs                  Job[]
+  pendingFarmPermission PendingFarmPermission[]
 }
 
 model FarmPermission {
@@ -152,6 +155,21 @@ model FarmPermission {
   farm       Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
 
   @@unique([farmId, applicatorId]) // Ensures only one permission per user per farm
+}
+
+model PendingFarmPermission {
+  id        Int      @id @default(autoincrement())
+  farmId    Int
+  inviteId  Int
+  canView   Boolean  @default(true)
+  canEdit   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  farm   Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  invite ApplicatorGrower @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@unique([farmId, inviteId])
 }
 
 model Field {

@@ -272,54 +272,57 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 	};
 };
 const resendOTP = async (email: string) => {
-    const user = await prisma.user.findFirst({
-        where: {
-            email: {
-                equals: email,
-                mode: 'insensitive',
-            },
-            profileStatus: 'COMPLETE',
-        },
-        select: { id: true },
-    });
+	const user = await prisma.user.findFirst({
+		where: {
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
+			profileStatus: 'COMPLETE',
+		},
+		select: { id: true },
+	});
 
-    if (!user) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'No account found with this email.');
-    }
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'No account found with this email.',
+		);
+	}
 
-    const { otp, expiryTime } = generateOTP();
+	const { otp, expiryTime } = generateOTP();
 
-    await prisma.otp.upsert({
-        where: { email },
-        create: {
-            email,
-            otp,
-            expiredAt: expiryTime,
-        },
-        update: {
-            otp,
-            expiredAt: expiryTime,
-            createdAt: new Date(),
-        },
-    });
+	await prisma.otp.upsert({
+		where: { email },
+		create: {
+			email,
+			otp,
+			expiredAt: expiryTime,
+		},
+		update: {
+			otp,
+			expiredAt: expiryTime,
+			createdAt: new Date(),
+		},
+	});
 
-    const subject = 'Resend OTP Verification';
-    const message = `
+	const subject = 'Resend OTP Verification';
+	const message = `
         Please use the following OTP to verify your account:<br><br>
         <strong style="color: black; font-size: 1.5em;">${otp}</strong><br><br>
         This OTP is valid till ${expiryTime}.<br>
         If you did not request this, please ignore this email.
     `;
-    const html = await mailHtmlTemplate(subject, message);
+	const html = await mailHtmlTemplate(subject, message);
 
-    await sendEmail({
-        emailTo: email,
-        subject,
-        text: 'Request Verification',
-        html,
-    });
+	await sendEmail({
+		emailTo: email,
+		subject,
+		text: 'Request Verification',
+		html,
+	});
 
-    return { otp };
+	return { otp };
 };
 
 // to update user profile
@@ -365,26 +368,68 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			},
 		});
 	} else if (role === 'APPLICATOR') {
-		await prisma.applicatorGrower.update({
-			where: {
-				inviteToken: token,
-				applicator: { profileStatus: 'INCOMPLETE' },
-			},
-			data: {
-				inviteStatus: 'ACCEPTED',
-				applicator: {
-					update: {
-						...data,
-						password,
-						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
-						profileStatus: 'COMPLETE',
-						joiningDate: new Date(),
+		await prisma.$transaction(async (prisma) => {
+			const invite = await prisma.applicatorGrower.update({
+				where: {
+					inviteToken: token,
+					// applicator: { profileStatus: 'INCOMPLETE' },
+				},
+				data: {
+					inviteStatus: 'ACCEPTED',
+					applicatorFirstName: firstName,
+					applicatorLastName: lastName,
+					applicator: {
+						create: {
+							role: 'APPLICATOR',
+							...(() => {
+								// eslint-disable-next-line @typescript-eslint/no-unused-vars
+								const { stateId, token, ...rest } = data; // Exclude stateId
+								return rest;
+							})(),
+							password,
+							fullName:
+								`${firstName || ''} ${lastName || ''}`.trim(),
+							profileStatus: 'COMPLETE',
+							joiningDate: new Date(),
+							state: data.stateId
+								? { connect: { id: data.stateId } }
+								: undefined,
+						},
 					},
 				},
-			},
-			select: {
-				applicator: { include: { state: { select: { name: true } } } },
-			},
+				select: {
+					id: true,
+					applicator: {
+						select: { id: true, state: { select: { name: true } } },
+					},
+					pendingFarmPermission: true,
+				},
+			});
+
+			// Ensure `applicator` exists before proceeding
+			if (!invite.applicator || invite.applicator.id === undefined) {
+				throw new Error('Applicator ID is missing');
+			}
+
+			// Ensure `pendingFarmPermission` is an array before mapping over it
+			if (
+				Array.isArray(invite.pendingFarmPermission) &&
+				invite.pendingFarmPermission.length > 0
+			) {
+				await prisma.farmPermission.createMany({
+					data: invite.pendingFarmPermission.map((perm) => ({
+						farmId: perm.farmId,
+						applicatorId: invite.applicator?.id ?? 0, // ✅ Use safe optional chaining with a default value
+						canView: perm.canView,
+						canEdit: perm.canEdit,
+					})),
+				});
+			}
+
+			// Delete pending permissions only if `invite.id` is valid
+			await prisma.pendingFarmPermission.deleteMany({
+				where: { inviteId: invite.id },
+			});
 		});
 	} else if (role === 'WORKER') {
 		await prisma.applicatorWorker.update({
