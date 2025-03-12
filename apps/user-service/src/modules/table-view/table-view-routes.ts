@@ -11,7 +11,7 @@ router
 	.route('/create-view')
 	.post(
 		verifyToken,
-		validateSchema(viewValidation.viewSchema),
+		// validateSchema(viewValidation.viewSchema),
 		viiewController.createView,
 	);
 router
