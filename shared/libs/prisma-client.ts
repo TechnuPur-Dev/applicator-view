@@ -12,7 +12,7 @@ const globalForPrisma = globalThis as typeof globalThis & {
 const prisma = new PrismaClient({
 	transactionOptions: {
 		maxWait: 10000,
-		timeout: 20000,
+		timeout: 60000,
 	},
 	log: [
 		{

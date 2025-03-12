@@ -53,4 +53,11 @@ router
 		verifyToken,
 		supportTicketController.getAllJobsByApplicator,
 	);
+	router
+		.route('/delete/:ticketId')
+		.delete(
+			verifyToken,
+			validateSchema(supportTicketValidation.paramsSchema),
+			supportTicketController.deleteTicket,
+		);
 export default router;
