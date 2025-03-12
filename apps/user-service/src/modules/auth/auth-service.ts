@@ -353,6 +353,7 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			},
 			data: {
 				inviteStatus: 'ACCEPTED',
+				canManageFarms: true,
 				grower: {
 					update: {
 						...data,

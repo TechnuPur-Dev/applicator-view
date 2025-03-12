@@ -250,6 +250,15 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 		);
 	}
 
+	const applicatorGrower = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId,
+				growerId: grower.id,
+			},
+		},
+	});
+
 	// Calculate total acres for each grower and each farm
 
 	const totalAcresByGrower = grower?.farms.reduce(
@@ -277,6 +286,7 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 
 	// Add total acres to the grower object
 	return {
+		inviteStatus: applicatorGrower ? applicatorGrower.inviteStatus : null,
 		...grower,
 		totalAcres: totalAcresByGrower,
 	};
@@ -354,7 +364,10 @@ const getAllGrowersByApplicator = async (
 	const growers = await prisma.applicatorGrower.findMany({
 		where: {
 			applicatorId,
-			inviteStatus: 'ACCEPTED',
+			OR: [
+				{ inviteInitiator: 'APPLICATOR', inviteStatus: 'PENDING' },
+				{}, // This ensures all other growers are included
+			],
 		},
 		select: {
 			growerFirstName: true,
@@ -1074,8 +1087,8 @@ const sendInviteToApplicator = async (
 				});
 			} else {
 				throw new ApiError(
-					httpStatus.CONFLICT,
-					'You are already connected to this Applicator.',
+					httpStatus.BAD_REQUEST,
+					'An active invitation already exists.',
 				);
 				throw new Error('An active invitation already exists.');
 			}
@@ -1131,15 +1144,18 @@ const sendInviteToApplicator = async (
 	return { message: 'Invite sent successfully.' };
 };
 
-const sendInviteToGrower = async (currentUser: User, growerId: number,	
+const sendInviteToGrower = async (
+	currentUser: User,
+	growerId: number,
 	data: {
-	farmPermission: {
-		farmId: number;
-		canView: boolean;
-		canEdit: boolean;
-	}[];
-},) => {
-	const { id: applicatorId, role,firstName, lastName } = currentUser;
+		farmPermission: {
+			farmId: number;
+			canView: boolean;
+			canEdit: boolean;
+		}[];
+	},
+) => {
+	const { id: applicatorId, role, firstName, lastName } = currentUser;
 	const token = generateInviteToken('GROWER');
 
 	if (role !== 'APPLICATOR')
@@ -1150,12 +1166,11 @@ const sendInviteToGrower = async (currentUser: User, growerId: number,
 
 	const existingInvite = await prisma.applicatorGrower.findFirst({
 		where: {
-			growerId:growerId,
-			applicatorId:applicatorId,
-			
+			growerId: growerId,
+			applicatorId: applicatorId,
 		},
 	});
-	console.log(existingInvite,"existingInvite")
+	console.log(existingInvite, 'existingInvite');
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
@@ -1164,8 +1179,8 @@ const sendInviteToGrower = async (currentUser: User, growerId: number,
 					where: { id: existingInvite.id },
 					data: {
 						inviteStatus: 'PENDING',
-						inviteToken:token,
-						inviteInitiator:"APPLICATOR",
+						inviteToken: token,
+						inviteInitiator: 'APPLICATOR',
 						canManageFarms: true,
 					},
 					select: { id: true }, // Select only required fields
@@ -1192,13 +1207,13 @@ const sendInviteToGrower = async (currentUser: User, growerId: number,
 					applicatorId: applicatorId,
 					growerId: growerId,
 					applicatorFirstName: currentUser.firstName ?? null,
-					applicatorLastName:currentUser.lastName ?? null,
+					applicatorLastName: currentUser.lastName ?? null,
 					growerFirstName: grower?.firstName,
 					growerLastName: grower?.lastName,
 					inviteStatus: 'PENDING',
 					inviteInitiator: 'APPLICATOR',
 					canManageFarms: true,
-					inviteToken:token,
+					inviteToken: token,
 					email: grower?.email,
 				},
 				select: { id: true }, // Select only required fields
