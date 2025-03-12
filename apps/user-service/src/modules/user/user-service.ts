@@ -1131,35 +1131,90 @@ const sendInviteToApplicator = async (
 	return { message: 'Invite sent successfully.' };
 };
 
-const sendInviteToGrower = async (currentUser: User, growerId: number) => {
-	const { id: applicatorId, role } = currentUser;
+const sendInviteToGrower = async (currentUser: User, growerId: number,	
+	data: {
+	farmPermission: {
+		farmId: number;
+		canView: boolean;
+		canEdit: boolean;
+	}[];
+},) => {
+	const { id: applicatorId, role,firstName, lastName } = currentUser;
 	const token = generateInviteToken('GROWER');
 
 	if (role !== 'APPLICATOR')
 		return 'You are not allowed to perform this action.';
-	const user = await prisma.applicatorGrower.update({
+	const grower = await prisma.user.findUnique({
+		where: { id: growerId, role: 'GROWER' },
+	});
+
+	const existingInvite = await prisma.applicatorGrower.findFirst({
 		where: {
-			applicatorId_growerId: {
-				applicatorId,
-				growerId,
-			},
-			inviteStatus: {
-				in: ['NOT_SENT', 'REJECTED'],
-			},
+			growerId:growerId,
+			applicatorId:applicatorId,
+			
 		},
-		data: {
-			inviteStatus: 'PENDING', // Only updating the inviteStatus field
-			inviteInitiator: 'APPLICATOR', // to update inviteInitiator
-			inviteToken: token,
-		},
-		include: {
-			// Move include here
-			grower: {
-				select: {
-					email: true,
+	});
+	console.log(existingInvite,"existingInvite")
+	let invite: { id: number };
+	await prisma.$transaction(async (tx) => {
+		if (existingInvite) {
+			if (existingInvite.inviteStatus === 'REJECTED') {
+				invite = await tx.applicatorGrower.update({
+					where: { id: existingInvite.id },
+					data: {
+						inviteStatus: 'PENDING',
+						inviteToken:token,
+						inviteInitiator:"APPLICATOR",
+						canManageFarms: true,
+					},
+					select: { id: true }, // Select only required fields
+				});
+
+				await tx.pendingFarmPermission.deleteMany({
+					where: { inviteId: existingInvite.id },
+				});
+
+				await tx.pendingFarmPermission.createMany({
+					data: data.farmPermission.map((farm) => ({
+						farmId: farm.farmId,
+						inviteId: invite.id, // `invite!.id` is safe because we assigned it above
+						canView: farm.canView,
+						canEdit: farm.canEdit,
+					})),
+				});
+			} else {
+				throw new Error('An active invitation already exists.');
+			}
+		} else {
+			invite = await tx.applicatorGrower.create({
+				data: {
+					applicatorId: applicatorId,
+					growerId: growerId,
+					applicatorFirstName: currentUser.firstName ?? null,
+					applicatorLastName:currentUser.lastName ?? null,
+					growerFirstName: grower?.firstName,
+					growerLastName: grower?.lastName,
+					inviteStatus: 'PENDING',
+					inviteInitiator: 'APPLICATOR',
+					canManageFarms: true,
+					inviteToken:token,
+					email: grower?.email,
 				},
-			},
-		},
+				select: { id: true }, // Select only required fields
+			});
+
+			if (data.farmPermission.length > 0) {
+				await tx.pendingFarmPermission.createMany({
+					data: data.farmPermission.map((farm) => ({
+						farmId: farm.farmId,
+						inviteId: invite.id, // `invite!.id` is safe because we assigned it above
+						canView: farm.canView,
+						canEdit: farm.canEdit,
+					})),
+				});
+			}
+		}
 	});
 
 	const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
@@ -1170,8 +1225,8 @@ const sendInviteToGrower = async (currentUser: User, growerId: number) => {
   ${inviteLink}<br><br>
   If you did not expect this invitation, please ignore this email.
 `;
-	if (user) {
-		const email = user?.grower?.email;
+	if (grower) {
+		const email = grower?.email;
 
 		if (!email) {
 			throw new Error('Email address is not available for the grower.');

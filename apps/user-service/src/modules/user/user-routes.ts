@@ -87,7 +87,6 @@ router
 	.route('/grower/invite/:growerId')
 	.put(
 		verifyToken,
-		validateSchema(userValidation.sendInviteSchema),
 		userController.sendInviteToGrower,
 	);
 

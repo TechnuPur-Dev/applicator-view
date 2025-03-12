@@ -150,7 +150,8 @@ const sendInviteToApplicator = catchAsync(
 const sendInviteToGrower = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const growerId = +req.params.growerId;
-	const result = await userService.sendInviteToGrower(user, growerId);
+	const data = req.body;
+	const result = await userService.sendInviteToGrower(user, growerId,data);
 	res.status(httpStatus.OK).json(result);
 });
 
