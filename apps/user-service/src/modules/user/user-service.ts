@@ -1086,6 +1086,7 @@ const sendInviteToApplicator = async (
 					data: {
 						inviteStatus: 'PENDING',
 						inviteToken,
+						inviteInitiator: 'GROWER',
 						canManageFarms: data.canManageFarms,
 					},
 					select: { id: true }, // Select only required fields
@@ -1166,6 +1167,7 @@ const sendInviteToGrower = async (
 	currentUser: User,
 	growerId: number,
 	data: {
+		canManageFarms: boolean;
 		farmPermission: {
 			farmId: number;
 			canView: boolean;
@@ -1181,14 +1183,21 @@ const sendInviteToGrower = async (
 	const grower = await prisma.user.findUnique({
 		where: { id: growerId, role: 'GROWER' },
 	});
+	if (!grower) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Grower with email not found.',
+		);
+	}
 
-	const existingInvite = await prisma.applicatorGrower.findFirst({
+	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
-			growerId: growerId,
-			applicatorId: applicatorId,
+			applicatorId_growerId: {
+				growerId: growerId,
+				applicatorId: applicatorId,
+			},
 		},
 	});
-	console.log(existingInvite, 'existingInvite');
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
@@ -1199,7 +1208,7 @@ const sendInviteToGrower = async (
 						inviteStatus: 'PENDING',
 						inviteToken: token,
 						inviteInitiator: 'APPLICATOR',
-						canManageFarms: true,
+						canManageFarms: data.canManageFarms,
 					},
 					select: { id: true }, // Select only required fields
 				});
@@ -1217,6 +1226,10 @@ const sendInviteToGrower = async (
 					})),
 				});
 			} else {
+				throw new ApiError(
+					httpStatus.BAD_REQUEST,
+					'An active invitation already exists.',
+				);
 				throw new Error('An active invitation already exists.');
 			}
 		} else {
@@ -1230,7 +1243,7 @@ const sendInviteToGrower = async (
 					growerLastName: grower?.lastName,
 					inviteStatus: 'PENDING',
 					inviteInitiator: 'APPLICATOR',
-					canManageFarms: true,
+					canManageFarms: data.canManageFarms,
 					inviteToken: token,
 					email: grower?.email,
 				},
