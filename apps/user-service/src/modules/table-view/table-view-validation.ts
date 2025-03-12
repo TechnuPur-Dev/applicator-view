@@ -8,6 +8,7 @@ const viewSchema: Schema = Joi.object()
 		}),
 		body: Joi.object({
 			tableName: Joi.string().min(1).max(50).required(),
+			viewName: Joi.string().min(1).max(30).required(),
 			config: Joi.object()
 				.pattern(
 					Joi.string(),
