@@ -1073,6 +1073,10 @@ const sendInviteToApplicator = async (
 					})),
 				});
 			} else {
+				throw new ApiError(
+					httpStatus.CONFLICT,
+					'You are already connected to this Applicator.',
+				);
 				throw new Error('An active invitation already exists.');
 			}
 		} else {

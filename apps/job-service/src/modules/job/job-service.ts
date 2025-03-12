@@ -16,7 +16,6 @@ import { User, PaginateOptions } from '../../../../../shared/types/global';
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
-import { error } from 'console';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -2162,10 +2161,21 @@ const getHeadersData = async (
 						_sum: { price: true },
 					});
 				result = {
-					totalRevenue:
-						(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-							0) +
-						(dashboardtotalProPrice._sum.price?.toNumber() || 0),
+					...(role === 'GROWER'
+						? {
+								totalExpenditures:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}
+						: {
+								totalRevenue:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
@@ -2173,10 +2183,10 @@ const getHeadersData = async (
 								totalApplicators:
 									dashboardtotalGrowersorApplicators,
 							}),
-
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
+
 				break;
 			}
 			case 'myJobs': {
