@@ -354,6 +354,7 @@ const getAllGrowersByApplicator = async (
 	const growers = await prisma.applicatorGrower.findMany({
 		where: {
 			applicatorId,
+			inviteStatus: 'ACCEPTED',
 		},
 		select: {
 			growerFirstName: true,
@@ -476,6 +477,7 @@ const getAllApplicatorsByGrower = async (
 			inviteStatus: true,
 			isArchivedByGrower: true,
 			canManageFarms: true,
+			email: true,
 			applicator: {
 				include: {
 					state: {
@@ -497,6 +499,11 @@ const getAllApplicatorsByGrower = async (
 			id: 'desc',
 		},
 	});
+	// ✅ Ensure `applicator` is never null by adding `email`
+	const updatedApplicators = applicators.map((applicator) => ({
+		...applicator,
+		applicator: applicator.applicator ?? { email: applicator.email }, // If applicator is null, assign email
+	}));
 	const totalResults = await prisma.applicatorGrower.count({
 		where: {
 			growerId,
@@ -506,7 +513,7 @@ const getAllApplicatorsByGrower = async (
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		result: applicators,
+		result: updatedApplicators,
 		page,
 		limit,
 		totalPages,
@@ -1503,7 +1510,6 @@ const verifyInviteToken = async (token: string) => {
 
 	let user = null;
 	let applicator = null;
-	let grower = null;
 
 	// Fetch user based on role
 	if (role === 'GROWER') {
@@ -1555,7 +1561,13 @@ const verifyInviteToken = async (token: string) => {
 		}
 		const { state } = user;
 		// Return only the role-specific user data
-		return { ...user, state: state?.name, applicator, grower };
+		return {
+			...user,
+			state: state?.name,
+			applicator,
+			isAlreadyExist:
+				invite.grower.profileStatus === 'COMPLETE' ? true : false,
+		};
 	} else if (role === 'APPLICATOR') {
 		const invite = await prisma.applicatorGrower.findUnique({
 			where: {
@@ -1667,7 +1679,7 @@ const verifyInviteToken = async (token: string) => {
 	}
 	const { state } = user;
 	// Return only the role-specific user data
-	return { ...user, state: state?.name, applicator, grower };
+	return { ...user, state: state?.name, applicator };
 };
 const getWeather = async (user: User, options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
