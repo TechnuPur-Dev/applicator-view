@@ -364,9 +364,16 @@ const getAllGrowersByApplicator = async (
 	const growers = await prisma.applicatorGrower.findMany({
 		where: {
 			applicatorId,
-			OR: [
-				{ inviteInitiator: 'APPLICATOR', inviteStatus: 'PENDING' },
-				{}, // This ensures all other growers are included
+			AND: [
+				{
+					OR: [
+						{
+							inviteInitiator: 'APPLICATOR',
+							inviteStatus: 'PENDING',
+						}, // PENDING must be from APPLICATOR
+						{ inviteStatus: { in: ['ACCEPTED', 'REJECTED'] } }, // Any ACCEPTED or REJECTED
+					],
+				},
 			],
 		},
 		select: {
@@ -450,6 +457,17 @@ const getAllGrowersByApplicator = async (
 	const totalResults = await prisma.applicatorGrower.count({
 		where: {
 			applicatorId,
+			AND: [
+				{
+					OR: [
+						{
+							inviteInitiator: 'APPLICATOR',
+							inviteStatus: 'PENDING',
+						}, // PENDING must be from APPLICATOR
+						{ inviteStatus: { in: ['ACCEPTED', 'REJECTED'] } }, // Any ACCEPTED or REJECTED
+					],
+				},
+			],
 		},
 	});
 
