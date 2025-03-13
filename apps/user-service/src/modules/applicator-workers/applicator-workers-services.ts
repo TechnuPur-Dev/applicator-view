@@ -85,16 +85,16 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 	  If you did not expect this invitation, please ignore this email.
 	`;
 		// Construct invite link
-	
+
 		const html = await mailHtmlTemplate(subject, message);
-	
+
 		await sendEmail({
 			emailTo: data.email,
 			subject,
 			text: 'Request Invitation',
 			html,
 		});
-	
+
 		return { ...worker, ...applicatorWorker };
 	});
 };
@@ -274,19 +274,16 @@ const updateWorker = async (
 };
 
 const deleteWorker = async (applicatorId: number, workerId: number) => {
-		await prisma.applicatorWorker.delete({
-			where: {
-				applicatorId_workerId: {
-					applicatorId,
-					workerId,
-				},
+	await prisma.applicatorWorker.delete({
+		where: {
+			applicatorId_workerId: {
+				applicatorId,
+				workerId,
 			},
-		});
+		},
+	});
 
-		return { result: 'Deleted successfully' };
-	
-	
-	
+	return { result: 'Deleted successfully' };
 };
 const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 	const workerRecord = await prisma.applicatorWorker.findUnique({
@@ -317,9 +314,9 @@ const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 		},
 	});
 	const token = generateInviteToken('WORKER');
-		const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
-		const subject = 'Invitation Email';
-		
+	const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
+	const subject = 'Invitation Email';
+
 	const message = `
 	  You are invited to join our platform!<br><br>
 	  Click the link below to join.<br><br>
@@ -387,7 +384,6 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 				mode: 'insensitive',
 			},
 			role: 'WORKER',
-			
 		},
 		select: {
 			id: true,
@@ -400,11 +396,47 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 		},
 	});
 	if (users) {
-		return  users;
-		
+		return users;
 	} else {
 		throw new ApiError(httpStatus.CONFLICT, 'User Not Found');
 	}
+};
+const getAllApplicators = async () => {
+	const workerApplicators = await prisma.applicatorWorker.findMany({
+		include: { applicator: true }, 
+	});
+	 return workerApplicators.map((worker) => worker.applicator);;
+};
+const getPendingInvites = async (user: User) => {
+	const pendingInvites = await prisma.applicatorWorker.findMany({
+		where: {
+			inviteStatus: 'PENDING',
+			OR:
+				user.role === 'WORKER'
+					? [{ workerId: user.id }]
+					: [{ applicatorId: user.id }],
+		},
+		include: {
+			worker: true,
+			applicator: true,
+		},
+	});
+
+	const applicators: any[] = [];
+	const workers: any[] = [];
+
+	pendingInvites.forEach((item) => {
+		if (user.role === 'WORKER' && item.applicator) {
+			if (!applicators.some((app) => app.id === item.applicator.id)) {
+				applicators.push(item.applicator);
+			}
+		} else if (user.role === 'APPLICATOR' && item.worker) {
+			if (!workers.some((wrk) => wrk.id === item.worker.id)) {
+				workers.push(item.worker);
+			}
+		}
+	});
+	return user.role === 'WORKER' ? { applicators } : { workers };
 };
 
 export default {
@@ -416,4 +448,6 @@ export default {
 	updateInviteStatus,
 	searchWorkerByEmail,
 	sendInviteToWorker,
+	getAllApplicators,
+	getPendingInvites,
 };

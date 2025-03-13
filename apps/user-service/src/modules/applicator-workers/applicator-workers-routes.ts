@@ -58,4 +58,16 @@ router
 		validateSchema(workerValidation.searchWorkerByEmail),
 		applicatorWorker.searchWorkerByEmail,
 	);
+	router
+	.route('/getAllApplicators')
+	.get(
+		verifyToken,
+		applicatorWorker.getAllApplicators,
+	)
+	router
+	.route('/pendingInvites')
+	.get(
+		verifyToken,
+		applicatorWorker.getPendingInvites,
+	)
 export default router;
