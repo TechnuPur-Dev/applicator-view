@@ -10,6 +10,7 @@ import {
 	mailHtmlTemplate,
 	sendEmail,
 } from '../../../../../shared/helpers/node-mailer';
+import { generateInviteToken } from '../../helper/invite-token';
 //
 
 const createWorker = async (user: User, data: ApplicatorWorker) => {
@@ -19,26 +20,6 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 			'You are not authorized to perform this action.',
 		);
 	}
-
-	// const workerExist = await prisma.user.findFirst({
-	// 	where: {
-	// 		email: {
-	// 			equals: data.email,
-	// 			mode: 'insensitive',
-	// 		},
-	// 	},
-	// });
-
-	// if (workerExist) {
-	// 	// updateInviteStatus(user.id, {
-	// 	// 	workerId: workerExist.id,
-	// 	// 	status: 'PENDING',
-	// 	// });
-	// 	// return {
-	// 	// 	message: 'Worker already exists, invite sent successfully.',
-	// 	// };
-	// 	throw new ApiError(httpStatus.CONFLICT, 'Invalid data provded.');
-	// }
 
 	return prisma.$transaction(async (prisma) => {
 		const worker = await prisma.user.create({
@@ -94,6 +75,26 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				updatedAt: true,
 			},
 		});
+		const token = generateInviteToken('WORKER');
+		const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
+		const subject = 'Invitation Email';
+		const message = `
+	  You are invited to join our platform!<br><br>
+	  Click the link below to join.<br><br>
+	  ${inviteLink}<br><br>
+	  If you did not expect this invitation, please ignore this email.
+	`;
+		// Construct invite link
+	
+		const html = await mailHtmlTemplate(subject, message);
+	
+		await sendEmail({
+			emailTo: data.email,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+	
 		return { ...worker, ...applicatorWorker };
 	});
 };
@@ -273,15 +274,19 @@ const updateWorker = async (
 };
 
 const deleteWorker = async (applicatorId: number, workerId: number) => {
-	await prisma.applicatorWorker.delete({
-		where: {
-			applicatorId_workerId: {
-				applicatorId,
-				workerId,
+		await prisma.applicatorWorker.delete({
+			where: {
+				applicatorId_workerId: {
+					applicatorId,
+					workerId,
+				},
 			},
-		},
-	});
-	return { result: 'Deleted successfully' };
+		});
+
+		return { result: 'Deleted successfully' };
+	
+	
+	
 };
 const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 	const workerRecord = await prisma.applicatorWorker.findUnique({
@@ -311,10 +316,15 @@ const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 			inviteStatus: 'PENDING', // Only updating the inviteStatus field
 		},
 	});
-	const subject = 'Email Invitation';
+	const token = generateInviteToken('WORKER');
+		const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
+		const subject = 'Invitation Email';
+		
 	const message = `
-	You are invited to join our platform!<br><br>
-	If you did not expect this invitation, please ignore this email.
+	  You are invited to join our platform!<br><br>
+	  Click the link below to join.<br><br>
+	  ${inviteLink}<br><br>
+	  If you did not expect this invitation, please ignore this email.
 	`;
 	if (user) {
 		const email = user?.worker?.email;
