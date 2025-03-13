@@ -1060,8 +1060,34 @@ const sendInviteToApplicator = async (
 	}
 
 	const applicator = await prisma.user.findUnique({
-		where: { email: userEmail, role: 'APPLICATOR' },
+		where: { email: userEmail },
 	});
+	if (!applicator) {
+		// Send email invitation
+		const inviteLink = `https://applicator-ac.netlify.app/#/signup`;
+		const subject = 'Invitation Email';
+		const message = `
+	  You are invited to join our platform!<br><br>
+	  Click the link below to join.<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
+	  If you did not expect this invitation, please ignore this email.
+	`;
+
+		const html = await mailHtmlTemplate(subject, message);
+		await sendEmail({
+			emailTo: userEmail,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+	}
+
+	if (applicator?.role !== 'APPLICATOR') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'User exists but is not an applicator.',
+		);
+	}
 
 	const existingInvite = await prisma.applicatorGrower.findFirst({
 		where: {
