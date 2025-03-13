@@ -90,10 +90,7 @@ const searchWorkerByEmail: Schema = Joi.object({
 	params: Joi.object({
 		email: Joi.string().required(),
 	}).required(),
-	query: Joi.object({
-		limit: Joi.number().integer().positive().optional(),
-		page: Joi.number().integer().positive().optional(),
-	}).required(),
+
 });
 export default {
 	workerCreateSchema,
