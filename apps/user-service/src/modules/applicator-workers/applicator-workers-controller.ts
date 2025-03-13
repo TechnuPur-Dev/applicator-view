@@ -77,11 +77,9 @@ const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 const searchWorkerByEmail = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
 	const email = req.params.email;
-	const options = pick(req.query, ['limit', 'page']);
 	const result = await applicatorWorkersServices.searchWorkerByEmail(
 		applicatorId,
 		email,
-		options,
 	);
 	res.status(httpStatus.OK).json(result);
 });

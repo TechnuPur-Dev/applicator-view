@@ -94,7 +94,6 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				updatedAt: true,
 			},
 		});
-
 		return { ...worker, ...applicatorWorker };
 	});
 };
@@ -369,38 +368,16 @@ const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
 		};
 	}
 };
-const searchWorkerByEmail = async (
-	applicatorId: number,
-	email: string,
-	options: PaginateOptions,
-) => {
-	// Set pagination parameters
-	const limit =
-		options.limit && parseInt(options.limit.toString(), 10) > 0
-			? parseInt(options.limit.toString(), 10)
-			: 10;
-	const page =
-		options.page && parseInt(options.page.toString(), 10) > 0
-			? parseInt(options.page.toString(), 10)
-			: 1;
-	const skip = (page - 1) * limit;
-
+const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
-	const users = await prisma.user.findMany({
+	const users = await prisma.user.findFirst({
 		where: {
 			email: {
 				contains: email, // Case-insensitive partial match
 				mode: 'insensitive',
 			},
-			NOT: {
-				// Exclude users already connected with ACCEPTED or PENDING statuses
-				applicatorWorkers: {
-					some: {
-						applicatorId,
-						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
-					},
-				},
-			},
+			role: 'WORKER',
+			
 		},
 		select: {
 			id: true,
@@ -411,37 +388,13 @@ const searchWorkerByEmail = async (
 			fullName: true,
 			email: true,
 		},
-		take: limit,
-		skip,
 	});
-
-	// Get total count of matching users
-	const totalResults = await prisma.user.count({
-		where: {
-			email: {
-				contains: email,
-				mode: 'insensitive',
-			},
-			NOT: {
-				applicatorWorkers: {
-					some: {
-						applicatorId,
-						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
-					},
-				},
-			},
-		},
-	});
-
-	const totalPages = Math.ceil(totalResults / limit);
-	// Return the paginated result including users, current page, limit, total pages, and total results
-	return {
-		result: users,
-		page,
-		limit,
-		totalPages,
-		totalResults,
-	};
+	if (users) {
+		return  users;
+		
+	} else {
+		throw new ApiError(httpStatus.CONFLICT, 'User Not Found');
+	}
 };
 
 export default {
