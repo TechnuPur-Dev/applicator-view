@@ -377,6 +377,16 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 				mode: 'insensitive',
 			},
 			role: 'WORKER',
+			
+		},
+		select: {
+			id: true,
+			profileImage: true,
+			thumbnailProfileImage: true,
+			firstName: true,
+			lastName: true,
+			fullName: true,
+			email: true,
 		},
 	});
 	if (users) {
