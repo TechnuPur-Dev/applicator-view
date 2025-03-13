@@ -328,7 +328,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 	const message = `
   You are invited to join our platform!<br><br>
   Click the link below to join.<br><br>
-  ${inviteLink}<br><br>
+  <a href="${inviteLink}">${inviteLink}</a><br><br>
   If you did not expect this invitation, please ignore this email.
 `;
 	// Construct invite link
@@ -1315,7 +1315,7 @@ const sendInviteToGrower = async (
 	const message = `
   You are invited to join our platform!<br><br>
   Click the link below to join.<br><br>
-  ${inviteLink}<br><br>
+  <a href="${inviteLink}">${inviteLink}</a><br><br>
   If you did not expect this invitation, please ignore this email.
 `;
 	if (grower) {

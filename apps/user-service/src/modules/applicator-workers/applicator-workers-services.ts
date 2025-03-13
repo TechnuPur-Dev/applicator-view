@@ -65,6 +65,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				autoAcceptJobs: data.autoAcceptJobs ?? false,
 				canViewPricingDetails: data.canViewPricingDetails ?? false,
 				code: data.code,
+				inviteStatus: 'PENDING',
 				// lastLogin: new Date(), // Set current timestamp if null/undefined
 			},
 			omit: {
@@ -81,20 +82,20 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 		const message = `
 	  You are invited to join our platform!<br><br>
 	  Click the link below to join.<br><br>
-	  ${inviteLink}<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
 	  If you did not expect this invitation, please ignore this email.
 	`;
 		// Construct invite link
-	
+
 		const html = await mailHtmlTemplate(subject, message);
-	
+
 		await sendEmail({
 			emailTo: data.email,
 			subject,
 			text: 'Request Invitation',
 			html,
 		});
-	
+
 		return { ...worker, ...applicatorWorker };
 	});
 };
@@ -274,19 +275,16 @@ const updateWorker = async (
 };
 
 const deleteWorker = async (applicatorId: number, workerId: number) => {
-		await prisma.applicatorWorker.delete({
-			where: {
-				applicatorId_workerId: {
-					applicatorId,
-					workerId,
-				},
+	await prisma.applicatorWorker.delete({
+		where: {
+			applicatorId_workerId: {
+				applicatorId,
+				workerId,
 			},
-		});
+		},
+	});
 
-		return { result: 'Deleted successfully' };
-	
-	
-	
+	return { result: 'Deleted successfully' };
 };
 const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 	const workerRecord = await prisma.applicatorWorker.findUnique({
@@ -317,13 +315,13 @@ const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 		},
 	});
 	const token = generateInviteToken('WORKER');
-		const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
-		const subject = 'Invitation Email';
-		
+	const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
+	const subject = 'Invitation Email';
+
 	const message = `
 	  You are invited to join our platform!<br><br>
 	  Click the link below to join.<br><br>
-	  ${inviteLink}<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
 	  If you did not expect this invitation, please ignore this email.
 	`;
 	if (user) {
