@@ -370,31 +370,55 @@ const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
 };
 const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
-	const users = await prisma.user.findFirst({
+	const user = await prisma.user.findFirst({
 		where: {
 			email: {
 				contains: email, // Case-insensitive partial match
 				mode: 'insensitive',
 			},
-			role: 'WORKER',
-			
 		},
-		select: {
-			id: true,
-			profileImage: true,
-			thumbnailProfileImage: true,
-			firstName: true,
-			lastName: true,
-			fullName: true,
-			email: true,
+		include: {
+			state: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+		omit: {
+			password: true, // Exclude sensitive data
 		},
 	});
-	if (users) {
-		return  users;
-		
-	} else {
-		throw new ApiError(httpStatus.CONFLICT, 'User Not Found');
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Worker with this email not found.',
+		);
 	}
+
+	if (user.role !== 'WORKER') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'User exists but is not an applicator.',
+		);
+	}
+
+	const existingInvite = await prisma.applicatorWorker.findUnique({
+		where: {
+			applicatorId_workerId: {
+				applicatorId,
+				workerId: user?.id,
+			},
+		},
+	});
+
+	const { state } = user;
+
+	return {
+		inviteStatus: existingInvite ? existingInvite.inviteStatus : null,
+		...user,
+		state: state?.name,
+	};
 };
 
 export default {

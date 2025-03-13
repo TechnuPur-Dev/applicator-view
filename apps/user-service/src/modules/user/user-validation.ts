@@ -78,10 +78,10 @@ const searchApplicatorByEmail: Schema = Joi.object({
 	params: Joi.object({
 		email: Joi.string().required(),
 	}).required(),
-	query: Joi.object({
-		limit: Joi.number().integer().positive().optional(),
-		page: Joi.number().integer().positive().optional(),
-	}).required(),
+	// query: Joi.object({
+	// 	limit: Joi.number().integer().positive().optional(),
+	// 	page: Joi.number().integer().positive().optional(),
+	// }).required(),
 });
 const verifyInviteToken: Schema = Joi.object({
 	body: Joi.object({
