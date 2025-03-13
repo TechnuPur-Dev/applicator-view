@@ -73,13 +73,25 @@ const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(result);
 });
-
 const searchWorkerByEmail = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
 	const email = req.params.email;
 	const result = await applicatorWorkersServices.searchWorkerByEmail(
 		applicatorId,
 		email,
+	);
+	res.status(httpStatus.OK).json(result);
+});
+const getAllApplicators = catchAsync(async (req: Request, res: Response) => {
+	
+	const result = await applicatorWorkersServices.getAllApplicators(
+	);
+	res.status(httpStatus.OK).json(result);
+});
+const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user
+	const result = await applicatorWorkersServices.getPendingInvites(
+		user,
 	);
 	res.status(httpStatus.OK).json(result);
 });
@@ -92,4 +104,6 @@ export default {
 	updateInviteStatus,
 	sendInviteToWorker,
 	searchWorkerByEmail,
+	getAllApplicators,
+	getPendingInvites
 };
