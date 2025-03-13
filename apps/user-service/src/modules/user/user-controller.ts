@@ -125,12 +125,7 @@ const updateArchivedStatus = catchAsync(async (req: Request, res: Response) => {
 const getApplicatorByEmail = catchAsync(async (req: Request, res: Response) => {
 	const growerId = req.payload.id;
 	const email = req.params.email;
-	const options = pick(req.query, ['limit', 'page']);
-	const result = await userService.getApplicatorByEmail(
-		growerId,
-		email,
-		options,
-	);
+	const result = await userService.getApplicatorByEmail(growerId, email);
 	res.status(httpStatus.OK).json(result);
 });
 const sendInviteToApplicator = catchAsync(
