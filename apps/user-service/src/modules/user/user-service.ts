@@ -230,7 +230,6 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 							applicatorId,
 						},
 					}, // Include permissions to calculate farm permissions for the applicator
-					fields: true, // Include fields to calculate total acres
 				},
 				orderBy: {
 					id: 'desc',
@@ -243,6 +242,7 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 			experience: true,
 		},
 	});
+
 	if (!grower) {
 		throw new ApiError(
 			httpStatus.CONFLICT,
@@ -259,35 +259,43 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 		},
 	});
 
-	// Calculate total acres for each grower and each farm
-
-	const totalAcresByGrower = grower?.farms.reduce(
-		(totalGrowerAcres, farm) => {
-			// Calculate total acres for this farm
-			const totalAcresByFarm = farm.fields.reduce(
-				(totalFarmAcres, field) => {
-					return (
-						totalFarmAcres +
-						parseFloat(field.acres?.toString() || '0')
-					);
-				},
-				0,
-			);
-
-			// Type assertion to inform TypeScript about `totalAcres`
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(farm as any).totalAcres = totalAcresByFarm;
-
-			// Accumulate total grower acres
-			return totalGrowerAcres + totalAcresByFarm;
+	// Fetch total acres separately for all farms
+	const farmIds = grower.farms.map((farm) => farm.id);
+	const farmAcres = await prisma.field.groupBy({
+		by: ['farmId'],
+		where: {
+			farmId: { in: farmIds },
 		},
+		_sum: {
+			acres: true,
+		},
+	});
+
+	// Convert Decimal to number safely
+	const farmAcresMap = farmAcres.reduce(
+		(acc, { farmId, _sum }) => {
+			acc[farmId] = _sum.acres ? _sum.acres.toNumber() : 0; // Convert Decimal to number
+			return acc;
+		},
+		{} as Record<number, number>,
+	);
+
+	const farmsWithTotalAcres = grower.farms.map((farm) => ({
+		...farm,
+		totalAcres: farmAcresMap[farm.id] ?? 0, // Ensure it's a number
+	}));
+
+	// Calculate total acres for the grower
+	const totalAcresByGrower = farmsWithTotalAcres.reduce(
+		(total, farm) => total + farm.totalAcres,
 		0,
 	);
 
-	// Add total acres to the grower object
+	// Return modified grower object
 	return {
 		inviteStatus: applicatorGrower ? applicatorGrower.inviteStatus : null,
 		...grower,
+		farms: farmsWithTotalAcres, // Farms without fields but with totalAcres
 		totalAcres: totalAcresByGrower,
 	};
 };
