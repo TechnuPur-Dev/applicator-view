@@ -328,7 +328,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 	const message = `
   You are invited to join our platform!<br><br>
   Click the link below to join.<br><br>
-  ${inviteLink}<br><br>
+  <a href="${inviteLink}">${inviteLink}</a><br><br>
   If you did not expect this invitation, please ignore this email.
 `;
 	// Construct invite link
@@ -914,118 +914,135 @@ const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 		};
 	}
 };
-const getApplicatorByEmail = async (
-	growerId: number,
-	email: string,
-	options: PaginateOptions,
-) => {
-	// Set pagination parameters
-	const limit =
-		options.limit && parseInt(options.limit.toString(), 10) > 0
-			? parseInt(options.limit.toString(), 10)
-			: 10;
-	const page =
-		options.page && parseInt(options.page.toString(), 10) > 0
-			? parseInt(options.page.toString(), 10)
-			: 1;
-	const skip = (page - 1) * limit;
+// const getApplicatorByEmail = async (
+// 	growerId: number,
+// 	email: string,
+// 	options: PaginateOptions,
+// ) => {
+// 	// Set pagination parameters
+// 	const limit =
+// 		options.limit && parseInt(options.limit.toString(), 10) > 0
+// 			? parseInt(options.limit.toString(), 10)
+// 			: 10;
+// 	const page =
+// 		options.page && parseInt(options.page.toString(), 10) > 0
+// 			? parseInt(options.page.toString(), 10)
+// 			: 1;
+// 	const skip = (page - 1) * limit;
 
+// 	// Find all users matching the email pattern (debounced search)
+// 	const users = await prisma.user.findMany({
+// 		where: {
+// 			email: {
+// 				contains: email, // Case-insensitive partial match
+// 				mode: 'insensitive',
+// 			},
+// 			role: 'APPLICATOR',
+// 			NOT: {
+// 				// Exclude users already connected by grower with ACCEPTED or PENDING statuses
+// 				applicators: {
+// 					some: {
+// 						growerId,
+// 						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
+// 					},
+// 				},
+// 			},
+// 		},
+// 		select: {
+// 			id: true,
+// 			profileImage: true,
+// 			thumbnailProfileImage: true,
+// 			firstName: true,
+// 			lastName: true,
+// 			fullName: true,
+// 			email: true,
+// 		},
+// 		take: limit,
+// 		skip,
+// 	});
+
+// 	// Get total count of matching users
+// 	const totalResults = await prisma.user.count({
+// 		where: {
+// 			email: {
+// 				contains: email,
+// 				mode: 'insensitive',
+// 			},
+// 			role: 'APPLICATOR',
+// 			NOT: {
+// 				applicators: {
+// 					some: {
+// 						growerId,
+// 						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
+// 					},
+// 				},
+// 			},
+// 		},
+// 	});
+
+// 	const totalPages = Math.ceil(totalResults / limit);
+// 	// Return the paginated result including users, current page, limit, total pages, and total results
+// 	return {
+// 		result: users,
+// 		page,
+// 		limit,
+// 		totalPages,
+// 		totalResults,
+// 	};
+// };
+
+const getApplicatorByEmail = async (growerId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
-	const users = await prisma.user.findMany({
+	const user = await prisma.user.findFirst({
 		where: {
 			email: {
 				contains: email, // Case-insensitive partial match
 				mode: 'insensitive',
 			},
-			role: 'APPLICATOR',
-			NOT: {
-				// Exclude users already connected by grower with ACCEPTED or PENDING statuses
-				applicators: {
-					some: {
-						growerId,
-						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
-					},
+		},
+		include: {
+			state: {
+				select: {
+					id: true,
+					name: true,
 				},
 			},
 		},
-		select: {
-			id: true,
-			profileImage: true,
-			thumbnailProfileImage: true,
-			firstName: true,
-			lastName: true,
-			fullName: true,
-			email: true,
+		omit: {
+			password: true, // Exclude sensitive data
 		},
-		take: limit,
-		skip,
 	});
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Applicator with this email not found.',
+		);
+	}
 
-	// Get total count of matching users
-	const totalResults = await prisma.user.count({
+	if (user.role !== 'APPLICATOR') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'User exists but is not an applicator.',
+		);
+	}
+
+	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
-			email: {
-				contains: email,
-				mode: 'insensitive',
-			},
-			role: 'APPLICATOR',
-			NOT: {
-				applicators: {
-					some: {
-						growerId,
-						inviteStatus: { in: ['ACCEPTED', 'PENDING'] },
-					},
-				},
+			applicatorId_growerId: {
+				growerId: growerId,
+				applicatorId: user?.id,
 			},
 		},
 	});
 
-	const totalPages = Math.ceil(totalResults / limit);
-	// Return the paginated result including users, current page, limit, total pages, and total results
+	const { state } = user;
+
 	return {
-		result: users,
-		page,
-		limit,
-		totalPages,
-		totalResults,
+		inviteStatus: existingInvite ? existingInvite.inviteStatus : null,
+		...user,
+		state: state?.name,
 	};
 };
-// const getApplicatorByEmail = async (userEmail: string) => {
-// 	const applicator = await prisma.user.findFirst({
-// 		where: {
-// 			email: {
-// 				equals: userEmail,
-// 				mode: 'insensitive',
-// 			},
-// 			role: 'APPLICATOR',
-// 		},
-// 		include: {
-// 			state: {
-// 				select: {
-// 					id: true,
-// 					name: true,
-// 				},
-// 			},
-
-// 		},
-// 		omit: {
-// 			password: true, // Exclude sensitive data
-// 			businessName: true,
-// 			experience: true,
-// 		},
-// 	});
-// 	if (!applicator) {
-// 		throw new ApiError(
-// 			httpStatus.CONFLICT,
-// 			'applicator with this email not found.',
-// 		);
-// 	}
-
-// 	// Add total acres to the grower object
-// 	return {
-// 		...applicator,
-// 	};
-// };
 const sendInviteToApplicator = async (
 	userEmail: string,
 	user: User,
@@ -1043,8 +1060,35 @@ const sendInviteToApplicator = async (
 	}
 
 	const applicator = await prisma.user.findUnique({
-		where: { email: userEmail, role: 'APPLICATOR' },
+		where: { email: userEmail },
 	});
+	if (!applicator) {
+		// Send email invitation
+		const inviteLink = `https://applicator-ac.netlify.app/#/signup`;
+		const subject = 'Invitation Email';
+		const message = `
+	  You are invited to join our platform!<br><br>
+	  Click the link below to join.<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
+	  If you did not expect this invitation, please ignore this email.
+	`;
+
+		const html = await mailHtmlTemplate(subject, message);
+		await sendEmail({
+			emailTo: userEmail,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+		return { message: 'Invite sent successfully.' };
+	}
+
+	if (applicator?.role !== 'APPLICATOR') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'User exists but is not an applicator.',
+		);
+	}
 
 	const existingInvite = await prisma.applicatorGrower.findFirst({
 		where: {
@@ -1080,7 +1124,10 @@ const sendInviteToApplicator = async (
 
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (existingInvite.inviteStatus === 'REJECTED') {
+			if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'PENDING'
+			) {
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
@@ -1268,7 +1315,7 @@ const sendInviteToGrower = async (
 	const message = `
   You are invited to join our platform!<br><br>
   Click the link below to join.<br><br>
-  ${inviteLink}<br><br>
+  <a href="${inviteLink}">${inviteLink}</a><br><br>
   If you did not expect this invitation, please ignore this email.
 `;
 	if (grower) {

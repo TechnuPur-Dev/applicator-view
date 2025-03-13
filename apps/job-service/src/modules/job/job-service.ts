@@ -176,7 +176,7 @@ const createJob = async (user: User, data: CreateJob) => {
 		const message = `
 	  ${user.firstName} ${user.lastName} added a job that needs your confirmation.!<br><br>
 	  Click the link below to accept it.<br><br>
-	  ${inviteLink}<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
 	  If you did not expect this invitation, please ignore this email.
 	`;
 
