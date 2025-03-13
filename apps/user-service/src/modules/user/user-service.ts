@@ -1080,6 +1080,7 @@ const sendInviteToApplicator = async (
 			text: 'Request Invitation',
 			html,
 		});
+		return { message: 'Invite sent successfully.' };
 	}
 
 	if (applicator?.role !== 'APPLICATOR') {
@@ -1123,7 +1124,10 @@ const sendInviteToApplicator = async (
 
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (existingInvite.inviteStatus === 'REJECTED') {
+			if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'PENDING'
+			) {
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {

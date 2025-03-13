@@ -349,7 +349,11 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 		await prisma.applicatorGrower.update({
 			where: {
 				inviteToken: token,
-				grower: { profileStatus: 'INCOMPLETE' },
+				grower: {
+					is: {
+						profileStatus: 'INCOMPLETE',
+					},
+				},
 			},
 			data: {
 				inviteStatus: 'ACCEPTED',
@@ -373,28 +377,30 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			const invite = await prisma.applicatorGrower.update({
 				where: {
 					inviteToken: token,
-					// applicator: { profileStatus: 'INCOMPLETE' },
 				},
 				data: {
 					inviteStatus: 'ACCEPTED',
 					applicatorFirstName: firstName,
 					applicatorLastName: lastName,
 					applicator: {
-						create: {
-							role: 'APPLICATOR',
-							...(() => {
-								// eslint-disable-next-line @typescript-eslint/no-unused-vars
-								const { stateId, token, ...rest } = data; // Exclude stateId
-								return rest;
-							})(),
-							password,
-							fullName:
-								`${firstName || ''} ${lastName || ''}`.trim(),
-							profileStatus: 'COMPLETE',
-							joiningDate: new Date(),
-							state: data.stateId
-								? { connect: { id: data.stateId } }
-								: undefined,
+						connectOrCreate: {
+							where: { email: data.email }, // Assuming email is unique
+							create: {
+								role: 'APPLICATOR',
+								...(() => {
+									// eslint-disable-next-line @typescript-eslint/no-unused-vars
+									const { stateId, token, ...rest } = data;
+									return rest;
+								})(),
+								password,
+								fullName:
+									`${firstName || ''} ${lastName || ''}`.trim(),
+								profileStatus: 'COMPLETE',
+								joiningDate: new Date(),
+								state: data.stateId
+									? { connect: { id: data.stateId } }
+									: undefined,
+							},
 						},
 					},
 				},
@@ -408,7 +414,7 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			});
 
 			// Ensure `applicator` exists before proceeding
-			if (!invite.applicator || invite.applicator.id === undefined) {
+			if (!invite.applicator?.id) {
 				throw new Error('Applicator ID is missing');
 			}
 
@@ -418,12 +424,14 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				invite.pendingFarmPermission.length > 0
 			) {
 				await prisma.farmPermission.createMany({
-					data: invite.pendingFarmPermission.map((perm) => ({
-						farmId: perm.farmId,
-						applicatorId: invite.applicator?.id ?? 0, // ✅ Use safe optional chaining with a default value
-						canView: perm.canView,
-						canEdit: perm.canEdit,
-					})),
+					data: invite.pendingFarmPermission
+						.filter(Boolean) // ✅ Remove null/undefined entries
+						.map((perm) => ({
+							farmId: perm.farmId,
+							applicatorId: invite.applicator?.id ?? 0, // ✅ Avoid defaulting to `0`
+							canView: perm.canView,
+							canEdit: perm.canEdit,
+						})),
 				});
 			}
 
