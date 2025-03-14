@@ -360,7 +360,11 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				canManageFarms: true,
 				grower: {
 					update: {
-						...data,
+						...(() => {
+							// eslint-disable-next-line @typescript-eslint/no-unused-vars
+							const { token, ...rest } = data;
+							return rest;
+						})(),
 						password,
 						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
 						profileStatus: 'COMPLETE',
