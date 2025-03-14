@@ -464,6 +464,7 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	return {
 		inviteStatus: existingInvite ? existingInvite.inviteStatus : null,
 		...user,
+		...existingInvite,
 		state: state?.name,
 	};
 };
@@ -503,15 +504,18 @@ const getAllApplicators = async (
 				},
 			},
 		},
+		omit: {
+			inviteToken: true,
+		},
 		skip,
 		take: limit,
 		orderBy: { id: 'desc' },
 	});
-	// // Flatten worker object and exclude unwanted fields
-	// const flattenedApplicators = applicators.map(({ applicator, ...rest }) => ({
-	// 	...applicator,
-	// 	...rest,
-	// }));
+	// Flatten worker object and exclude unwanted fields
+	const flattenedApplicators = applicators.map(({ applicator, ...rest }) => ({
+		...applicator,
+		...rest,
+	}));
 
 	// Total workers count
 	const totalResults = await prisma.applicatorWorker.count({
@@ -521,7 +525,7 @@ const getAllApplicators = async (
 
 	// Return paginated results
 	return {
-		result: applicators,
+		result: flattenedApplicators,
 		page,
 		limit,
 		totalPages,
@@ -569,10 +573,18 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 					},
 				},
 			},
+			omit: {
+				inviteToken: true,
+			},
 			skip,
 			take: limit,
 			orderBy: { id: 'desc' },
 		});
+		// Flatten worker object and exclude unwanted fields
+		pendingInvites = pendingInvites.map(({ applicator, ...rest }) => ({
+			...applicator,
+			...rest,
+		}));
 	}
 	if (!isWorker) {
 		// Fetch pending invites
