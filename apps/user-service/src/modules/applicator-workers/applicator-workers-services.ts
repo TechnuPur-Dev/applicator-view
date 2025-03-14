@@ -20,7 +20,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 			'You are not authorized to perform this action.',
 		);
 	}
-
+	const token = generateInviteToken('WORKER');
 	return prisma.$transaction(async (prisma) => {
 		const worker = await prisma.user.create({
 			data: {
@@ -49,13 +49,13 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				businessName: true,
 			},
 		});
-
+	
 		const applicatorWorker = await prisma.applicatorWorker.create({
 			data: {
 				applicatorId: user.id,
 				workerId: worker.id,
 				workerType: data.title,
-				pilotPestLicenseNumber: data.pilotLicenseNumber,
+				pilotPestLicenseNumber: data.pilotPestLicenseNumber,
 				pilotLicenseNumber: data.pilotLicenseNumber,
 				businessLicenseNumber: data.businessLicenseNumber,
 				planeOrUnitNumber: data.planeOrUnitNumber,
@@ -66,6 +66,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				canViewPricingDetails: data.canViewPricingDetails ?? false,
 				code: data.code,
 				inviteStatus: 'PENDING',
+				inviteToken: token,
 				// lastLogin: new Date(), // Set current timestamp if null/undefined
 			},
 			omit: {
@@ -76,7 +77,6 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				updatedAt: true,
 			},
 		});
-		const token = generateInviteToken('WORKER');
 		const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
 		const subject = 'Invitation Email';
 		const message = `

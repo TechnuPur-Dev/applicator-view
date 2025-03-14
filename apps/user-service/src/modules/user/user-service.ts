@@ -1826,6 +1826,20 @@ const verifyInviteToken = async (token: string) => {
 		});
 		user = invite?.worker;
 		applicator = invite?.applicator;
+		if (!user) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'User not found or invite expired.',
+			);
+		}
+		const { state } = user;
+		return {
+			...user,
+			state: state?.name,
+			applicator,
+			isAlreadyExist:
+				invite?.worker.profileStatus === 'COMPLETE' ? true : false,
+		};
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
