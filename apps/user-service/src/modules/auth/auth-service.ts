@@ -448,13 +448,21 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 		await prisma.applicatorWorker.update({
 			where: {
 				inviteToken: token,
-				worker: { profileStatus: 'INCOMPLETE' },
+				worker: {
+					is: {
+						profileStatus: 'INCOMPLETE',
+					},
+				},
 			},
 			data: {
 				inviteStatus: 'ACCEPTED',
 				worker: {
 					update: {
-						...data,
+						...(() => {
+							// eslint-disable-next-line @typescript-eslint/no-unused-vars
+							const { token, ...rest } = data;
+							return rest;
+						})(),
 						password,
 						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
 						profileStatus: 'COMPLETE',
