@@ -290,7 +290,9 @@ const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 	const workerRecord = await prisma.applicatorWorker.findUnique({
 		where: {
 			applicatorId_workerId: { applicatorId, workerId },
-			inviteStatus: 'NOT_SENT',
+			inviteStatus: {
+				in: ['PENDING', 'REJECTED'],
+			},
 		},
 	});
 	if (!workerRecord) {
