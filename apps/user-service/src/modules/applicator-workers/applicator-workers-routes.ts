@@ -29,7 +29,7 @@ router
 		validateSchema(workerValidation.paramsSchema),
 		applicatorWorker.sendInviteToWorker,
 	);
-	router
+router
 	.route('/update/invite-status')
 	.put(
 		verifyToken,
@@ -58,16 +58,10 @@ router
 		validateSchema(workerValidation.searchWorkerByEmail),
 		applicatorWorker.searchWorkerByEmail,
 	);
-	router
-	.route('/getAllApplicators')
-	.get(
-		verifyToken,
-		applicatorWorker.getAllApplicators,
-	)
-	router
-	.route('/pendingInvites')
-	.get(
-		verifyToken,
-		applicatorWorker.getPendingInvites,
-	)
+router
+	.route('/get/all-applicators')
+	.get(verifyToken, applicatorWorker.getAllApplicators);
+router
+	.route('/pending-invites')
+	.get(verifyToken, applicatorWorker.getPendingInvites);
 export default router;

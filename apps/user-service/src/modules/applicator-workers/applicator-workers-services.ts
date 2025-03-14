@@ -431,42 +431,129 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 		state: state?.name,
 	};
 };
-const getAllApplicators = async () => {
-	const workerApplicators = await prisma.applicatorWorker.findMany({
-		include: { applicator: true }, 
+const getAllApplicators = async (
+	workerId: number,
+	options: PaginateOptions,
+) => {
+	// Set pagination parameters
+	const limit =
+		options.limit && parseInt(options.limit.toString(), 10) > 0
+			? parseInt(options.limit.toString(), 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page.toString(), 10) > 0
+			? parseInt(options.page.toString(), 10)
+			: 1;
+	const skip = (page - 1) * limit;
+	const applicators = await prisma.applicatorWorker.findMany({
+		where: {
+			workerId,
+		},
+		include: {
+			// inviteStatus: true,
+			applicator: {
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
+				omit: {
+					role: true,
+					password: true,
+					stateId: true,
+				},
+			},
+		},
+		skip,
+		take: limit,
+		orderBy: { id: 'desc' },
 	});
-	 return workerApplicators.map((worker) => worker.applicator);;
+	// // Flatten worker object and exclude unwanted fields
+	// const flattenedApplicators = applicators.map(({ applicator, ...rest }) => ({
+	// 	...applicator,
+	// 	...rest,
+	// }));
+
+	// Total workers count
+	const totalResults = await prisma.applicatorWorker.count({
+		where: { workerId },
+	});
+	const totalPages = Math.ceil(totalResults / limit);
+
+	// Return paginated results
+	return {
+		result: applicators,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
-const getPendingInvites = async (user: User) => {
+const getPendingInvites = async (user: User, options: PaginateOptions) => {
+	// Set pagination parameters
+	const limit =
+		options.limit && parseInt(options.limit.toString(), 10) > 0
+			? parseInt(options.limit.toString(), 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page.toString(), 10) > 0
+			? parseInt(options.page.toString(), 10)
+			: 1;
+	const skip = (page - 1) * limit;
+
+	// Determine the correct filter based on user role
+	const isWorker = user.role === 'WORKER';
+
+	// Fetch pending invites
 	const pendingInvites = await prisma.applicatorWorker.findMany({
 		where: {
 			inviteStatus: 'PENDING',
-			OR:
-				user.role === 'WORKER'
-					? [{ workerId: user.id }]
-					: [{ applicatorId: user.id }],
+			[isWorker ? 'workerId' : 'applicatorId']: user.id,
 		},
 		include: {
-			worker: true,
-			applicator: true,
+			[isWorker ? 'applicator' : 'worker']: {
+				include: {
+					state: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
+				omit: {
+					role: true,
+					password: true,
+					stateId: true,
+				},
+			},
+		},
+		skip,
+		take: limit,
+		orderBy: { id: 'desc' },
+	});
+
+	// Get total count
+	const totalResults = await prisma.applicatorWorker.count({
+		where: {
+			inviteStatus: 'PENDING',
+			[isWorker ? 'workerId' : 'applicatorId']: user.id,
 		},
 	});
 
-	const applicators: any[] = [];
-	const workers: any[] = [];
+	// Calculate total pages
+	const totalPages = Math.ceil(totalResults / limit);
 
-	pendingInvites.forEach((item) => {
-		if (user.role === 'WORKER' && item.applicator) {
-			if (!applicators.some((app) => app.id === item.applicator.id)) {
-				applicators.push(item.applicator);
-			}
-		} else if (user.role === 'APPLICATOR' && item.worker) {
-			if (!workers.some((wrk) => wrk.id === item.worker.id)) {
-				workers.push(item.worker);
-			}
-		}
-	});
-	return user.role === 'WORKER' ? { applicators } : { workers };
+	// Return paginated results
+	return {
+		result: pendingInvites,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 
 export default {
