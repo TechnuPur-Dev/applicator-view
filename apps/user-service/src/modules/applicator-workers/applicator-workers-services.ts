@@ -49,7 +49,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				businessName: true,
 			},
 		});
-	
+
 		const applicatorWorker = await prisma.applicatorWorker.create({
 			data: {
 				applicatorId: user.id,
@@ -545,34 +545,76 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 
 	// Determine the correct filter based on user role
 	const isWorker = user.role === 'WORKER';
+	console.log(isWorker);
 
-	// Fetch pending invites
-	const pendingInvites = await prisma.applicatorWorker.findMany({
-		where: {
-			inviteStatus: 'PENDING',
-			[isWorker ? 'workerId' : 'applicatorId']: user.id,
-		},
-		include: {
-			[isWorker ? 'applicator' : 'worker']: {
-				include: {
-					state: {
-						select: {
-							id: true,
-							name: true,
+	let pendingInvites;
+	if (isWorker) {
+		// Fetch pending invites
+		pendingInvites = await prisma.applicatorWorker.findMany({
+			where: {
+				inviteStatus: 'PENDING',
+				workerId: user.id,
+			},
+			include: {
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
 						},
 					},
-				},
-				omit: {
-					role: true,
-					password: true,
-					stateId: true,
+					omit: {
+						role: true,
+						password: true,
+						stateId: true,
+					},
 				},
 			},
-		},
-		skip,
-		take: limit,
-		orderBy: { id: 'desc' },
-	});
+			skip,
+			take: limit,
+			orderBy: { id: 'desc' },
+		});
+	}
+	if (!isWorker) {
+		// Fetch pending invites
+		pendingInvites = await prisma.applicatorWorker.findMany({
+			where: {
+				inviteStatus: 'PENDING',
+				applicatorId: user.id,
+			},
+			select: {
+				dollarPerAcre: true,
+				percentageFee: true,
+				code: true,
+				worker: {
+					select: {
+						id: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						phoneNumber: true,
+						email: true,
+						address1: true,
+						address2: true,
+						stateId: true,
+						county: true,
+						township: true,
+						zipCode: true,
+					},
+				},
+			},
+			skip,
+			take: limit,
+			orderBy: { id: 'desc' },
+		});
+		// Flatten worker object and exclude unwanted fields
+		pendingInvites = pendingInvites.map(({ worker, ...rest }) => ({
+			...worker, // Flatten worker fields
+			...rest, // Spread other fields from applicatorWorker
+		}));
+	}
 
 	// Get total count
 	const totalResults = await prisma.applicatorWorker.count({

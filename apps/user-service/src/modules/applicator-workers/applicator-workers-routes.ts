@@ -26,7 +26,7 @@ router
 	.route('/send/invite/:id')
 	.put(
 		verifyToken,
-		validateSchema(workerValidation.paramsSchema),
+		validateSchema(workerValidation.sendInviteSchema),
 		applicatorWorker.sendInviteToWorker,
 	);
 router

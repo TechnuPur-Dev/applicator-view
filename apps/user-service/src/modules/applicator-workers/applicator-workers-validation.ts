@@ -90,7 +90,22 @@ const searchWorkerByEmail: Schema = Joi.object({
 	params: Joi.object({
 		email: Joi.string().required(),
 	}).required(),
-
+});
+const sendInviteSchema: Schema = Joi.object({
+	params: Joi.object({
+		id: Joi.number().integer().positive().required(), // growerId should be a positive number
+	}).required(),
+	body: Joi.object({
+		pilotPestLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
+		pilotLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
+		businessLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
+		planeOrUnitNumber: Joi.string().min(1).max(50).optional(), // Nullable field
+		percentageFee: Joi.number().precision(2).min(0).optional(), // Decimal field
+		dollarPerAcre: Joi.number().precision(2).min(0).optional(), // Decimal field
+		autoAcceptJobs: Joi.boolean().default(false).optional(),
+		canViewPricingDetails: Joi.boolean().default(false).optional(),
+		code: Joi.string().optional(),
+	}).optional(),
 });
 export default {
 	workerCreateSchema,
@@ -98,4 +113,5 @@ export default {
 	updateSchema,
 	updateInviteStatusSchema,
 	searchWorkerByEmail,
+	sendInviteSchema,
 };
