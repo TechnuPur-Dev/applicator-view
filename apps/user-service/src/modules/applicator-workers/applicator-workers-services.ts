@@ -286,8 +286,15 @@ const deleteWorker = async (applicatorId: number, workerId: number) => {
 
 	return { result: 'Deleted successfully' };
 };
-const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
-	const workerRecord = await prisma.applicatorWorker.findUnique({
+const sendInviteToWorker = async (
+	applicatorId: number,
+	workerId: number,
+	data: ApplicatorWorker,
+) => {
+	let invite;
+	const token = generateInviteToken('WORKER');
+
+	const existingInvite = await prisma.applicatorWorker.findUnique({
 		where: {
 			applicatorId_workerId: { applicatorId, workerId },
 			inviteStatus: {
@@ -295,28 +302,60 @@ const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 			},
 		},
 	});
-	if (!workerRecord) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'Worker not found or invite already sent.',
-		);
-	}
-	const user = await prisma.applicatorWorker.update({
-		where: {
-			applicatorId_workerId: { applicatorId, workerId },
-		},
-		include: {
-			worker: {
-				select: {
-					email: true,
+	if (existingInvite) {
+		if (
+			existingInvite.inviteStatus === 'REJECTED' ||
+			existingInvite.inviteStatus === 'PENDING'
+		) {
+			invite = await prisma.applicatorWorker.update({
+				where: {
+					applicatorId_workerId: { applicatorId, workerId },
+				},
+				include: {
+					worker: {
+						select: {
+							email: true,
+						},
+					},
+				},
+				data: {
+					...data,
+					inviteStatus: 'PENDING', // Only updating the inviteStatus field
+					inviteToken: token,
+				},
+			});
+		} else {
+			throw new ApiError(
+				httpStatus.BAD_REQUEST,
+				'An active invitation already exists.',
+			);
+		}
+	} else {
+		invite = await prisma.applicatorWorker.create({
+			data: {
+				applicatorId,
+				workerId,
+				inviteStatus: 'PENDING',
+				inviteToken: token,
+				workerType: 'PILOT',
+				pilotPestLicenseNumber: data.pilotLicenseNumber,
+				pilotLicenseNumber: data.pilotLicenseNumber,
+				businessLicenseNumber: data.businessLicenseNumber,
+				planeOrUnitNumber: data.planeOrUnitNumber,
+				percentageFee: data.percentageFee,
+				dollarPerAcre: data.dollarPerAcre,
+				autoAcceptJobs: data.autoAcceptJobs ?? false,
+				canViewPricingDetails: data.canViewPricingDetails ?? false,
+				code: data.code,
+			},
+			select: {
+				worker: {
+					select: { email: true },
 				},
 			},
-		},
-		data: {
-			inviteStatus: 'PENDING', // Only updating the inviteStatus field
-		},
-	});
-	const token = generateInviteToken('WORKER');
+		});
+	}
+
 	const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
 	const subject = 'Invitation Email';
 
@@ -326,8 +365,8 @@ const sendInviteToWorker = async (applicatorId: number, workerId: number) => {
 	  <a href="${inviteLink}">${inviteLink}</a><br><br>
 	  If you did not expect this invitation, please ignore this email.
 	`;
-	if (user) {
-		const email = user?.worker?.email;
+	if (invite) {
+		const email = invite?.worker?.email;
 
 		if (!email) {
 			throw new Error('Email address is not available for this worker.');
