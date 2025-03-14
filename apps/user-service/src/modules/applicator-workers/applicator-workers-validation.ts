@@ -34,7 +34,7 @@ const workerCreateSchema: Schema = Joi.object({
 			.pattern(/^\d{5}(-\d{4})?$/)
 			.required(),
 		pilotPestLicenseNumber: Joi.string().allow('').optional(), // Nullable field
-		businessPestLicenseNumber: Joi.string().allow('').optional(), // Nullable field
+		businessLicenseNumber: Joi.string().allow('').optional(), // Nullable field
 		pilotLicenseNumber: Joi.string().allow('').optional(), // Nullable field
 		planeOrUnitNumber: Joi.string().allow('').optional(), // Nullable field
 		dollarPerAcre: Joi.number().precision(2).min(0).optional(), // Decimal field

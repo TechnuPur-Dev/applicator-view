@@ -564,11 +564,12 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	const { id: userId, role } = user;
 	const { status, userId: targetUserId } = data;
 
-	// Determine the applicatorId and growerId based on the role
+	// Determine the applicatorId , growerId and worker id based on the role
 	const isGrower = role === 'GROWER';
 	const applicatorId = isGrower ? targetUserId : userId;
 	const growerId = isGrower ? userId : targetUserId;
-
+	
+   
 	if (status === 'ACCEPTED') {
 		await prisma.$transaction(async (prisma) => {
 			// Update the inviteStatus field
@@ -1943,6 +1944,7 @@ const acceptOrRejectInviteThroughEmail = async (
 ) => {
 	// Verify token and extract role
 	const role = verifyInvite(token);
+	console.log(role)
 	if (!role) {
 		throw new ApiError(
 			httpStatus.UNAUTHORIZED,
@@ -2037,6 +2039,53 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
 				});
+			});
+		}
+	}
+	else if (role === 'WORKER') {
+		if (inviteStatus === 'ACCEPTED') {
+		await prisma.$transaction(async (prisma) => {
+				// Update the inviteStatus field
+				 await prisma.applicatorWorker.update({
+					where: {
+						inviteToken: token,
+						inviteStatus: 'PENDING',
+						worker: {
+							profileStatus: 'INCOMPLETE',
+						},
+					},
+					data: {
+						inviteStatus, // Only updating the inviteStatus field
+					},
+					select: {
+						id: true,
+						applicator: {
+							select: {
+								id: true,
+								state: { select: { name: true } },
+							},
+						},
+					},
+				});
+           	// Ensure `applicator` exists before proceeding
+				
+			});
+		
+		} else if (inviteStatus === 'REJECTED') {
+			await prisma.$transaction(async (prisma) => {
+				 await prisma.applicatorWorker.update({
+					where: {
+						inviteToken: token,
+						inviteStatus: 'PENDING',
+						worker: {
+							profileStatus: 'INCOMPLETE',
+						},
+					},
+					data: {
+						inviteStatus,
+					},
+				});
+				
 			});
 		}
 	}
