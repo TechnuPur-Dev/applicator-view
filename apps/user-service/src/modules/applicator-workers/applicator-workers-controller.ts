@@ -58,9 +58,11 @@ const deleteWorker = catchAsync(async (req: Request, res: Response) => {
 const sendInviteToWorker = catchAsync(async (req: Request, res: Response) => {
 	const applicatorId = req.payload.id;
 	const workerId = +req.params.id;
+	const data = req.body;
 	const result = await applicatorWorkersServices.sendInviteToWorker(
 		applicatorId,
 		workerId,
+		data,
 	);
 	res.status(httpStatus.OK).json(result);
 });
