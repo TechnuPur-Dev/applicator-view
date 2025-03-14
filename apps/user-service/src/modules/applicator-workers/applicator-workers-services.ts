@@ -419,12 +419,9 @@ const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
 };
 const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
-	const user = await prisma.user.findFirst({
+	const user = await prisma.user.findUnique({
 		where: {
-			email: {
-				contains: email, // Case-insensitive partial match
-				mode: 'insensitive',
-			},
+			email,
 		},
 		include: {
 			state: {

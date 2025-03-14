@@ -1001,12 +1001,9 @@ const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 
 const getApplicatorByEmail = async (growerId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
-	const user = await prisma.user.findFirst({
+	const user = await prisma.user.findUnique({
 		where: {
-			email: {
-				contains: email, // Case-insensitive partial match
-				mode: 'insensitive',
-			},
+			email,
 		},
 		include: {
 			state: {
