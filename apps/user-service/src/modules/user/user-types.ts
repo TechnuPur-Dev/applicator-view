@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { $Enums, UserRole } from '@prisma/client';
 import { InviteStatus, ProfileStatus } from '@prisma/client';
 
 interface UploadProfileImage {
@@ -36,4 +36,13 @@ interface UpdateArchiveStatus {
 	archiveStatus: boolean;
 	canManageFarmsStauts: boolean;
 }
-export { UploadProfileImage, UpdateUser, UpdateStatus, UpdateArchiveStatus };
+interface ResponseData {
+	growerFirstName?: string | null;
+	growerLastName?: string | null;
+	inviteStatus?: $Enums.InviteStatus;
+	isArchivedByApplicator?: boolean;
+	canManageFarms?: boolean;
+	grower?: any;
+	inviteUrl?: string;
+  };
+export { UploadProfileImage, UpdateUser, UpdateStatus, UpdateArchiveStatus,ResponseData };
