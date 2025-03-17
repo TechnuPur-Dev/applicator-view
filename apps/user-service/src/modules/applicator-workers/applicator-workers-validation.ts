@@ -83,7 +83,7 @@ const updateSchema: Schema = Joi.object({
 const updateInviteStatusSchema: Schema = Joi.object({
 	body: Joi.object({
 		status: Joi.string().valid('ACCEPTED', 'REJECTED').required(),
-		workerId: Joi.number().integer().positive().required(),
+		applicatorId: Joi.number().integer().positive().required(),
 	}).required(),
 });
 const searchWorkerByEmail: Schema = Joi.object({

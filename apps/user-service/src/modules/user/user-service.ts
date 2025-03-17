@@ -327,6 +327,16 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 		...grower,
 		farms: farmsWithTotalAcres, // Farms without fields but with totalAcres
 		totalAcres: totalAcresByGrower,
+		inviteUrl:
+			applicatorGrower?.inviteStatus === 'PENDING'
+				? `https://grower-ac.netlify.app/#/invitationView?token=${applicatorGrower.inviteToken}`
+				: undefined,
+		isInviteExpired:
+			applicatorGrower?.inviteStatus === 'PENDING'
+				? applicatorGrower?.expiresAt
+					? new Date(applicatorGrower?.expiresAt) <= new Date()
+					: true
+				: undefined,
 	};
 };
 
@@ -356,7 +366,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 				inviteStatus: 'PENDING',
 				inviteInitiator: 'APPLICATOR',
 				inviteToken: token,
-				expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+				expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 			},
 		});
 
@@ -573,17 +583,19 @@ const getAllApplicatorsByGrower = async (
 	});
 	// ✅ Ensure `applicator` is never null by adding `email`
 	const updatedApplicators = applicators.map((applicator) => {
-		
 		return {
 			...applicator,
 			applicator: applicator.applicator ?? { email: applicator.email }, // Ensure `applicator` is not null
 			inviteUrl:
-			applicator.inviteStatus === 'PENDING'
-				? `https://applicator-ac.netlify.app/#/invitationView?token=${applicator.inviteToken}`
-				: undefined,
-				expiresAt:applicator.inviteStatus === 'PENDING'?new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-				: applicator.expiresAt
-			
+				applicator.inviteStatus === 'PENDING'
+					? `https://applicator-ac.netlify.app/#/invitationView?token=${applicator.inviteToken}`
+					: undefined,
+			isInviteExpired:
+				applicator.inviteStatus === 'PENDING'
+					? applicator.expiresAt
+						? new Date(applicator.expiresAt) <= new Date()
+						: true
+					: undefined,
 		};
 	});
 
@@ -598,56 +610,43 @@ const getAllApplicatorsByGrower = async (
 	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {
-	// Destructure
+	// Destructure input values
 	const { id: userId, role } = user;
 	const { status, userId: targetUserId } = data;
 
-	// Determine the applicatorId , growerId and worker id based on the role
+	// Determine IDs based on the role
 	const isGrower = role === 'GROWER';
 	const isWorker = role === 'WORKER';
+	const isApplicator = role === 'APPLICATOR';
 	const applicatorId = isGrower || isWorker ? targetUserId : userId;
 	const growerId = isGrower ? userId : targetUserId;
+
+	// Handle Worker Invitations
 	if (isWorker) {
-		if (status === 'ACCEPTED') {
-			await prisma.applicatorWorker.update({
-				where: {
-					applicatorId_workerId: {
-						applicatorId,
-						workerId: userId, // worker id extract by payload (backen)
-					},
-				},
-				data: { inviteStatus: status },
-			});
+		await prisma.applicatorWorker.update({
+			where: {
+				applicatorId_workerId: { applicatorId, workerId: userId },
+			},
+			data: { inviteStatus: status },
+		});
 
-			return { message: 'Worker invite accepted successfully.' };
-		}
+		return {
+			message: `Worker invite ${status.toLowerCase()} successfully.`,
+		};
+	}
 
-		if (status === 'REJECTED') {
-			await prisma.applicatorWorker.update({
-				where: {
-					applicatorId_workerId: {
-						applicatorId,
-						workerId: userId, //worker id extract by payload (backen)
-					},
-				},
-				data: { inviteStatus: status },
-			});
-
-			return { message: 'Worker invite rejected successfully.' };
-		}
-	} else {
+	// Handle Applicator & Grower Invitations
+	if (isApplicator || isGrower) {
 		if (status === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
-				// Update the inviteStatus field
+				// Update the inviteStatus and (for growers) `canManageFarms`
 				const invite = await prisma.applicatorGrower.update({
 					where: {
-						applicatorId_growerId: {
-							applicatorId,
-							growerId,
-						},
+						applicatorId_growerId: { applicatorId, growerId },
 					},
 					data: {
-						inviteStatus: status, // Only updating the inviteStatus field
+						inviteStatus: status,
+						...(isGrower ? { canManageFarms: true } : {}), // Growers get farm management permission
 					},
 					select: {
 						id: true,
@@ -661,12 +660,12 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 					},
 				});
 
-				// Ensure `applicator` exists before proceeding
-				if (!invite.applicator || invite.applicator.id === undefined) {
+				// Ensure `applicator` exists
+				if (!invite.applicator?.id) {
 					throw new Error('Applicator ID is missing');
 				}
 
-				// Ensure `pendingFarmPermission` is an array before mapping over it
+				// Transfer pending farm permissions if they exist
 				if (
 					Array.isArray(invite.pendingFarmPermission) &&
 					invite.pendingFarmPermission.length > 0
@@ -674,44 +673,34 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 					await prisma.farmPermission.createMany({
 						data: invite.pendingFarmPermission.map((perm) => ({
 							farmId: perm.farmId,
-							applicatorId: invite.applicator?.id ?? 0, // ✅ Use safe optional chaining with a default value
+							applicatorId: invite?.applicator?.id ?? 0,
 							canView: perm.canView,
 							canEdit: perm.canEdit,
 						})),
 					});
-				}
 
-				// Delete pending permissions only if `invite.id` is valid
-				await prisma.pendingFarmPermission.deleteMany({
-					where: { inviteId: invite.id },
-				});
+					// Remove pending permissions after transfer
+					await prisma.pendingFarmPermission.deleteMany({
+						where: { inviteId: invite.id },
+					});
+				}
 			});
 
-			return {
-				message: 'Invite accepted successfully.',
-			};
+			return { message: 'Invite accepted successfully.' };
 		}
+
 		if (status === 'REJECTED') {
-			// Update the inviteStatus field
 			await prisma.applicatorGrower.update({
 				where: {
-					applicatorId_growerId: {
-						applicatorId,
-						growerId,
-					},
+					applicatorId_growerId: { applicatorId, growerId },
 				},
-				data: {
-					inviteStatus: status, // Only updating the inviteStatus field
-					canManageFarms:true
-				},
+				data: { inviteStatus: 'REJECTED' },
 			});
-
-			return {
-				message: 'Invite rejected successfully.',
-			};
+			return { message: 'Invite rejected successfully.' };
 		}
 	}
 };
+
 // delete grower
 
 const deleteGrower = async (growerId: number, applicatorId: number) => {
@@ -1203,7 +1192,9 @@ const sendInviteToApplicator = async (
 					data: {
 						inviteStatus: 'PENDING',
 						inviteToken,
-						expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+						expiresAt: new Date(
+							Date.now() + 3 * 24 * 60 * 60 * 1000,
+						),
 						inviteInitiator: 'GROWER',
 						canManageFarms: data.canManageFarms,
 					},
@@ -1242,7 +1233,7 @@ const sendInviteToApplicator = async (
 					inviteInitiator: 'GROWER',
 					canManageFarms: data.canManageFarms,
 					inviteToken,
-					expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+					expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					email: userEmail,
 				},
 				select: { id: true }, // Select only required fields
@@ -1294,7 +1285,7 @@ const sendInviteToGrower = async (
 		}[];
 	},
 ) => {
-	const { id: applicatorId, role, firstName, lastName } = currentUser;
+	const { id: applicatorId, role } = currentUser;
 	const token = generateInviteToken('GROWER');
 
 	if (role !== 'APPLICATOR')
@@ -1326,7 +1317,9 @@ const sendInviteToGrower = async (
 					data: {
 						inviteStatus: 'PENDING',
 						inviteToken: token,
-						expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+						expiresAt: new Date(
+							Date.now() + 3 * 24 * 60 * 60 * 1000,
+						),
 						inviteInitiator: 'APPLICATOR',
 						canManageFarms: data.canManageFarms,
 					},
@@ -1365,7 +1358,7 @@ const sendInviteToGrower = async (
 					inviteInitiator: 'APPLICATOR',
 					canManageFarms: data.canManageFarms,
 					inviteToken: token,
-					expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+					expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					email: grower?.email,
 				},
 				select: { id: true }, // Select only required fields
@@ -1504,9 +1497,9 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 		if (grower.inviteStatus === 'PENDING') {
 			const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${grower.inviteToken}`;
 			responseData.inviteUrl = inviteLink;
-			responseData.expiresAt = new Date(
-				Date.now() + 3 * 24 * 60 * 60 * 1000,
-			);
+			responseData.isInviteExpired = grower.expiresAt
+				? new Date(grower.expiresAt) <= new Date()
+				: true;
 		}
 	}
 	// Add total acres to the grower object
@@ -1750,11 +1743,16 @@ const verifyInviteToken = async (token: string) => {
 
 	// Fetch user based on role
 	if (role === 'GROWER') {
-		const invite = await prisma.applicatorGrower.findUnique({
+		const invite = await prisma.applicatorGrower.findFirst({
 			where: {
 				inviteToken: token,
+				expiresAt: {
+					gte: new Date(), // Ensures the invite is still valid
+				},
 				grower: {
-					profileStatus: 'INCOMPLETE',
+					is: {
+						profileStatus: 'INCOMPLETE',
+					},
 				},
 			},
 			select: {
@@ -1806,13 +1804,12 @@ const verifyInviteToken = async (token: string) => {
 				invite.grower.profileStatus === 'COMPLETE' ? true : false,
 		};
 	} else if (role === 'APPLICATOR') {
-		const invite = await prisma.applicatorGrower.findUnique({
+		const invite = await prisma.applicatorGrower.findFirst({
 			where: {
 				inviteToken: token,
-				expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-				// applicator: {
-				// 	profileStatus: 'INCOMPLETE',
-				// },
+				expiresAt: {
+					gte: new Date(), // Ensures the invite is still valid
+				},
 			},
 			select: {
 				email: true,
@@ -1869,8 +1866,13 @@ const verifyInviteToken = async (token: string) => {
 		const invite = await prisma.applicatorWorker.findUnique({
 			where: {
 				inviteToken: token,
+				expiresAt: {
+					gte: new Date(), // Ensures the invite is still valid
+				},
 				worker: {
-					profileStatus: 'INCOMPLETE',
+					is: {
+						profileStatus: 'INCOMPLETE',
+					},
 				},
 			},
 			select: {
@@ -2041,7 +2043,7 @@ const acceptOrRejectInviteThroughEmail = async (
 					},
 					data: {
 						inviteStatus, // Only updating the inviteStatus field
-						canManageFarms:true
+						canManageFarms: true,
 					},
 					select: {
 						id: true,

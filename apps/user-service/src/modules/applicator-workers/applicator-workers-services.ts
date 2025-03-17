@@ -67,7 +67,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				code: data.code,
 				inviteStatus: 'PENDING',
 				inviteToken: token,
-				expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+				expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				// lastLogin: new Date(), // Set current timestamp if null/undefined
 			},
 			omit: {
@@ -201,22 +201,20 @@ const getWorkerById = async (applicatorId: number, workerId: number) => {
 	if (!workerRecord) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Worker not found.');
 	}
-	let inviteUrl;
-	if (workerRecord) {
-		if (workerRecord.inviteStatus === 'PENDING') {
-			 inviteUrl=`https://applicator-ac.netlify.app/#/workerInvitationView?token=${workerRecord.inviteToken}`;
-			workerRecord.expiresAt = new Date(
-				Date.now() + 3 * 24 * 60 * 60 * 1000,
-			);
-		}
-	}
-	
+	const inviteUrl = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${workerRecord.inviteToken}`;
+
 	const { worker, ...rest } = workerRecord;
 	return {
-		
 		...worker, // Flatten worker fields
 		...rest, // Spread other fields from applicatorWorker
-		inviteUrl
+		inviteUrl:
+			workerRecord.inviteStatus === 'PENDING' ? inviteUrl : undefined,
+		isInviteExpired:
+			workerRecord.inviteStatus === 'PENDING'
+				? workerRecord?.expiresAt
+					? new Date(workerRecord?.expiresAt) <= new Date()
+					: true
+				: undefined,
 	};
 };
 const updateWorker = async (
@@ -335,7 +333,7 @@ const sendInviteToWorker = async (
 					...data,
 					inviteStatus: 'PENDING', // Only updating the inviteStatus field
 					inviteToken: token,
-					expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+					expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				},
 			});
 		} else {
@@ -351,7 +349,7 @@ const sendInviteToWorker = async (
 				workerId,
 				inviteStatus: 'PENDING',
 				inviteToken: token,
-				expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+				expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				workerType: 'PILOT',
 				pilotPestLicenseNumber: data.pilotLicenseNumber,
 				pilotLicenseNumber: data.pilotLicenseNumber,
@@ -400,8 +398,8 @@ const sendInviteToWorker = async (
 		};
 	}
 };
-const updateInviteStatus = async (applicatorId: number, data: UpdateStatus) => {
-	const { workerId, status } = data;
+const updateInviteStatus = async (workerId: number, data: UpdateStatus) => {
+	const { applicatorId, status } = data;
 
 	if (status === 'ACCEPTED') {
 		await prisma.applicatorWorker.update({

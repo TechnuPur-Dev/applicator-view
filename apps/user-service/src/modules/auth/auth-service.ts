@@ -366,6 +366,9 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 		const grower = await prisma.applicatorGrower.update({
 			where: {
 				inviteToken: token,
+				expiresAt: {
+					gte: new Date(), // Ensures the invite is still valid
+				},
 				grower: {
 					is: {
 						profileStatus: 'INCOMPLETE',
@@ -399,6 +402,9 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			const invite = await prisma.applicatorGrower.update({
 				where: {
 					inviteToken: token,
+					expiresAt: {
+						gte: new Date(), // Ensures the invite is still valid
+					},
 				},
 				data: {
 					inviteStatus: 'ACCEPTED',
@@ -471,6 +477,9 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 		const worker = await prisma.applicatorWorker.update({
 			where: {
 				inviteToken: token,
+				expiresAt: {
+					gte: new Date(), // Ensures the invite is still valid
+				},
 				worker: {
 					is: {
 						profileStatus: 'INCOMPLETE',
