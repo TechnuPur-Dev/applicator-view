@@ -1,5 +1,6 @@
 import { $Enums, UserRole } from '@prisma/client';
 import { InviteStatus, ProfileStatus } from '@prisma/client';
+import { User } from '../../../../../shared/types/global';
 
 interface UploadProfileImage {
 	statusCode: number;
@@ -43,7 +44,13 @@ interface ResponseData {
 	inviteStatus?: $Enums.InviteStatus;
 	isArchivedByApplicator?: boolean;
 	canManageFarms?: boolean;
-	grower?: any;
+	grower?: User;
 	inviteUrl?: string;
-  };
-export { UploadProfileImage, UpdateUser, UpdateStatus, UpdateArchiveStatus,ResponseData };
+}
+export {
+	UploadProfileImage,
+	UpdateUser,
+	UpdateStatus,
+	UpdateArchiveStatus,
+	ResponseData,
+};
