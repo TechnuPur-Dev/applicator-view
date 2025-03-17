@@ -38,6 +38,7 @@ interface UpdateArchiveStatus {
 	canManageFarmsStauts: boolean;
 }
 interface ResponseData {
+	expiresAt?: Date|null;
 	growerFirstName?: string | null;
 	growerLastName?: string | null;
 	inviteStatus?: $Enums.InviteStatus;

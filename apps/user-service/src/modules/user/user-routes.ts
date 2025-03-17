@@ -124,5 +124,12 @@ router
 		validateSchema(userValidation.respondInviteToken),
 		userController.acceptOrRejectInviteThroughEmail,
 	);
+	router
+	.route('/pending-invites/:id')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.getPendingInvitesById,
+	);
 	
 export default router;
