@@ -569,8 +569,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	const isWorker = role === 'WORKER';
 	const applicatorId =  isGrower || isWorker ? targetUserId : userId;
 	const growerId = isGrower ? userId : targetUserId;
-	console.log(isWorker,"isWorker")
-	console.log(isGrower,"isWorker")
+
 	// Handling WORKER role 
 	if (isWorker) {
 		if (status === 'ACCEPTED') {
@@ -600,8 +599,9 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 
 			return { message: 'Worker invite rejected successfully.' };
 		}
-	}else{
+	}else{ // handle grower and applicator role
 	if (status === 'ACCEPTED') {
+		
 		await prisma.$transaction(async (prisma) => {
 			// Update the inviteStatus field
 			const invite = await prisma.applicatorGrower.update({
@@ -613,6 +613,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 				},
 				data: {
 					inviteStatus: status, // Only updating the inviteStatus field
+					canManageFarms:true
 				},
 				select: {
 					id: true,
@@ -1973,7 +1974,6 @@ const acceptOrRejectInviteThroughEmail = async (
 ) => {
 	// Verify token and extract role
 	const role = verifyInvite(token);
-	console.log(role)
 	if (!role) {
 		throw new ApiError(
 			httpStatus.UNAUTHORIZED,
@@ -1994,6 +1994,7 @@ const acceptOrRejectInviteThroughEmail = async (
 					},
 					data: {
 						inviteStatus, // Only updating the inviteStatus field
+						canManageFarms:true
 					},
 					select: {
 						id: true,
