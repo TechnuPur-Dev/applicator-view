@@ -356,6 +356,7 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 				inviteStatus: 'PENDING',
 				inviteInitiator: 'APPLICATOR',
 				inviteToken: token,
+				expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
 			},
 		});
 
@@ -1202,6 +1203,7 @@ const sendInviteToApplicator = async (
 					data: {
 						inviteStatus: 'PENDING',
 						inviteToken,
+						expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 						inviteInitiator: 'GROWER',
 						canManageFarms: data.canManageFarms,
 					},
@@ -1240,6 +1242,7 @@ const sendInviteToApplicator = async (
 					inviteInitiator: 'GROWER',
 					canManageFarms: data.canManageFarms,
 					inviteToken,
+					expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					email: userEmail,
 				},
 				select: { id: true }, // Select only required fields
@@ -1323,6 +1326,7 @@ const sendInviteToGrower = async (
 					data: {
 						inviteStatus: 'PENDING',
 						inviteToken: token,
+						expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 						inviteInitiator: 'APPLICATOR',
 						canManageFarms: data.canManageFarms,
 					},
@@ -1361,6 +1365,7 @@ const sendInviteToGrower = async (
 					inviteInitiator: 'APPLICATOR',
 					canManageFarms: data.canManageFarms,
 					inviteToken: token,
+					expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					email: grower?.email,
 				},
 				select: { id: true }, // Select only required fields
@@ -1804,6 +1809,7 @@ const verifyInviteToken = async (token: string) => {
 		const invite = await prisma.applicatorGrower.findUnique({
 			where: {
 				inviteToken: token,
+				expiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				// applicator: {
 				// 	profileStatus: 'INCOMPLETE',
 				// },
