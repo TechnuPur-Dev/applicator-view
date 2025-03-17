@@ -89,7 +89,23 @@ const registerUser = async (data: RegisterUser) => {
 			password: true, // Omit password from the response to prevent exposing it to clients
 		},
 	});
+	const subject = 'Welcome to Acre Connect!';
 
+	const message = `<p>Hi ${firstName} ${lastName},</p><br><br>
+	<p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
+           <p>If you have any questions, feel free to reach out.</p><br><br>
+           <p>Best Regards,<br>Acre Connect Team</p><br><br>
+	  If you did not expect this, please ignore this email.
+	`;
+
+	const html = await mailHtmlTemplate(subject, message);
+
+	await sendEmail({
+		emailTo: email,
+		subject,
+		text: 'Request Invitation',
+		html,
+	});
 	return user;
 };
 const loginUser = async (data: LoginUser) => {
