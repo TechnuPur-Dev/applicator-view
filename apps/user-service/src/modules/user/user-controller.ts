@@ -191,7 +191,12 @@ const acceptOrRejectInviteThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
-
+const getApplicatorGrowerById = catchAsync(async (req: Request, res: Response) => {
+	const userId = +req.params.id;
+	const user = req.user;
+	const result = await userService.getApplicatorGrowerById(user,userId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -215,4 +220,5 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
+	getApplicatorGrowerById
 };

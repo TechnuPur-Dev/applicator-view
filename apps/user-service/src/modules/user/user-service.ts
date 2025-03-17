@@ -523,6 +523,7 @@ const getAllApplicatorsByGrower = async (
 			isArchivedByGrower: true,
 			canManageFarms: true,
 			email: true,
+			expiresAt: true,
 			applicator: {
 				include: {
 					state: {
@@ -546,16 +547,24 @@ const getAllApplicatorsByGrower = async (
 	});
 	// ✅ Ensure `applicator` is never null by adding `email`
 	const updatedApplicators = applicators.map((applicator) => {
-		const token = applicator.inviteStatus === "PENDING" ? generateInviteToken("GROWER") : null;
-		const inviteUrl = token ? `https://grower-ac.netlify.app/#/invitationView?token=${token}` : undefined;
-	
-		return {
-		  ...applicator,
-		  applicator: applicator.applicator ?? { email: applicator.email }, // Ensure `applicator` is not null
-		  inviteUrl, 
-		};
-	  });
+		const token =
+			applicator.inviteStatus === 'PENDING'
+				? generateInviteToken('GROWER')
+				: null;
+		const inviteUrl = token
+			? `https://grower-ac.netlify.app/#/invitationView?token=${token}`
+			: undefined;
+		const expiresAt = token
+			? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+			: applicator.expiresAt;
 
+		return {
+			...applicator,
+			applicator: applicator.applicator ?? { email: applicator.email }, // Ensure `applicator` is not null
+			inviteUrl,
+			expiresAt,
+		};
+	});
 
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -564,7 +573,7 @@ const getAllApplicatorsByGrower = async (
 		page,
 		limit,
 		totalPages,
-		totalResults:updatedApplicators?.length,
+		totalResults: updatedApplicators?.length,
 	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {
@@ -748,15 +757,8 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 							},
 						},
 						farms: {
-							where: {
-								permissions: {
-									some: {
-										applicatorId: user.id,
-									},
-								},
-							},
 							include: {
-								permissions: true,
+								pendingFarmPermission: true,
 								fields: true,
 								state: {
 									select: {
@@ -849,7 +851,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 						},
 						farms: {
 							include: {
-								permissions: true,
+								pendingFarmPermission: true,
 								fields: true,
 								state: {
 									select: {
@@ -1403,6 +1405,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			inviteStatus: true,
 			isArchivedByApplicator: true,
 			canManageFarms: true,
+			expiresAt: true,
 			grower: {
 				include: {
 					state: {
@@ -1480,6 +1483,9 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
 
 			responseData.inviteUrl = inviteLink;
+			responseData.expiresAt = new Date(
+				Date.now() + 3 * 24 * 60 * 60 * 1000,
+			);
 		}
 	}
 	// Add total acres to the grower object
@@ -2139,7 +2145,162 @@ const acceptOrRejectInviteThroughEmail = async (
 		message: 'Invite status updated successfully.',
 	};
 };
+const getApplicatorGrowerById = async (user: User, userId: number) => {
+	if (user.role === 'APPLICATOR') {
+		const pendingInvites = await prisma.applicatorGrower.findUnique({
+			where: { id: userId }, // Ensure userId is unique
+			select: {
+				growerFirstName: true,
+				growerLastName: true,
+				inviteStatus: true,
+				isArchivedByApplicator: true,
+				grower: {
+					select: {
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						address1: true,
+						address2: true,
+						email: true,
+						phoneNumber: true,
+						state: { select: { id: true, name: true } },
+						farms: {
+							where: {
+								pendingFarmPermission: {
+									some: {
+										inviteId: userId,
+									},
+								},
+							},
+							select: {
+								id: true,
+								name: true,
+								isActive: true,
+								pendingFarmPermission: true,
+								fields: {
+									select: {
+										id: true,
+										name: true,
+										acres: true,
+										crop: true,
+										legal: true,
+										longitude: true,
+										latitude: true,
+									},
+								},
+								state: { select: { id: true, name: true } },
+							},
+						},
+					},
+				},
+			},
+		});
 
+		if (!pendingInvites) return { result: null };
+		const totalAcresByGrower = pendingInvites.grower?.farms.reduce(
+			(totalGrowerAcres, farm) => {
+				const totalAcresByFarm = farm.fields.reduce(
+					(totalFarmAcres, field) =>
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0'),
+					0,
+				);
+				return totalGrowerAcres + totalAcresByFarm;
+			},
+			0,
+		);
+
+		//   // Extract grower object without farms
+		//   const { farms, ...growerWithoutFarms } = pendingInvites.grower || {};
+
+		// Construct the enriched object
+		const enrichedGrower = {
+			...pendingInvites,
+			grower: { ...pendingInvites.grower },
+			totalAcres: totalAcresByGrower,
+		};
+
+		return { result: enrichedGrower };
+	}
+	if (user.role === 'GROWER') {
+		const pendingInvites = await prisma.applicatorGrower.findUnique({
+			where: {
+				id: userId,
+			},
+			select: {
+				applicatorFirstName: true,
+				applicatorLastName: true,
+				inviteStatus: true,
+				isArchivedByGrower: true,
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+						farms: {
+							where: {
+								pendingFarmPermission: {
+									some: {
+										inviteId: userId,
+									},
+								},
+							},
+							include: {
+								pendingFarmPermission: true,
+								fields: true,
+								state: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
+							},
+						},
+					},
+					omit: {
+						password: true,
+						businessName: true,
+						experience: true,
+						stateId: true,
+					},
+				},
+			},
+		});
+
+		if (!pendingInvites) return { result: null };
+		const totalAcresByGrower = pendingInvites.applicator?.farms.reduce(
+			(totalAplicatorAcres, farm) => {
+				const totalAcresByFarm = farm.fields.reduce(
+					(totalFarmAcres, field) =>
+						totalFarmAcres +
+						parseFloat(field.acres?.toString() || '0'),
+					0,
+				);
+				return totalAplicatorAcres + totalAcresByFarm;
+			},
+			0,
+		);
+
+		// Extract grower object without farms
+		const { farms, ...growerWithoutFarms } =
+			pendingInvites.applicator || {};
+
+		// Construct the enriched object
+		const enrichedApplicators = {
+			...pendingInvites,
+			grower: { ...growerWithoutFarms },
+			totalAcres: totalAcresByGrower,
+		};
+
+		return {
+			result: enrichedApplicators,
+		};
+	}
+	return user;
+};
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -2163,4 +2324,5 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
+	getApplicatorGrowerById,
 };

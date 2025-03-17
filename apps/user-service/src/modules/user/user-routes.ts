@@ -124,5 +124,12 @@ router
 		validateSchema(userValidation.respondInviteToken),
 		userController.acceptOrRejectInviteThroughEmail,
 	);
+	router
+	.route('/applicator-grower/:id')
+	.get(
+		verifyToken,
+		validateSchema(userValidation.paramsSchema),
+		userController.getApplicatorGrowerById,
+	);
 	
 export default router;
