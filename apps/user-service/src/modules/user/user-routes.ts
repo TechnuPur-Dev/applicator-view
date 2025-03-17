@@ -125,11 +125,11 @@ router
 		userController.acceptOrRejectInviteThroughEmail,
 	);
 	router
-	.route('/pending-invites/:id')
+	.route('/applicators/by-grower/:applicatorId')
 	.get(
 		verifyToken,
 		validateSchema(userValidation.paramsSchema),
-		userController.getPendingInvitesById,
+		userController.getApplicatorById,
 	);
 	
 export default router;

@@ -191,10 +191,10 @@ const acceptOrRejectInviteThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
-const getPendingInvitesById = catchAsync(async (req: Request, res: Response) => {
-	const userId = +req.params.id;
-	const user = req.user;
-	const result = await userService.getPendingInvitesById(user,userId);
+const getApplicatorById = catchAsync(async (req: Request, res: Response) => {
+	const growerId = req.payload.id;
+	const applicatorId = +req.params.applicatorId;
+	const result = await userService.getApplicatorById(growerId,applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -220,5 +220,5 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
-	getPendingInvitesById
+	getApplicatorById
 };
