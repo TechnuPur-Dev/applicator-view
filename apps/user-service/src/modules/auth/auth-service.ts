@@ -359,10 +359,11 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 	if (password) {
 		password = await hashPassword(password);
 	}
+	let email;
 
 	// Determine the user based on role and update accordingly
 	if (role === 'GROWER') {
-		await prisma.applicatorGrower.update({
+		const grower = await prisma.applicatorGrower.update({
 			where: {
 				inviteToken: token,
 				grower: {
@@ -392,6 +393,7 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				grower: { include: { state: { select: { name: true } } } },
 			},
 		});
+		email = grower.grower.email;
 	} else if (role === 'APPLICATOR') {
 		await prisma.$transaction(async (prisma) => {
 			const invite = await prisma.applicatorGrower.update({
@@ -427,7 +429,11 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				select: {
 					id: true,
 					applicator: {
-						select: { id: true, state: { select: { name: true } } },
+						select: {
+							id: true,
+							email: true,
+							state: { select: { name: true } },
+						},
 					},
 					pendingFarmPermission: true,
 				},
@@ -459,9 +465,10 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			await prisma.pendingFarmPermission.deleteMany({
 				where: { inviteId: invite.id },
 			});
+			email = invite.applicator.email;
 		});
 	} else if (role === 'WORKER') {
-		await prisma.applicatorWorker.update({
+		const worker = await prisma.applicatorWorker.update({
 			where: {
 				inviteToken: token,
 				worker: {
@@ -490,9 +497,28 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				worker: { include: { state: { select: { name: true } } } },
 			},
 		});
+		email = worker.worker.email;
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
+
+	const subject = 'Welcome to Acre Connect!';
+
+	const message = `<p>Hi ${firstName} ${lastName},</p><br><br>
+	<p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
+           <p>If you have any questions, feel free to reach out.</p><br><br>
+           <p>Best Regards,<br>Acre Connect Team</p><br><br>
+	  If you did not expect this, please ignore this email.
+	`;
+
+	const html = await mailHtmlTemplate(subject, message);
+
+	await sendEmail({
+		emailTo: email ?? '', // Defaults to an empty string if email is null/undefined
+		subject,
+		text: 'Welcome to Acre Connect!',
+		html,
+	});
 	return {
 		message: 'Invite accepted successfully.',
 	};

@@ -92,6 +92,15 @@ const uploadProfileImage = async (
 const updateProfile = async (data: UpdateUser, userId: number) => {
 	let { password } = data;
 	const { firstName, lastName } = data;
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: {
+			firstName: true,
+			lastName: true,
+			email: true,
+			profileStatus: true,
+		},
+	});
 	// hash the password only if it is provided
 	if (password) {
 		const hashedPassword = await hashPassword(data.password);
@@ -100,10 +109,6 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 	// Construct fullName if firstName or lastName is updated
 	let fullName: string | undefined;
 	if (firstName || lastName) {
-		const user = await prisma.user.findUnique({
-			where: { id: userId },
-			select: { firstName: true, lastName: true },
-		});
 		fullName =
 			`${firstName || user?.firstName || ''} ${lastName || user?.lastName || ''}`.trim();
 	}
@@ -133,6 +138,25 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 	});
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { state } = udpatedUser; // Exclude password
+	if (user?.profileStatus === 'INCOMPLETE') {
+		const subject = 'Welcome to Acre Connect!';
+
+		const message = `<p>Hi ${firstName} ${lastName},</p><br><br>
+			<p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
+				   <p>If you have any questions, feel free to reach out.</p><br><br>
+				   <p>Best Regards,<br>Acre Connect Team</p><br><br>
+			  If you did not expect this, please ignore this email.
+			`;
+
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: user.email ?? '', // Defaults to an empty string if email is null/undefined
+			subject,
+			text: 'Welcome to Acre Connect!',
+			html,
+		});
+	}
 	return {
 		...udpatedUser,
 		state: state?.name,
@@ -522,6 +546,7 @@ const getAllApplicatorsByGrower = async (
 			inviteStatus: true,
 			isArchivedByGrower: true,
 			canManageFarms: true,
+			inviteToken: true,
 			email: true,
 			applicator: {
 				include: {
@@ -545,17 +570,14 @@ const getAllApplicatorsByGrower = async (
 		},
 	});
 	// ✅ Ensure `applicator` is never null by adding `email`
-	const updatedApplicators = applicators.map((applicator) => {
-		const token = applicator.inviteStatus === "PENDING" ? generateInviteToken("GROWER") : null;
-		const inviteUrl = token ? `https://grower-ac.netlify.app/#/invitationView?token=${token}` : undefined;
-	
-		return {
-		  ...applicator,
-		  applicator: applicator.applicator ?? { email: applicator.email }, // Ensure `applicator` is not null
-		  inviteUrl, 
-		};
-	  });
-
+	const updatedApplicators = applicators.map((applicator) => ({
+		...applicator,
+		inviteUrl:
+			applicator.inviteStatus === 'PENDING'
+				? `https://applicator-ac.netlify.app/#/invitationView?token=${applicator.inviteToken}`
+				: undefined,
+		applicator: applicator.applicator ?? { email: applicator.email }, // Ensure `applicator` is not null
+	}));
 
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -564,7 +586,7 @@ const getAllApplicatorsByGrower = async (
 		page,
 		limit,
 		totalPages,
-		totalResults:updatedApplicators?.length,
+		totalResults: updatedApplicators?.length,
 	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {
@@ -1403,6 +1425,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			inviteStatus: true,
 			isArchivedByApplicator: true,
 			canManageFarms: true,
+			inviteToken: true,
 			grower: {
 				include: {
 					state: {
@@ -1472,13 +1495,10 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 		},
 		0,
 	);
-	let responseData: ResponseData = { ...grower };
+	const responseData: ResponseData = { ...grower };
 	if (grower) {
 		if (grower.inviteStatus === 'PENDING') {
-			const token = generateInviteToken('GROWER');
-
-			const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
-
+			const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${grower.inviteToken}`;
 			responseData.inviteUrl = inviteLink;
 		}
 	}
