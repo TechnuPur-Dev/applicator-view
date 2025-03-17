@@ -2161,7 +2161,7 @@ const acceptOrRejectInviteThroughEmail = async (
 		message: 'Invite status updated successfully.',
 	};
 };
-const getApplicatorGrowerById = async (user: User, userId: number) => {
+const getPendingInvitesById = async (user: User, userId: number) => {
 	if (user.role === 'APPLICATOR') {
 		const pendingInvites = await prisma.applicatorGrower.findUnique({
 			where: { id: userId }, // Ensure userId is unique
@@ -2340,5 +2340,5 @@ export default {
 	verifyInviteToken,
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
-	getApplicatorGrowerById,
+	getPendingInvitesById,
 };
