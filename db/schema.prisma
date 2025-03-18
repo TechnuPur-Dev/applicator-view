@@ -63,6 +63,7 @@ model User {
   DeviceToken            DeviceToken[]
   Bid                    Bid[]
   ForecastCity           ForecastCity[]
+  JobActivity            JobActivity[]
 }
 
 model ApplicatorWorker {
@@ -220,7 +221,7 @@ model Job {
   adjacentCrops       String?
   specialInstructions String?
   attachments         Json?
-  rejectionReason     String? // General job rejection reason by grower/applicator
+  // rejectionReason     String? // General job rejection reason by grower/applicator
   // pilotRejectionReason String? // Pilot's rejection reason
   // pilotJobStatus       PilotJobStatus? // Pilot's rejection reason
   createdAt           DateTime            @default(now())
@@ -235,6 +236,7 @@ model Job {
   supportTickets      SupportTicket[]
   Notification        Notification?
   Bid                 Bid[]
+  JobActivity         JobActivity[]
 }
 
 model Bid {
@@ -418,6 +420,20 @@ model ForecastCity {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model JobActivity {
+  id            Int       @id @default(autoincrement())
+  jobId         Int       @unique // Link to the Job
+  changedById   Int // User who changed the status (Applicator, Pilot, or Grower)
+  changedByRole UserRole // Enum: APPLICATOR, GROWER, PILOT
+  oldStatus     JobStatus
+  newStatus     JobStatus
+  reason        String? // Optional: Store rejection reasons if applicable
+  createdAt     DateTime  @default(now())
+
+  job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  changedBy User @relation(fields: [changedById], references: [id])
 }
 
 enum NotificationType {

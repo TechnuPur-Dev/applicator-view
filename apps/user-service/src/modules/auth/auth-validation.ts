@@ -82,11 +82,11 @@ const acceptInviteAndSignUp: Schema = Joi.object({
 		pilotLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
 		businessLicenseNumber: Joi.string().min(1).max(50).optional(), // Nullable field
 		planeOrUnitNumber: Joi.string().min(1).max(50).optional(), // Nullable field
-		percentageFee: Joi.number().precision(2).min(0).optional(), // Decimal field
-		dollarPerAcre: Joi.number().precision(2).min(0).optional(), // Decimal field
-		autoAcceptJobs: Joi.boolean().default(false).optional(),
-		canViewPricingDetails: Joi.boolean().default(false).optional(),
-		code: Joi.string().optional(),
+		// percentageFee: Joi.number().precision(2).min(0).optional(), // Decimal field
+		// dollarPerAcre: Joi.number().precision(2).min(0).optional(), // Decimal field
+		// autoAcceptJobs: Joi.boolean().default(false).optional(),
+		// canViewPricingDetails: Joi.boolean().default(false).optional(),
+		// code: Joi.string().optional(),
 	}).required(),
 });
 
