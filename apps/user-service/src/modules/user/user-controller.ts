@@ -192,9 +192,9 @@ const acceptOrRejectInviteThroughEmail = catchAsync(
 	},
 );
 const getApplicatorById = catchAsync(async (req: Request, res: Response) => {
-	const growerId = req.payload.id;
 	const applicatorId = +req.params.applicatorId;
-	const result = await userService.getApplicatorById(growerId,applicatorId);
+	const growerId = req.payload.id;
+	const result = await userService.getApplicatorById(applicatorId, growerId);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
