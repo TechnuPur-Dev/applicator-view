@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { CreateFarmParams, AssignFarmPermission } from './farm-types';
+import { CreateFarmParams } from './farm-types';
 import { PaginateOptions, User } from './../../../../../shared/types/global';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
@@ -325,39 +325,52 @@ const updateFarm = async (
 	}
 };
 
-const assignFarmPermission = async (user: User, data: AssignFarmPermission) => {
+const assignFarmPermissions = async (
+	user: User,
+	data: {
+		farmId: number;
+		applicatorId: number;
+		canView: boolean;
+		canEdit: boolean;
+	}[],
+) => {
 	const { id: userId } = user;
-	const { farmId, applicatorId, canView, canEdit } = data;
 
-	// Validate farm existence
+	// Validate farm existence (ensure the grower owns the farm)
 	const farm = await prisma.farm.findUnique({
-		where: { id: farmId, growerId: userId },
+		where: { id: data[0].farmId, growerId: userId }, // Assuming all records have the same `farmId`
 		select: { id: true },
 	});
+
 	if (!farm) {
 		throw new ApiError(
 			httpStatus.UNAUTHORIZED,
 			'You are not authorized or the farm does not exist.',
 		);
 	}
-	// Update farm
-	const permission = await prisma.farmPermission.create({
-		data: { farmId, applicatorId, canView, canEdit },
+
+	// Insert multiple records at once
+	const permissions = await prisma.farmPermission.createMany({
+		data,
+		skipDuplicates: true, // Prevents duplicate records if they exist
 	});
 
-	return permission;
+	return permissions;
 };
-const updateFarmPermission = async (
+
+const updateFarmPermissions = async (
 	user: User,
-	permissionId: number,
-	data: AssignFarmPermission,
+	permissions: { permissionId: number; canView: boolean; canEdit: boolean }[],
 ) => {
-	const { canEdit, canView } = data;
 	const { id: userId } = user;
-	// Validate farm existence
-	const permission = await prisma.farmPermission.findUnique({
-		where: { id: permissionId },
+
+	// Validate farm existence and authorization for each permission
+	const permissionChecks = await prisma.farmPermission.findMany({
+		where: {
+			id: { in: permissions.map((p) => p.permissionId) },
+		},
 		select: {
+			id: true,
 			farm: {
 				select: {
 					growerId: true,
@@ -365,23 +378,32 @@ const updateFarmPermission = async (
 			},
 		},
 	});
-	if (permission?.farm?.growerId !== userId) {
+
+	const unauthorized = permissionChecks.some(
+		(perm) => perm.farm?.growerId !== userId,
+	);
+
+	if (unauthorized) {
 		throw new ApiError(
 			httpStatus.UNAUTHORIZED,
 			'You are not authorized to perform this action.',
 		);
 	}
-	// Update farm
-	const updatedPermission = await prisma.farmPermission.update({
-		where: { id: permissionId },
-		data: {
-			canEdit,
-			canView,
-		},
-	});
 
-	return updatedPermission;
+	// Update permissions
+	const updatePromises = permissions.map(
+		({ permissionId, canView, canEdit }) =>
+			prisma.farmPermission.update({
+				where: { id: permissionId },
+				data: { canView, canEdit },
+			}),
+	);
+
+	const updatedPermissions = await Promise.all(updatePromises);
+
+	return updatedPermissions;
 };
+
 const deleteFarmPermission = async (user: User, permissionId: number) => {
 	const { id: userId } = user;
 	// Validate farm existence
@@ -558,8 +580,8 @@ export default {
 	getFarmById,
 	deleteFarm,
 	updateFarm,
-	assignFarmPermission,
-	updateFarmPermission,
+	assignFarmPermissions,
+	updateFarmPermissions,
 	deleteFarmPermission,
 	askFarmPermission,
 	uploadFarmImage,

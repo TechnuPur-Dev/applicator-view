@@ -15,7 +15,6 @@ const createFarm = catchAsync(async (req: Request, res: Response) => {
 // get all farms
 const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
-
 	const growerId = req.payload.id;
 	const userData = await farmService.getAllFarmsByGrower(growerId, options);
 	res.status(httpStatus.OK).json(userData);
@@ -43,24 +42,24 @@ const updateFarm = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 // controler to update Farm
-const assignFarmPermission = catchAsync(async (req: Request, res: Response) => {
+const assignFarmPermissions = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
 	const data = req.body;
-	const result = await farmService.assignFarmPermission(currentUser, data);
+	const result = await farmService.assignFarmPermissions(currentUser, data);
 	res.status(httpStatus.OK).json(result);
 });
 // controler to update Farm
-const updateFarmPermission = catchAsync(async (req: Request, res: Response) => {
-	const currentUser = req.user;
-	const permissionId = +req.params.permissionId;
-	const data = req.body;
-	const result = await farmService.updateFarmPermission(
-		currentUser,
-		permissionId,
-		data,
-	);
-	res.status(httpStatus.OK).json(result);
-});
+const updateFarmPermissions = catchAsync(
+	async (req: Request, res: Response) => {
+		const currentUser = req.user;
+		const data = req.body;
+		const result = await farmService.updateFarmPermissions(
+			currentUser,
+			data,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 // controler to update Farm
 const deleteFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
@@ -130,8 +129,8 @@ export default {
 	getFarmById,
 	deleteFarm,
 	updateFarm,
-	assignFarmPermission,
-	updateFarmPermission,
+	assignFarmPermissions,
+	updateFarmPermissions,
 	deleteFarmPermission,
 	askFarmPermission,
 	uploadFarmImage,
