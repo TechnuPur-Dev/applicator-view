@@ -18,6 +18,9 @@ const jobStatusSchema: Schema = Joi.string()
 		'PENDING',
 		'REJECTED',
 		'OPEN_FOR_BIDDING',
+		'ASSIGNED_TO_PILOT',
+		'PILOT_REJECTED',
+		'IN_PROGRESS'
 	)
 	.required();
 
@@ -117,7 +120,7 @@ const jobStatusParamSchema: Schema = Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 	body: Joi.object({
-		status: Joi.string().valid('READY_TO_SPRAY', 'REJECTED').required(),
+		status: Joi.string().valid('READY_TO_SPRAY','IN_PROGRESS','PILOT_REJECTED', 'REJECTED').required(),
 		rejectionReason: Joi.string().min(1).max(300).when('status', {
 			is: 'REJECTED',
 			then: Joi.required(),

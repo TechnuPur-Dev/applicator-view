@@ -550,6 +550,7 @@ const getAllApplicatorsByGrower = async (
 	const applicators = await prisma.applicatorGrower.findMany({
 		where: {
 			growerId,
+			inviteInitiator:"GROWER"
 		},
 		select: {
 			applicatorFirstName: true,
@@ -2032,7 +2033,6 @@ const getWeather = async (user: User, options: city) => {
 		);
 		// Add hourly weather data
 		if (parseInt(hour) % 1 === 0) {
-			// Ye condition ensure karegi ke har 1-hour ka data add ho
 			groupedWeather[date].hourly.push({
 				time: time12,
 				temperature: item.main.temp,
