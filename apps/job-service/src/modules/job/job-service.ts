@@ -390,7 +390,13 @@ const getAllJobsByApplicator = async (
 	const filters: Prisma.JobWhereInput = {
 		applicatorId,
 		status: {
-			in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
+			in: [
+				'READY_TO_SPRAY',
+				'IN_PROGRESS',
+				'SPRAYED',
+				'INVOICED',
+				'PAID',
+			],
 		},
 	};
 
@@ -713,17 +719,20 @@ const updateJobByApplicator = async (
 
 	const { status: currentStatus } = job;
 	const { status: requestedStatus, fieldWorkerId } = data;
-
+	console.log(currentStatus, 'currentStatus');
 	// Valid job status transitions
 	const statusTransitions: Record<JobStatus, JobStatus[]> = {
-		READY_TO_SPRAY: ['SPRAYED'],
-		SPRAYED: ['INVOICED'],
-		INVOICED: ['PAID'],
-		PAID: ['PAID'],
-		TO_BE_MAPPED: [], // Assuming it doesn't transition
-		OPEN_FOR_BIDDING: [], // Assuming it doesn't transition
-		PENDING: [], // Assuming it doesn't transition
-		REJECTED: [], // Assuming it doesn't transition
+		READY_TO_SPRAY: ['ASSIGNED_TO_PILOT'], // A job in READY_TO_SPRAY can only move to ASSIGNED_TO_PILOT
+		SPRAYED: ['INVOICED'], // A job in SPRAYED can only move to INVOICED
+		INVOICED: ['PAID'], // A job in INVOICED can only move to PAID
+		PAID: ['PAID'], // PAID jobs remain PAID
+		// Jobs in the following statuses cannot transition to other statuses:
+		OPEN_FOR_BIDDING: [],
+		PENDING: [],
+		REJECTED: [],
+		ASSIGNED_TO_PILOT: [],
+		PILOT_REJECTED: ['ASSIGNED_TO_PILOT'], // A job rejected by the pilot can be reassigned
+		IN_PROGRESS: ['SPRAYED'], // A job in progress can only move to SPRAYED
 	};
 
 	if (
@@ -736,10 +745,14 @@ const updateJobByApplicator = async (
 		);
 	}
 	// If assigning a field worker, validate status
-	if (fieldWorkerId && currentStatus !== 'READY_TO_SPRAY') {
+	if (
+		fieldWorkerId &&
+		currentStatus !== 'READY_TO_SPRAY' &&
+		currentStatus !== 'PILOT_REJECTED'
+	) {
 		throw new ApiError(
 			httpStatus.CONFLICT,
-			'Job status must be READY_TO_SPRAY to assign a pilot.',
+			'Job status must be READY_TO_SPRAY or PILOT_REJECTED to assign a pilot.',
 		);
 	}
 
@@ -1778,15 +1791,19 @@ const updatePendingJobStatus = async (
 		id: number;
 		applicatorId?: number;
 		growerId?: number;
-		status: 'PENDING';
+		fieldWorkerId?: number;
+		status: 'PENDING' | 'ASSIGNED_TO_PILOT'; // Worker condition added
 	} = { id: jobId, status: 'PENDING' };
 
 	if (role === 'APPLICATOR') {
 		whereCondition.applicatorId = id;
 	} else if (role === 'GROWER') {
 		whereCondition.growerId = id;
+	} else if (role === 'WORKER') {
+		whereCondition.fieldWorkerId = id; // check for pilotid
+		whereCondition.status = 'ASSIGNED_TO_PILOT'; // should should only be update by pilot when job status is ASSIGNED_TO_PILOT
 	}
-
+	console.log(whereCondition, 'whereCondition');
 	// const job = await prisma.job.findUnique({
 	// 	where: whereCondition,
 	// 	select: {
@@ -1805,11 +1822,12 @@ const updatePendingJobStatus = async (
 				where: whereCondition,
 				data: {
 					status: data.status,
-					rejectionReason: data.rejectionReason,
+					// rejectionReason: data.rejectionReason,
 				},
 				select: {
 					applicatorId: true,
 					growerId: true,
+					fieldWorkerId: true,
 				},
 			});
 
@@ -1817,7 +1835,9 @@ const updatePendingJobStatus = async (
 			const notificationUserId =
 				role === 'GROWER'
 					? updatedJob.applicatorId
-					: updatedJob.growerId;
+					: role === 'WORKER'
+						? updatedJob.applicatorId
+						: updatedJob.growerId;
 
 			if (!notificationUserId) {
 				throw new ApiError(
@@ -1833,7 +1853,9 @@ const updatePendingJobStatus = async (
 					type:
 						data.status === 'READY_TO_SPRAY'
 							? 'JOB_ASSIGNED'
-							: 'JOB_REJECTED',
+							: data.status === 'IN_PROGRESS'
+								? 'JOB_ASSIGNED'
+								: 'JOB_REJECTED',
 				},
 			});
 		});
@@ -2502,7 +2524,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions) => {
 				id: true,
 				title: true,
 				type: true,
-				rejectionReason: true,
+				// rejectionReason: true,
 				grower: {
 					select: {
 						firstName: true,
@@ -2601,7 +2623,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions) => {
 				id: true,
 				title: true,
 				type: true,
-				rejectionReason: true,
+				// rejectionReason: true,
 				grower: {
 					select: {
 						firstName: true,
@@ -2913,7 +2935,7 @@ const getJobInvoice = async (user: User, jobId: number) => {
 			specialInstructions: true,
 			adjacentCrops: true,
 			attachments: true,
-			rejectionReason: true,
+			// rejectionReason: true,
 			createdAt: true,
 			farmId: true,
 		},
