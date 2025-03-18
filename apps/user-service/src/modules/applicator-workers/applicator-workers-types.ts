@@ -26,6 +26,6 @@ interface ApplicatorWorker {
 }
 interface UpdateStatus {
 	status: InviteStatus;
-	workerId: number;
+	applicatorId: number;
 }
 export { ApplicatorWorker, UpdateStatus };

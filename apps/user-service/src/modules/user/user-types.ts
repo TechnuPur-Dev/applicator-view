@@ -38,7 +38,6 @@ interface UpdateArchiveStatus {
 	canManageFarmsStauts: boolean;
 }
 interface ResponseData {
-	expiresAt?: Date|null;
 	growerFirstName?: string | null;
 	growerLastName?: string | null;
 	inviteStatus?: $Enums.InviteStatus;
@@ -46,6 +45,7 @@ interface ResponseData {
 	canManageFarms?: boolean;
 	grower?: User;
 	inviteUrl?: string;
+	isInviteExpired?: boolean;
 }
 export {
 	UploadProfileImage,

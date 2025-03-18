@@ -67,10 +67,10 @@ const sendInviteToWorker = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
-	const applicatorId = req.payload.id;
+	const workerId = req.payload.id;
 	const data = req.body;
 	const result = await applicatorWorkersServices.updateInviteStatus(
-		applicatorId,
+		workerId,
 		data,
 	);
 	res.status(httpStatus.OK).json(result);
