@@ -1408,19 +1408,6 @@ const sendInviteToGrower = async (
 };
 // service for user
 const getGrowerById = async (applicatorId: number, growerId: number) => {
-	const invite = await prisma.applicatorGrower.findUnique({
-		where: {
-			applicatorId_growerId: {
-				applicatorId,
-				growerId,
-			},
-		},
-		select: {
-			id: true,
-			inviteStatus: true
-		}
-	})
-	const isInvitePending = invite?.inviteStatus === "PENDING" ? true : false
 	// Fetch growers with their farms and fields
 	const grower = await prisma.applicatorGrower.findUnique({
 		where: {
@@ -1445,32 +1432,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 							name: true,
 						},
 					},
-					farms: isInvitePending ? {
-						where: {
-							pendingFarmPermission: {
-								some: {
-									inviteId: invite?.id,
-								},
-							},
-						},
-						include: {
-							pendingFarmPermission: {
-								where: {
-									inviteId: invite?.id,
-								},
-							}, // Include permissions to calculate farm permissions for the applicator
-							fields: true, // Include fields to calculate total acres
-							state: {
-								select: {
-									id: true,
-									name: true,
-								},
-							},
-						},
-						orderBy: {
-							id: 'desc',
-						},
-					} : {
+					farms: {
 						where: {
 							permissions: {
 								some: {
@@ -2233,7 +2195,7 @@ const acceptOrRejectInviteThroughEmail = async (
 // 										inviteId: userId,
 // 									},
 // 								},
-
+								
 // 							},
 // 							select: {
 // 								id: true,
@@ -2364,30 +2326,14 @@ const acceptOrRejectInviteThroughEmail = async (
 // 	}
 // 	return user;
 // };
-const getApplicatorById = async (applicatorId: number, growerId: number) => {
-	// identify invitation is pending or not 
-	const invite = await prisma.applicatorGrower.findUnique({
-		where: {
-			applicatorId_growerId: {
-				applicatorId,
-				growerId,
-
-
-			},
-		},
-		select: {
-			id: true,
-			inviteStatus: true
-		}
-	})
-	const isInvitePending = invite?.inviteStatus === "PENDING" ? true : false
-	console.log(invite, "invite")
+const getApplicatorById = async ( growerId: number,applicatorId: number,) => {
 	// Fetch applicator with their farms and fields
 	const applicator = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
-				applicatorId,
 				growerId,
+				applicatorId,
+				
 			},
 		},
 		select: {
@@ -2406,74 +2352,7 @@ const getApplicatorById = async (applicatorId: number, growerId: number) => {
 							name: true,
 						},
 					},
-					// farms: {
-					// 	include: {
-					// 		permissions: isInvitePending ? undefined : {
-					// 			where: {
-					// 				applicatorId
-					// 			},
-					// 			include: {
-					// 				farm: {
-					// 					select: {
-					// 						fields: true,
-					// 						state: {
-					// 							select: {
-					// 								id: true,
-					// 								name: true,
-					// 							},
-					// 						},
-					// 					}
-					// 				}
-					// 			}
-					// 		},
-					// 		pendingFarmPermission: isInvitePending ? {
-					// 			where: {
-					// 				inviteId: invite?.id
-					// 			},
-					// 			include: {
-					// 				farm: {
-					// 					include: {
-					// 						fields: true,
-					// 						state: {
-					// 							select: {
-					// 								id: true,
-					// 								name: true,
-					// 							},
-					// 						},
-					// 					}
-					// 				}
-					// 			}
-
-
-					// 		} : undefined,
-					// 	},
-					// },
-					farms: isInvitePending ? {
-						where: {
-							pendingFarmPermission: {
-								some: {
-									inviteId: invite?.id,
-								},
-							},
-						},
-						include: {
-							pendingFarmPermission: {
-								where: {
-									inviteId: invite?.id,
-								},
-							}, // Include permissions to calculate farm permissions for the applicator
-							fields: true, // Include fields to calculate total acres
-							state: {
-								select: {
-									id: true,
-									name: true,
-								},
-							},
-						},
-						orderBy: {
-							id: 'desc',
-						},
-					} : {
+					farms: {
 						where: {
 							permissions: {
 								some: {
@@ -2539,9 +2418,9 @@ const getApplicatorById = async (applicatorId: number, growerId: number) => {
 		if (applicator.inviteStatus === 'PENDING') {
 			const inviteLink = `https://applicator-ac.netlify.app/#/invitationViewtoken=${applicator.inviteToken}`;
 			responseData.inviteUrl = inviteLink;
-			responseData.isInviteExpired = applicator.expiresAt
-				? new Date(applicator.expiresAt) <= new Date()
-				: true;
+			responseData.expiresAt = new Date(
+				Date.now() + 3 * 24 * 60 * 60 * 1000,
+			);
 		}
 	}
 	// Add total acres to the grower object
