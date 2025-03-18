@@ -62,6 +62,7 @@ model User {
   Product                Product[]
   DeviceToken            DeviceToken[]
   Bid                    Bid[]
+  ForecastCity           ForecastCity[]
 }
 
 model ApplicatorWorker {
@@ -410,6 +411,15 @@ model DeviceToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model ForecastCity {
+  id        Int      @id @default(autoincrement())
+  name      String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum NotificationType {
   JOB_REQUEST
   JOB_ASSIGNED
@@ -531,23 +541,17 @@ enum JobSource {
 }
 
 enum JobStatus {
-  TO_BE_MAPPED
+  PENDING
+  REJECTED
   READY_TO_SPRAY
-  // IN_PROGRESS
+  ASSIGNED_TO_PILOT
+  PILOT_REJECTED
+  IN_PROGRESS
   SPRAYED
   INVOICED
   PAID
-  PENDING
-  REJECTED
   OPEN_FOR_BIDDING
 }
-
-// enum PilotJobStatus {
-//   NOT_ASSIGNED
-//   PENDING
-//   ACCEPTED
-//   REJECTED
-// }
 
 enum InviteInitiator {
   APPLICATOR
