@@ -1311,7 +1311,10 @@ const sendInviteToGrower = async (
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (existingInvite.inviteStatus === 'REJECTED') {
+			if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'PENDING'
+			) {
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
@@ -1738,9 +1741,6 @@ const verifyInviteToken = async (token: string) => {
 		);
 	}
 
-	let user = null;
-	let applicator = null;
-
 	// Fetch user based on role
 	if (role === 'GROWER') {
 		const invite = await prisma.applicatorGrower.findFirst({
@@ -1876,6 +1876,15 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				pilotPestLicenseNumber: true,
+				pilotLicenseNumber: true,
+				businessLicenseNumber: true,
+				planeOrUnitNumber: true,
+				percentageFee: true,
+				dollarPerAcre: true,
+				autoAcceptJobs: true,
+				canViewPricingDetails: true,
+				code: true,
 				applicator: {
 					select: {
 						profileImage: true,
@@ -1904,17 +1913,18 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 		});
-		user = invite?.worker;
-		applicator = invite?.applicator;
-		if (!user) {
+		if (!invite) {
 			throw new ApiError(
 				httpStatus.NOT_FOUND,
 				'User not found or invite expired.',
 			);
 		}
-		const { state } = user;
+		const { worker, ...woerkerData } = invite;
+		const { state } = worker;
+		const applicator = invite?.applicator;
 		return {
-			...user,
+			...worker,
+			...woerkerData,
 			state: state?.name,
 			applicator,
 			isAlreadyExist:
@@ -1923,17 +1933,6 @@ const verifyInviteToken = async (token: string) => {
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
-
-	// If no user is found, throw an error
-	if (!user) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'User not found or invite expired.',
-		);
-	}
-	const { state } = user;
-	// Return only the role-specific user data
-	return { ...user, state: state?.name, applicator };
 };
 const getWeather = async (user: User, options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
@@ -2197,7 +2196,7 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 			},
 		});
 		if (!applicator) {
-			throw new ApiError(httpStatus.NOT_FOUND,'Invalid data provided.');
+			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid data provided.');
 		}
 
 		return {
