@@ -550,7 +550,6 @@ const getAllApplicatorsByGrower = async (
 	const applicators = await prisma.applicatorGrower.findMany({
 		where: {
 			growerId,
-			inviteInitiator:"GROWER"
 		},
 		select: {
 			applicatorFirstName: true,
