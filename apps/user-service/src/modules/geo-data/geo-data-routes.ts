@@ -12,7 +12,7 @@ router
 router
 	.route('/township/create')
 	.post(verifyToken, geoDataController.createTownships);
-router.route('/all-states').get(verifyToken, geoDataController.getAllStates);
+router.route('/all-states').get(geoDataController.getAllStates);
 router
 	.route('/all-counties')
 	.get(verifyToken, geoDataController.getAllCounties);

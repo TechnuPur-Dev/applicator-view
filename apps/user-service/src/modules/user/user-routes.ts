@@ -85,10 +85,7 @@ router
 	.put(verifyToken, userController.sendInviteToApplicator);
 router
 	.route('/grower/invite/:growerId')
-	.put(
-		verifyToken,
-		userController.sendInviteToGrower,
-	);
+	.put(verifyToken, userController.sendInviteToGrower);
 
 router
 	.route('/update/archived-status')
@@ -124,12 +121,12 @@ router
 		validateSchema(userValidation.respondInviteToken),
 		userController.acceptOrRejectInviteThroughEmail,
 	);
-	router
-	.route('/applicators/by-grower/:applicatorId')
+router
+	.route('/applicator/by-id/:applicatorId')
 	.get(
 		verifyToken,
 		validateSchema(userValidation.paramsSchema),
 		userController.getApplicatorById,
 	);
-	
+
 export default router;

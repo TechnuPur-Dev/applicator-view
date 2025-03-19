@@ -41,10 +41,10 @@ router
 	);
 router
 	.route('/permission/assign')
-	.post(verifyToken, farmController.assignFarmPermission);
+	.post(verifyToken, farmController.assignFarmPermissions);
 router
-	.route('/permission/update/:permissionId')
-	.put(verifyToken, farmController.updateFarmPermission);
+	.route('/permission/update')
+	.put(verifyToken, farmController.updateFarmPermissions);
 router
 	.route('/permission/delete/:permissionId')
 	.delete(verifyToken, farmController.deleteFarmPermission);

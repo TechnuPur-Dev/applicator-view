@@ -1312,7 +1312,10 @@ const sendInviteToGrower = async (
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (existingInvite.inviteStatus === 'REJECTED') {
+			if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'PENDING'
+			) {
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
@@ -1778,9 +1781,6 @@ const verifyInviteToken = async (token: string) => {
 		);
 	}
 
-	let user = null;
-	let applicator = null;
-
 	// Fetch user based on role
 	if (role === 'GROWER') {
 		const invite = await prisma.applicatorGrower.findFirst({
@@ -1916,6 +1916,15 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 			select: {
+				pilotPestLicenseNumber: true,
+				pilotLicenseNumber: true,
+				businessLicenseNumber: true,
+				planeOrUnitNumber: true,
+				percentageFee: true,
+				dollarPerAcre: true,
+				autoAcceptJobs: true,
+				canViewPricingDetails: true,
+				code: true,
 				applicator: {
 					select: {
 						profileImage: true,
@@ -1944,17 +1953,18 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 		});
-		user = invite?.worker;
-		applicator = invite?.applicator;
-		if (!user) {
+		if (!invite) {
 			throw new ApiError(
 				httpStatus.NOT_FOUND,
 				'User not found or invite expired.',
 			);
 		}
-		const { state } = user;
+		const { worker, ...woerkerData } = invite;
+		const { state } = worker;
+		const applicator = invite?.applicator;
 		return {
-			...user,
+			...worker,
+			...woerkerData,
 			state: state?.name,
 			applicator,
 			isAlreadyExist:
@@ -1963,17 +1973,6 @@ const verifyInviteToken = async (token: string) => {
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
-
-	// If no user is found, throw an error
-	if (!user) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'User not found or invite expired.',
-		);
-	}
-	const { state } = user;
-	// Return only the role-specific user data
-	return { ...user, state: state?.name, applicator };
 };
 const getWeather = async (user: User, options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
@@ -2208,265 +2207,124 @@ const acceptOrRejectInviteThroughEmail = async (
 		message: 'Invite status updated successfully.',
 	};
 };
-// const getPendingInvitesById = async (user: User, userId: number) => {
-// 	if (user.role === 'APPLICATOR') {
-// 		const pendingInvites = await prisma.applicatorGrower.findUnique({
-// 			where: { id: userId }, // Ensure userId is unique
-// 			select: {
-// 				growerFirstName: true,
-// 				growerLastName: true,
-// 				inviteStatus: true,
-// 				isArchivedByApplicator: true,
-// 				grower: {
-// 					select: {
-// 						firstName: true,
-// 						lastName: true,
-// 						fullName: true,
-// 						address1: true,
-// 						address2: true,
-// 						email: true,
-// 						phoneNumber: true,
-// 						state: { select: { id: true, name: true } },
-// 						farms: {
-// 							where: {
-// 								pendingFarmPermission: {
-// 									some: {
-// 										inviteId: userId,
-// 									},
-// 								},
-								
-// 							},
-// 							select: {
-// 								id: true,
-// 								name: true,
-// 								isActive: true,
-// 								pendingFarmPermission: true,
-// 								fields: {
-// 									select: {
-// 										id: true,
-// 										name: true,
-// 										acres: true,
-// 										crop: true,
-// 										legal: true,
-// 										longitude: true,
-// 										latitude: true,
-// 									},
-// 								},
-// 								state: { select: { id: true, name: true } },
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		});
-
-// 		if (!pendingInvites) return { result: null };
-// 		const totalAcresByGrower = pendingInvites.grower?.farms.reduce(
-// 			(totalGrowerAcres, farm) => {
-// 				const totalAcresByFarm = farm.fields.reduce(
-// 					(totalFarmAcres, field) =>
-// 						totalFarmAcres +
-// 						parseFloat(field.acres?.toString() || '0'),
-// 					0,
-// 				);
-// 				return totalGrowerAcres + totalAcresByFarm;
-// 			},
-// 			0,
-// 		);
-
-// 		//   // Extract grower object without farms
-// 		//   const { farms, ...growerWithoutFarms } = pendingInvites.grower || {};
-
-// 		// Construct the enriched object
-// 		const enrichedGrower = {
-// 			...pendingInvites,
-// 			grower: { ...pendingInvites.grower },
-// 			totalAcres: totalAcresByGrower,
-// 		};
-
-// 		return { result: enrichedGrower };
-// 	}
-// 	if (user.role === 'GROWER') {
-// 		const pendingInvites = await prisma.applicatorGrower.findUnique({
-// 			where: {
-// 				id: userId,
-// 			},
-// 			select: {
-// 				applicatorFirstName: true,
-// 				applicatorLastName: true,
-// 				inviteStatus: true,
-// 				isArchivedByGrower: true,
-// 				applicator: {
-// 					include: {
-// 						state: {
-// 							select: {
-// 								id: true,
-// 								name: true,
-// 							},
-// 						},
-// 						farms: {
-// 							where: {
-// 								pendingFarmPermission: {
-// 									some: {
-// 										inviteId: userId,
-// 									},
-// 								},
-// 							},
-// 							include: {
-// 								pendingFarmPermission: true,
-// 								fields: true,
-// 								state: {
-// 									select: {
-// 										id: true,
-// 										name: true,
-// 									},
-// 								},
-// 							},
-// 						},
-// 					},
-// 					omit: {
-// 						password: true,
-// 						businessName: true,
-// 						experience: true,
-// 						stateId: true,
-// 					},
-// 				},
-// 			},
-// 		});
-
-// 		if (!pendingInvites) return { result: null };
-// 		const totalAcresByGrower = pendingInvites.applicator?.farms.reduce(
-// 			(totalAplicatorAcres, farm) => {
-// 				const totalAcresByFarm = farm.fields.reduce(
-// 					(totalFarmAcres, field) =>
-// 						totalFarmAcres +
-// 						parseFloat(field.acres?.toString() || '0'),
-// 					0,
-// 				);
-// 				return totalAplicatorAcres + totalAcresByFarm;
-// 			},
-// 			0,
-// 		);
-
-// 		// Extract grower object without farms
-// 		const { farms, ...growerWithoutFarms } =
-// 			pendingInvites.applicator || {};
-
-// 		// Construct the enriched object
-// 		const enrichedApplicators = {
-// 			...pendingInvites,
-// 			grower: { ...growerWithoutFarms },
-// 			totalAcres: totalAcresByGrower,
-// 		};
-
-// 		return {
-// 			result: enrichedApplicators,
-// 		};
-// 	}
-// 	return user;
-// };
-const getApplicatorById = async ( growerId: number,applicatorId: number,) => {
-	// Fetch applicator with their farms and fields
-	const applicator = await prisma.applicatorGrower.findUnique({
-		where: {
-			applicatorId_growerId: {
-				growerId,
-				applicatorId,
-				
-			},
-		},
-		select: {
-			applicatorFirstName: true,
-			applicatorLastName: true,
-			inviteStatus: true,
-			isArchivedByGrower: true,
-			canManageFarms: true,
-			expiresAt: true,
-			inviteToken: true,
-			applicator: {
-				include: {
-					state: {
-						select: {
-							id: true,
-							name: true,
-						},
-					},
-					farms: {
-						where: {
-							permissions: {
-								some: {
-									applicatorId,
-								},
-							},
-						},
-						include: {
-							permissions: {
-								where: {
-									applicatorId,
-								},
-							}, // Include permissions to calculate farm permissions for the applicator
-							fields: true, // Include fields to calculate total acres
-							state: {
-								select: {
-									id: true,
-									name: true,
-								},
-							},
-						},
-						orderBy: {
-							id: 'desc',
-						},
-					},
-				},
-				omit: {
-					password: true, // Exclude sensitive data
-					businessName: true,
-					experience: true,
-					stateId: true,
+const getApplicatorById = async (user: User, applicatorId: number) => {
+	if (user.role === 'WORKER') {
+		const applicator = await prisma.applicatorWorker.findUnique({
+			where: {
+				applicatorId_workerId: {
+					applicatorId,
+					workerId: user.id,
 				},
 			},
-		},
-	});
-
-	// Calculate total acres for each grower and each farm
-
-	const totalAcresByGrower = applicator?.applicator?.farms.reduce(
-		(totalGrowerAcres, farm) => {
-			// Calculate total acres for this farm
-			const totalAcresByFarm = farm.fields.reduce(
-				(totalFarmAcres, field) => {
-					return (
-						totalFarmAcres +
-						parseFloat(field.acres?.toString() || '0')
-					);
+			select: {
+				inviteStatus: true,
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+					},
+					omit: {
+						stateId: true,
+						password: true, // Exclude sensitive data
+					},
 				},
-				0,
-			);
-
-			// Type assertion to inform TypeScript about `totalAcres`
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(farm as any).totalAcres = totalAcresByFarm;
-
-			// Accumulate total grower acres
-			return totalGrowerAcres + totalAcresByFarm;
-		},
-		0,
-	);
-	const responseData: ResponseData = { ...applicator };
-	if (applicator) {
-		if (applicator.inviteStatus === 'PENDING') {
-			const inviteLink = `https://applicator-ac.netlify.app/#/invitationViewtoken=${applicator.inviteToken}`;
-			responseData.inviteUrl = inviteLink;
-			responseData.expiresAt = new Date(
-				Date.now() + 3 * 24 * 60 * 60 * 1000,
-			);
+			},
+		});
+		if (!applicator) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid data provided.');
 		}
+
+		return {
+			inviteStatus: applicator.inviteStatus,
+			...applicator.applicator,
+			state: applicator.applicator?.state?.name ?? null,
+		};
 	}
-	// Add total acres to the grower object
-	return {
-		...responseData,
-		totalAcres: totalAcresByGrower,
-	};
+	// Todo: udpate this condition to get applciator for grower
+	// if (user.role === 'GROWER') {
+	// 	const pendingInvites = await prisma.applicatorGrower.findUnique({
+	// 		where: {
+	// 			applicatorId_growerId: {
+	// 				applicatorId,
+	// 				growerId: user.id,
+	// 			},
+	// 		},
+	// 		select: {
+	// 			applicatorFirstName: true,
+	// 			applicatorLastName: true,
+	// 			inviteStatus: true,
+	// 			isArchivedByGrower: true,
+	// 			applicator: {
+	// 				include: {
+	// 					state: {
+	// 						select: {
+	// 							id: true,
+	// 							name: true,
+	// 						},
+	// 					},
+	// 					farms: {
+	// 						where: {
+	// 							pendingFarmPermission: {
+	// 								some: {
+	// 									inviteId: applicatorId,
+	// 								},
+	// 							},
+	// 						},
+	// 						include: {
+	// 							pendingFarmPermission: true,
+	// 							fields: true,
+	// 							state: {
+	// 								select: {
+	// 									id: true,
+	// 									name: true,
+	// 								},
+	// 							},
+	// 						},
+	// 					},
+	// 				},
+	// 				omit: {
+	// 					password: true,
+	// 					businessName: true,
+	// 					experience: true,
+	// 					stateId: true,
+	// 				},
+	// 			},
+	// 		},
+	// 	});
+
+	// 	if (!pendingInvites) return { result: null };
+	// 	const totalAcresByGrower = pendingInvites.applicator?.farms.reduce(
+	// 		(totalAplicatorAcres, farm) => {
+	// 			const totalAcresByFarm = farm.fields.reduce(
+	// 				(totalFarmAcres, field) =>
+	// 					totalFarmAcres +
+	// 					parseFloat(field.acres?.toString() || '0'),
+	// 				0,
+	// 			);
+	// 			return totalAplicatorAcres + totalAcresByFarm;
+	// 		},
+	// 		0,
+	// 	);
+
+	// 	// Extract grower object without farms
+	// 	const { farms, ...growerWithoutFarms } =
+	// 		pendingInvites.applicator || {};
+
+	// 	// Construct the enriched object
+	// 	const enrichedApplicators = {
+	// 		...pendingInvites,
+	// 		grower: { ...growerWithoutFarms },
+	// 		totalAcres: totalAcresByGrower,
+	// 	};
+
+	// 	return {
+	// 		result: enrichedApplicators,
+	// 	};
+	// }
 };
 export default {
 	uploadProfileImage,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Import necessary modules
 import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
@@ -488,17 +489,31 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			},
 			data: {
 				inviteStatus: 'ACCEPTED',
+				pilotPestLicenseNumber: data.pilotPestLicenseNumber,
+				businessLicenseNumber: data.businessLicenseNumber,
+				pilotLicenseNumber: data.pilotLicenseNumber,
+				planeOrUnitNumber: data.planeOrUnitNumber,
 				worker: {
 					update: {
 						...(() => {
-							// eslint-disable-next-line @typescript-eslint/no-unused-vars
-							const { token, ...rest } = data;
+							const {
+								pilotPestLicenseNumber,
+								businessLicenseNumber,
+								pilotLicenseNumber,
+								planeOrUnitNumber,
+								stateId,
+								token,
+								...rest
+							} = data;
 							return rest;
 						})(),
 						password,
 						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
 						profileStatus: 'COMPLETE',
 						joiningDate: new Date(),
+						state: data.stateId
+							? { connect: { id: data.stateId } }
+							: undefined,
 					},
 				},
 			},

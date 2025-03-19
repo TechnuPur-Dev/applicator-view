@@ -52,6 +52,10 @@ interface signUpUserSchema {
 	bio?: string;
 	additionalInfo?: string;
 	profileStatus?: ProfileStatus;
+	pilotPestLicenseNumber?: string;
+	pilotLicenseNumber?: string;
+	businessLicenseNumber?: string;
+	planeOrUnitNumber?: string;
 }
 
 export { RegisterUser, LoginUser, verifyOTPAndRegisterEmail, signUpUserSchema };
