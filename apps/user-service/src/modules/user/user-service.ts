@@ -1411,6 +1411,19 @@ const sendInviteToGrower = async (
 };
 // service for user
 const getGrowerById = async (applicatorId: number, growerId: number) => {
+	const invite = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId,
+				growerId,
+			},
+		},
+		select: {
+			id: true,
+			inviteStatus: true
+		}
+	})
+	const isInvitePending = invite?.inviteStatus === "PENDING" ? true : false
 	// Fetch growers with their farms and fields
 	const grower = await prisma.applicatorGrower.findUnique({
 		where: {
@@ -1435,7 +1448,32 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 							name: true,
 						},
 					},
-					farms: {
+					farms: isInvitePending ? {
+						where: {
+							pendingFarmPermission: {
+								some: {
+									inviteId: invite?.id,
+								},
+							},
+						},
+						include: {
+							pendingFarmPermission: {
+								where: {
+									inviteId: invite?.id,
+								},
+							}, // Include permissions to calculate farm permissions for the applicator
+							fields: true, // Include fields to calculate total acres
+							state: {
+								select: {
+									id: true,
+									name: true,
+								},
+							},
+						},
+						orderBy: {
+							id: 'desc',
+						},
+					} : {
 						where: {
 							permissions: {
 								some: {
