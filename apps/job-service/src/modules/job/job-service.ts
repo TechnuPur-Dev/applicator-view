@@ -668,7 +668,7 @@ const getJobById = async (user: User, jobId: number) => {
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ applicator, grower, ...job }) => ({
+	const formattedJob = (({ applicator, grower, products, ...job }) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
@@ -683,6 +683,11 @@ const getJobById = async (user: User, jobId: number) => {
 				0,
 			),
 		},
+		products: products.map(({ product, ...rest }) => ({
+			...rest,
+			name: product?.productName, // Move productName to name
+			perAcreRate: product?.perAcreRate, // Move perAcreRate from product
+		})),
 	}))(job);
 
 	return formattedJob;
@@ -761,6 +766,7 @@ const updateJobByApplicator = async (
 			where: { id: jobId },
 			data: {
 				...data,
+				status: 'ASSIGNED_TO_PILOT',
 				fieldWorkerId: fieldWorkerId,
 				Notification: {
 					create: {
@@ -858,7 +864,7 @@ const getAllJobStatus = async () => {
 	}));
 	// Filter the required statuses
 	const filteredStatuses = jobStatusList.filter((status) =>
-		['SPRAYED', 'INVOICED', 'PAID'].includes(status.name),
+		['SPRAYED', 'INVOICED', 'PAID', 'IN_PROGRESS'].includes(status.name),
 	);
 
 	return filteredStatuses;
@@ -3108,7 +3114,7 @@ const getPilotPendingJobs = async (
 	const jobs = await prisma.job.findMany({
 		where: {
 			fieldWorkerId: pilotId,
-			status: 'PENDING',
+			status: 'ASSIGNED_TO_PILOT',
 		},
 		include: {
 			applicator: {
