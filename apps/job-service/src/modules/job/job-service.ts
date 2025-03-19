@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
-import { JobSource, JobStatus, JobType, Prisma } from '@prisma/client';
+import { JobSource, JobStatus, JobType, Prisma, UserRole } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateJob } from './job-types';
@@ -714,6 +714,7 @@ const updateJobByApplicator = async (
 	const job = await prisma.job.findUnique({
 		where: { id: jobId, applicatorId: user.id },
 		select: {
+			id:true,
 			status: true,
 		},
 	});
@@ -775,6 +776,17 @@ const updateJobByApplicator = async (
 					},
 				},
 			},
+		
+		});
+		await prisma.jobActivity.create({
+			data: {
+				jobId:job.id,
+				changedById: user.id, //Connect to an existing user
+				changedByRole: user.role as UserRole, 
+				oldStatus: currentStatus,
+				newStatus: 'ASSIGNED_TO_PILOT',
+				reason:  null
+			},
 		});
 		await sendPushNotifications({
 			userIds: fieldWorkerId,
@@ -782,6 +794,7 @@ const updateJobByApplicator = async (
 			message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
 			notificationType: 'JOB_ASSIGNED',
 		});
+		
 	}
 	if (requestedStatus) {
 		// Update job status
@@ -792,8 +805,18 @@ const updateJobByApplicator = async (
 				status: requestedStatus,
 			},
 		});
+		await prisma.jobActivity.create({
+			data: {
+				jobId:job.id,
+				changedById: user.id, //Connect to an existing user
+				changedByRole: user.role as UserRole, 
+				oldStatus: currentStatus,
+				newStatus: data.status,
+				reason:  null
+			},
+		});
 	}
-
+	
 	return {
 		message: `Job updated successfully.`,
 	};
@@ -1062,7 +1085,6 @@ const getJobs = async (
 		},
 	}); // Fetch all users
 	// Calculate total acres for each job
-
 	if (type === 'BIDDING') {
 		jobs = jobs.filter((job) => job.source === 'BIDDING');
 	} else if (type === 'GROWER') {
@@ -1809,7 +1831,7 @@ const updatePendingJobStatus = async (
 		whereCondition.fieldWorkerId = id // check for pilotid 
 		whereCondition.status = 'ASSIGNED_TO_PILOT'; // should should only be update by pilot when job status is ASSIGNED_TO_PILOT
 	}
-console.log(whereCondition,"whereCondition")
+
 	// const job = await prisma.job.findUnique({
 	// 	where: whereCondition,
 	// 	select: {
@@ -1831,12 +1853,14 @@ console.log(whereCondition,"whereCondition")
 					// rejectionReason: data.rejectionReason,
 				},
 				select: {
+					id:true,
+					status:true,
 					applicatorId: true,
 					growerId: true,
 					fieldWorkerId:true
 				},
 			});
-
+  console.log(updatedJob,"updatedJob")
 			// Determine userId for the notification
 			const notificationUserId =
 				role === 'GROWER'
@@ -1860,6 +1884,16 @@ console.log(whereCondition,"whereCondition")
 							: data.status === 'IN_PROGRESS'
 								? 'JOB_ASSIGNED'
 								: 'JOB_REJECTED',
+				},
+			});
+			await tx.jobActivity.create({
+				data: {
+					jobId: updatedJob.id,
+					changedById: id, //Connect to an existing user
+					changedByRole: role as UserRole, 
+					oldStatus: whereCondition.status,
+					newStatus: data.status,
+					reason: data.status === "REJECTED" ? data.rejectionReason : null
 				},
 			});
 		});
