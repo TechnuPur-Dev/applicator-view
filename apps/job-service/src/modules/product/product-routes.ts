@@ -46,4 +46,7 @@ router
 router
 	.route('/all/dropdown')
 	.get(verifyToken, productController.getAllProductsDropdown);
+	router
+	.route('/restricted/:id')
+	.patch(verifyToken, productController.updateRestricted);
 export default router;

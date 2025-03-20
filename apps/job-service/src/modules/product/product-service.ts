@@ -152,7 +152,13 @@ const getAllProductsDropdown = async (user: User) => {
 		orderBy: { id: 'desc' },
 	});
 };
-
+const updateRestricted = async (productId:number,restrictedUse:boolean) => {
+	await prisma.product.update({
+		where: { id:productId },
+		data: { restrictedUse }
+	});
+	return {messaage:"Product updated successfully"};
+};
 export default {
 	getAllProductCategories,
 	getAllAppliedUnits,
@@ -162,4 +168,5 @@ export default {
 	updateProduct,
 	deleteProduct,
 	getAllProductsDropdown,
+	updateRestricted
 };
