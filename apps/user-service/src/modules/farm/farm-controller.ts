@@ -77,8 +77,9 @@ const deleteFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
-	const { email } = req.body; // Destructure body
-	const result = await farmService.askFarmPermission(email);
+	const currentUser = req.user;
+	const { growerId,farmPermission } = req.body; // Destructure body
+	const result = await farmService.askFarmPermission(currentUser,growerId,farmPermission);
 	res.status(httpStatus.OK).json(result);
 });
 
@@ -129,6 +130,17 @@ const getAllFarms = catchAsync(async (req: Request, res: Response) => {
 	const userData = await farmService.getAllFarms(growerId, options);
 	res.status(httpStatus.OK).json(userData);
 });
+const handleFarmPermissions = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const { applciatorId,action,pendingFarmPermission } = req.body; // Destructure body
+	const result = await farmService.handleFarmPermissions(currentUser,applciatorId,action,pendingFarmPermission);
+	res.status(httpStatus.OK).json(result);
+});
+const getAvailableApplicators = catchAsync(async (req: Request, res: Response) => {
+	const farmId = +req.params.farmId;
+	const userData = await farmService.getAvailableApplicators(farmId);
+	res.status(httpStatus.OK).json(userData);
+});
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -141,4 +153,6 @@ export default {
 	askFarmPermission,
 	uploadFarmImage,
 	getAllFarms,
+	handleFarmPermissions,
+	getAvailableApplicators
 };
