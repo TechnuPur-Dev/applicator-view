@@ -1899,6 +1899,15 @@ const verifyInviteToken = async (token: string) => {
 						updatedAt: true,
 					},
 				},
+				pendingFarmPermission: {
+					include: {
+						farm: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
 			},
 		});
 		const user = invite?.grower;
@@ -1919,6 +1928,7 @@ const verifyInviteToken = async (token: string) => {
 			applicator,
 			isAlreadyExist:
 				invite.grower.profileStatus === 'COMPLETE' ? true : false,
+			pendingFarmPermissions: invite.pendingFarmPermission,
 		};
 	} else if (role === 'APPLICATOR') {
 		const invite = await prisma.applicatorGrower.findFirst({
