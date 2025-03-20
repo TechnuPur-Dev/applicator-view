@@ -62,5 +62,7 @@ router
 	);
 
 router.route('/get-all/by-grower').get(verifyToken, farmController.getAllFarms);
-
+router
+	.route('/permission/accept-reject')
+	.post(verifyToken, farmController.handleFarmPermissions);
 export default router;

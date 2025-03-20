@@ -432,48 +432,70 @@ const deleteFarmPermission = async (user: User, permissionId: number) => {
 		message: 'Farm permission deleted successfully.',
 	};
 };
-const askFarmPermission = async (email: string) => {
-	console.log(email, 'req.body');
+const askFarmPermission = async (
+	currentUser: User,
+	growerId: number,
 
-	const isEmailExist = await prisma.user.findFirst({
-		where: {
-			email: {
-				equals: email,
-				mode: 'insensitive',
-			},
-			profileStatus: 'COMPLETE',
-		},
-		select: {
-			id: true, // Omit password from the response to prevent exposing it to clients
-		},
+	farmPermission: {
+		farmId: number;
+		canView: boolean;
+		canEdit: boolean;
+	}[],
+) => {
+	const { id: applicatorId, role } = currentUser;
+
+	if (role !== 'APPLICATOR')
+		return 'You are not allowed to perform this action.';
+	const grower = await prisma.user.findUnique({
+		where: { id: growerId, role: 'GROWER' },
 	});
-
-	if (!isEmailExist) {
+	if (!grower) {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
-			'An account with this email not exists.',
+			'Grower with email not found.',
 		);
 	}
 
-	const subject = 'Request For Farm Permissions';
-	const message = `
-		You have received a request for farm access permissions.<br><br>
-		To grant access, please review and approve the request.<br><br>
-		If you did not initiate this request, please ignore this email.<br><br>
-		Thank you.
-	  `;
-	const html = await mailHtmlTemplate(subject, message);
-	await sendEmail({
-		emailTo: email,
-		subject,
-		text: 'Request Verification',
-		html,
+	const existingInvite = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				growerId: growerId,
+				applicatorId: applicatorId,
+			},
+		},
+	});
+	await prisma.$transaction(async (tx) => {
+		if (existingInvite) {
+			let pendingPermission =
+				await prisma.pendingFarmPermission.findFirst({
+					where: { inviteId: existingInvite.id },
+				});
+			if (pendingPermission) {
+				await tx.pendingFarmPermission.deleteMany({
+					where: { inviteId: existingInvite.id },
+				});
+			}
+
+			await tx.pendingFarmPermission.createMany({
+				data: farmPermission.map((farm) => ({
+					farmId: farm.farmId,
+					inviteId: existingInvite.id,
+					canView: farm.canView,
+					canEdit: farm.canEdit,
+				})),
+			});
+		} else {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'An active invitation not found',
+			);
+		}
 	});
 	return {
-		message:
-			'Request email for permission has been sent to the user Succesfully',
+		message: 'Permissions request sent successfully.',
 	};
 };
+
 const uploadFarmImage = async (
 	userId: number,
 	type: string,
@@ -574,6 +596,95 @@ const getAllFarms = async (growerId: number, options: PaginateOptions) => {
 		totalResults,
 	};
 };
+
+const handleFarmPermissions = async (
+	currentUser: User,
+	growerId: number,
+	action: string,
+	pendingFarmPermission: {
+		farmId: number;
+	}[],
+) => {
+	const { id: applicatorId, role } = currentUser;
+
+	if (role !== 'APPLICATOR')
+		return 'You are not allowed to perform this action.';
+
+	const grower = await prisma.user.findUnique({
+		where: { id: growerId, role: 'GROWER' },
+	});
+	if (!grower) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Grower with email not found.',
+		);
+	}
+
+	const existingInvite = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				growerId: growerId,
+				applicatorId: applicatorId,
+			},
+		},
+	});
+
+	if (!existingInvite) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+	}
+
+	let processedCount = 0;
+
+	for (const permission of pendingFarmPermission) {
+		const { farmId } = permission;
+
+		const pendingRequest = await prisma.pendingFarmPermission.findUnique({
+			where: {
+				farmId_inviteId: {
+					farmId,
+					inviteId: existingInvite.id,
+				},
+			},
+		});
+
+		if (!pendingRequest) {
+			continue;
+		}
+
+		if (action === 'ACCEPTED') {
+			await prisma.farmPermission.create({
+				data: {
+					farmId,
+					applicatorId: existingInvite.id,
+					canView: pendingRequest.canView,
+					canEdit: pendingRequest.canEdit,
+				},
+			});
+		}
+
+		await prisma.pendingFarmPermission.delete({
+			where: {
+				farmId_inviteId: {
+					farmId,
+					inviteId: existingInvite.id,
+				},
+			},
+		});
+
+		processedCount++;
+	}
+
+	if (processedCount === 0) {
+		return {
+			message: 'No matching pending permissions found to process.',
+		};
+	}
+
+	return {
+		message: `Permissions ${action.toLowerCase()} successfully.`,
+	};
+};
+
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -586,4 +697,5 @@ export default {
 	askFarmPermission,
 	uploadFarmImage,
 	getAllFarms,
+	handleFarmPermissions,
 };
