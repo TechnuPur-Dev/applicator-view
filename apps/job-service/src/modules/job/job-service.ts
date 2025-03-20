@@ -763,58 +763,68 @@ const updateJobByApplicator = async (
 	}
 
 	if (fieldWorkerId) {
-		await prisma.job.update({
-			where: { id: jobId },
-			data: {
-				...data,
-				status: 'ASSIGNED_TO_PILOT',
-				fieldWorkerId: fieldWorkerId,
-				Notification: {
-					create: {
-						userId: fieldWorkerId,
-						type: 'JOB_ASSIGNED',
+		await prisma.$transaction(async (tx) => {
+			await tx.job.update({
+				where: { id: jobId },
+				data: {
+					...data,
+					status: 'ASSIGNED_TO_PILOT',
+					fieldWorkerId: fieldWorkerId,
+					Notification: {
+						create: {
+							userId: fieldWorkerId,
+							type: 'JOB_ASSIGNED',
+						},
 					},
 				},
-			},
-		
-		});
-		await prisma.jobActivity.create({
-			data: {
-				jobId:job.id,
-				changedById: user.id, //Connect to an existing user
-				changedByRole: user.role as UserRole, 
-				oldStatus: currentStatus,
-				newStatus: 'ASSIGNED_TO_PILOT',
-				reason:  null
-			},
-		});
-		await sendPushNotifications({
-			userIds: fieldWorkerId,
-			title: `Job Confirmation`,
-			message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
-			notificationType: 'JOB_ASSIGNED',
-		});
+			
+			});
+			await tx.jobActivity.update({ // update because this job id already has a record in this module 
+				where:{
+					jobId:job.id,
+				},
+				data: {
+					changedById: user.id, //Connect to an existing user
+					changedByRole: user.role as UserRole, 
+					oldStatus: currentStatus,
+					newStatus: 'ASSIGNED_TO_PILOT',
+					reason:  null
+				},
+			});
+			await sendPushNotifications({
+				userIds: fieldWorkerId,
+				title: `Job Confirmation`,
+				message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
+				notificationType: 'JOB_ASSIGNED',
+			});
+		})
+	
 		
 	}
 	if (requestedStatus) {
 		// Update job status
-		await prisma.job.update({
-			where: { id: jobId },
-			data: {
-				...data,
-				status: requestedStatus,
-			},
-		});
-		await prisma.jobActivity.create({
-			data: {
-				jobId:job.id,
-				changedById: user.id, //Connect to an existing user
-				changedByRole: user.role as UserRole, 
-				oldStatus: currentStatus,
-				newStatus: data.status,
-				reason:  null
-			},
-		});
+		await prisma.$transaction(async (tx) => {
+			await tx.job.update({
+				where: { id: jobId },
+				data: {
+					...data,
+					status: requestedStatus,
+				},
+			});
+			await tx.jobActivity.update({
+				where:{
+					jobId:job.id
+				},
+				data: {
+					changedById: user.id, //Connect to an existing user
+					changedByRole: user.role as UserRole, 
+					oldStatus: currentStatus,
+					newStatus: data.status,
+					reason:  null
+				},
+			});
+		})
+	
 	}
 	
 	return {
@@ -1886,6 +1896,7 @@ const updatePendingJobStatus = async (
 								: 'JOB_REJECTED',
 				},
 			});
+			
 			await tx.jobActivity.create({
 				data: {
 					jobId: updatedJob.id,
@@ -3228,7 +3239,8 @@ const getPilotRejectedJobs = async (
 	const jobs = await prisma.job.findMany({
 		where: {
 			fieldWorkerId: pilotId,
-			status: 'REJECTED',
+			status: 'PILOT_REJECTED',
+
 		},
 		include: {
 			applicator: {
