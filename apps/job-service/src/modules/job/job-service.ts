@@ -787,11 +787,9 @@ const updateJobByApplicator = async (
 				},
 			
 			});
-			await tx.jobActivity.update({ // update because this job id already has a record in this module 
-				where:{
-					jobId:job.id,
-				},
+			await tx.jobActivity.create({ // update because this job id already has a record in this module 
 				data: {
+					jobId:job.id,
 					changedById: user.id, //Connect to an existing user
 					changedByRole: user.role as UserRole, 
 					oldStatus: currentStatus,
@@ -1847,7 +1845,14 @@ const updatePendingJobStatus = async (
 		whereCondition.growerId = id;
 	} else if (role === 'WORKER') {
 		whereCondition.fieldWorkerId = id; // check for pilotid
-		whereCondition.status = 'ASSIGNED_TO_PILOT'; // should should only be update by pilot when job status is ASSIGNED_TO_PILOT
+		whereCondition.status = 'ASSIGNED_TO_PILOT'; 
+			// Worker can only change status from ASSIGNED_TO_PILOT to PILOT_REJECT or IN_PROGRESS
+		if (data.status !== 'PILOT_REJECTED' && data.status !== 'IN_PROGRESS') {
+			throw new ApiError(
+				httpStatus.FORBIDDEN,
+				'pilot can only update jobs to PILOT_REJECT or IN_PROGRESS',
+			);
+		}
 	}
 
 	// const job = await prisma.job.findUnique({
