@@ -65,7 +65,15 @@ const getAllProductsDropdown = catchAsync(
 		res.status(httpStatus.OK).json({ result: productData });
 	},
 );
-
+const updateRestricted=  catchAsync(
+	async (req: Request, res: Response) => {
+		const  id  = +req.params.id;
+        const { restrictedUse } = req.body;
+		const productData =
+			await productService.updateRestricted(id,restrictedUse);
+		res.status(httpStatus.OK).json( productData);
+	},
+);
 export default {
 	getAllProductCategories,
 	getAllAppliedUnits,
@@ -75,4 +83,5 @@ export default {
 	updateProduct,
 	deleteProduct,
 	getAllProductsDropdown,
+	updateRestricted
 };
