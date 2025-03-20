@@ -109,6 +109,10 @@ model ApplicatorGrower {
   isArchivedByApplicator Boolean          @default(false)
   isArchivedByGrower     Boolean          @default(false)
   canManageFarms         Boolean          @default(false)
+  isDeletedByApplicator  Boolean          @default(false)
+  isDeletedByGrower      Boolean          @default(false)
+  applicatorDeletedTill  DateTime? // Timestamp for when the applicator deleted till
+  growerDeletedTill      DateTime? // Timestamp for when the grower deleted till
   email                  String? // Store invited email to handle the case when applicator does notexists in the system
 
   applicator User? @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -532,6 +536,8 @@ enum InviteStatus {
   PENDING
   ACCEPTED
   REJECTED
+  DELETED_BY_APPLICATOR
+  DELETED_BY_GROWER
 }
 
 enum ViewTable {

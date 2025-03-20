@@ -420,7 +420,15 @@ const getAllGrowersByApplicator = async (
 							inviteInitiator: 'APPLICATOR',
 							inviteStatus: 'PENDING',
 						}, // PENDING must be from APPLICATOR
-						{ inviteStatus: { in: ['ACCEPTED', 'REJECTED'] } }, // Any ACCEPTED or REJECTED
+						{
+							inviteStatus: {
+								in: [
+									'ACCEPTED',
+									'REJECTED',
+									'DELETED_BY_GROWER',
+								],
+							},
+						}, // Any ACCEPTED or REJECTED
 					],
 				},
 			],
@@ -550,6 +558,25 @@ const getAllApplicatorsByGrower = async (
 	const applicators = await prisma.applicatorGrower.findMany({
 		where: {
 			growerId,
+			AND: [
+				{
+					OR: [
+						{
+							inviteInitiator: 'GROWER',
+							inviteStatus: 'PENDING',
+						},
+						{
+							inviteStatus: {
+								in: [
+									'ACCEPTED',
+									'REJECTED',
+									'DELETED_BY_APPLICATOR',
+								],
+							},
+						},
+					],
+				},
+			],
 		},
 		select: {
 			applicatorFirstName: true,
@@ -701,34 +728,121 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	}
 };
 
-// delete grower
-
 const deleteGrower = async (growerId: number, applicatorId: number) => {
-	await prisma.applicatorGrower.delete({
-		where: {
-			applicatorId_growerId: {
-				growerId,
-				applicatorId,
+	await prisma.$transaction(async (tx) => {
+		// Check if the applicatorGrower record exists and its soft delete status
+		const existingRecord = await tx.applicatorGrower.findUnique({
+			where: {
+				applicatorId_growerId: { growerId, applicatorId },
 			},
-		},
+			select: {
+				isDeletedByApplicator: true,
+				isDeletedByGrower: true,
+				id: true,
+			},
+		});
+
+		if (existingRecord?.isDeletedByGrower) {
+			// If already deleted by both, perform a hard delete
+			await tx.applicatorGrower.delete({
+				where: { id: existingRecord.id },
+			});
+		} else {
+			await tx.applicatorGrower.update({
+				where: {
+					applicatorId_growerId: {
+						growerId,
+						applicatorId,
+					},
+				},
+				data: {
+					isDeletedByApplicator: true,
+					applicatorDeletedTill: new Date(),
+					inviteStatus: 'DELETED_BY_APPLICATOR',
+				},
+			});
+		}
+
+		const farms = await tx.farm.findMany({
+			where: {
+				growerId,
+			},
+			select: {
+				id: true,
+			},
+		});
+		const farmIds = farms.map((farm) => farm.id);
+		await tx.pendingFarmPermission.deleteMany({
+			where: { inviteId: existingRecord?.id },
+		});
+		if (farmIds.length > 0) {
+			await tx.farmPermission.deleteMany({
+				where: { applicatorId, farmId: { in: farmIds } },
+			});
+		}
 	});
 
 	return {
-		message: 'Grower deleted successfully',
+		message: "Grower deleted successfully from the applicator's view.",
 	};
 };
+
 const deleteApplicator = async (growerId: number, applicatorId: number) => {
-	await prisma.applicatorGrower.delete({
-		where: {
-			applicatorId_growerId: {
-				growerId,
-				applicatorId,
+	await prisma.$transaction(async (tx) => {
+		// Check if the applicatorGrower record exists and its soft delete status
+		const existingRecord = await tx.applicatorGrower.findUnique({
+			where: {
+				applicatorId_growerId: { growerId, applicatorId },
 			},
-		},
+			select: {
+				isDeletedByApplicator: true,
+				isDeletedByGrower: true,
+				id: true,
+			},
+		});
+
+		if (existingRecord?.isDeletedByApplicator) {
+			// If already deleted by both, perform a hard delete
+			await tx.applicatorGrower.delete({
+				where: { id: existingRecord.id },
+			});
+		} else {
+			await tx.applicatorGrower.update({
+				where: {
+					applicatorId_growerId: {
+						growerId,
+						applicatorId,
+					},
+				},
+				data: {
+					isDeletedByGrower: true,
+					growerDeletedTill: new Date(),
+					inviteStatus: 'DELETED_BY_GROWER', // Update status to reflect the deletion
+				},
+			});
+		}
+
+		const farms = await tx.farm.findMany({
+			where: {
+				growerId,
+			},
+			select: {
+				id: true,
+			},
+		});
+		const farmIds = farms.map((farm) => farm.id);
+		await tx.pendingFarmPermission.deleteMany({
+			where: { inviteId: existingRecord?.id },
+		});
+		if (farmIds.length > 0) {
+			await tx.farmPermission.deleteMany({
+				where: { applicatorId, farmId: { in: farmIds } },
+			});
+		}
 	});
 
 	return {
-		message: 'applicator deleted successfully',
+		message: "Applicator deleted successfully from the grower's view.",
 	};
 };
 
@@ -1185,7 +1299,9 @@ const sendInviteToApplicator = async (
 		if (existingInvite) {
 			if (
 				existingInvite.inviteStatus === 'REJECTED' ||
-				existingInvite.inviteStatus === 'PENDING'
+				existingInvite.inviteStatus === 'PENDING' ||
+				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
+				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
 			) {
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
@@ -1313,7 +1429,9 @@ const sendInviteToGrower = async (
 		if (existingInvite) {
 			if (
 				existingInvite.inviteStatus === 'REJECTED' ||
-				existingInvite.inviteStatus === 'PENDING'
+				existingInvite.inviteStatus === 'PENDING' ||
+				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
+				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
 			) {
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
@@ -1408,7 +1526,6 @@ const sendInviteToGrower = async (
 		};
 	}
 };
-// service for user
 const getGrowerById = async (applicatorId: number, growerId: number) => {
 	// Fetch growers with their farms and fields
 	const grower = await prisma.applicatorGrower.findUnique({
@@ -1993,7 +2110,6 @@ const getWeather = async (user: User, options: city) => {
 		);
 		// Add hourly weather data
 		if (parseInt(hour) % 1 === 0) {
-			// Ye condition ensure karegi ke har 1-hour ka data add ho
 			groupedWeather[date].hourly.push({
 				time: time12,
 				temperature: item.main.temp,

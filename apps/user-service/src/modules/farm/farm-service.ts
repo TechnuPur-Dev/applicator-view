@@ -165,13 +165,28 @@ const getAllFarmsByGrower = async (
 		totalResults,
 	};
 };
-const getFarmById = async (Id: number) => {
+const getFarmById = async (user: User, id: number) => {
 	const farm = await prisma.farm.findUnique({
 		where: {
-			id: Id,
+			id,
+			growerId: user.id,
 		},
 		include: {
 			fields: true, // Include related fields in the result
+			permissions: {
+				include: {
+					applicator: {
+						select: {
+							id: true,
+							profileImage: true,
+							thumbnailProfileImage: true,
+							firstName: true,
+							lastName: true,
+							fullName: true,
+						},
+					},
+				},
+			},
 			state: {
 				select: {
 					id: true,

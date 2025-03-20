@@ -16,7 +16,7 @@ router
 	);
 router.route('/get/all').get(verifyToken, forecastCity.getAllForecastCities);
 router
-	.route('/get/by-Id/:id')
+	.route('/get/by-id/:id')
 	.get(
 		verifyToken,
 		validateSchema(forecastCityValidation.paramsSchema),
