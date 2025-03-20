@@ -132,8 +132,8 @@ const getAllFarms = catchAsync(async (req: Request, res: Response) => {
 });
 const handleFarmPermissions = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const { growerId,action,pendingFarmPermission } = req.body; // Destructure body
-	const result = await farmService.handleFarmPermissions(currentUser,growerId,action,pendingFarmPermission);
+	const { applciatorId,action,pendingFarmPermission } = req.body; // Destructure body
+	const result = await farmService.handleFarmPermissions(currentUser,applciatorId,action,pendingFarmPermission);
 	res.status(httpStatus.OK).json(result);
 });
 export default {

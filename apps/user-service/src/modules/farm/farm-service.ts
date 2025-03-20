@@ -614,24 +614,24 @@ const getAllFarms = async (growerId: number, options: PaginateOptions) => {
 
 const handleFarmPermissions = async (
 	currentUser: User,
-	growerId: number,
+	applicatorId: number,
 	action: string,
 	pendingFarmPermission: {
 		farmId: number;
 	}[],
 ) => {
-	const { id: applicatorId, role } = currentUser;
+	const { id: growerId, role } = currentUser;
 
-	if (role !== 'APPLICATOR')
-		return 'You are not allowed to perform this action.';
+	if (role !== 'GROWER')
+		return {message:'You are not allowed to perform this action.'}
 
-	const grower = await prisma.user.findUnique({
-		where: { id: growerId, role: 'GROWER' },
+	const applciator = await prisma.user.findUnique({
+		where: { id: applicatorId, role: 'APPLICATOR' },
 	});
-	if (!grower) {
+	if (!applciator) {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
-			'Grower with email not found.',
+			'APPLICATOR with email not found.',
 		);
 	}
 
