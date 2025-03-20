@@ -699,7 +699,27 @@ const handleFarmPermissions = async (
 		message: `Permissions ${action.toLowerCase()} successfully.`,
 	};
 };
-
+const getAvailableApplicators = async (farmId:number) => {
+	const availableApplicators = await prisma.user.findMany({
+		where: {
+			NOT: {
+				farmPermissions: {
+					some: {
+						farmId: farmId
+					}
+				}
+			},
+			role:"APPLICATOR"
+		},
+		select: {
+			id: true,
+			fullName: true,
+			email: true,
+			role:true
+		}
+	});
+	return availableApplicators
+}
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -713,4 +733,5 @@ export default {
 	uploadFarmImage,
 	getAllFarms,
 	handleFarmPermissions,
+	getAvailableApplicators
 };
