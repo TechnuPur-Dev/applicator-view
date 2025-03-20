@@ -428,7 +428,7 @@ model ForecastCity {
 
 model JobActivity {
   id            Int       @id @default(autoincrement())
-  jobId         Int       @unique // Link to the Job
+  jobId         Int // Link to the Job
   changedById   Int // User who changed the status (Applicator, Pilot, or Grower)
   changedByRole UserRole // Enum: APPLICATOR, GROWER, PILOT
   oldStatus     JobStatus
