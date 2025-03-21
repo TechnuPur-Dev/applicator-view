@@ -176,4 +176,24 @@ router
 		verifyToken,
 		jobController.getPilotRejectedJobs,
 	);
+	router 
+	.route('/pilot/get-rejectedjobs')
+	.get(
+		verifyToken,
+		jobController.getPilotRejectedJobs,
+	);
+	router
+	.route('/pilot/get-job/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getJobByIdForPilot,
+	);
+	router
+	.route('/get-jobActivity/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getJobActivityById,
+	);
 export default router;

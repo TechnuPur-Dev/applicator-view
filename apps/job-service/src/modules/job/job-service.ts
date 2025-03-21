@@ -817,11 +817,10 @@ const updateJobByApplicator = async (
 					status: requestedStatus,
 				},
 			});
-			await tx.jobActivity.update({
-				where:{
-					jobId:job.id
-				},
+			await tx.jobActivity.create({
+		
 				data: {
+					jobId:job.id,
 					changedById: user.id, //Connect to an existing user
 					changedByRole: user.role as UserRole, 
 					oldStatus: currentStatus,
@@ -3317,6 +3316,68 @@ const getPilotRejectedJobs = async (
 		totalResults,
 	};
 };
+const getJobByIdForPilot = async (
+	jobId: number,
+	pilotId : number
+	// options: PaginateOptions,
+) => {
+	  const result = await prisma.job.findUnique({
+       where:{
+		id:jobId,
+		fieldWorkerId:pilotId
+	   },
+	   include: {
+		grower: {
+			select: {
+				firstName: true,
+				lastName: true,
+				fullName: true,
+				email: true,
+				phoneNumber: true,
+				businessName: true,
+			},
+		},
+		applicator: {
+			select: {
+				firstName: true,
+				lastName: true,
+				fullName: true,
+				email: true,
+				phoneNumber: true,
+				businessName: true,
+			},
+		},
+		fieldWorker: {
+			select: {
+				id:true,
+				fullName: true,
+			},
+		},
+
+	},
+	omit:{
+		applicatorId:true,
+		growerId:true,
+		fieldWorkerId:true,
+	}
+	  })
+	  return{
+		result
+	  }
+};
+const getJobActivityById = async (
+	jobId: number,
+	// options: PaginateOptions,
+) => {
+	  const result = await prisma.jobActivity.findMany({
+       where:{
+		jobId:jobId
+	   },
+	  })
+	  return{
+		result
+	  }
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -3348,4 +3409,7 @@ export default {
 	getMyJobsByPilot,
 	getPilotPendingJobs,
 	getPilotRejectedJobs,
+	getJobByIdForPilot,
+	getJobActivityById,
+	
 };
