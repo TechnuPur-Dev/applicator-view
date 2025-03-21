@@ -691,10 +691,10 @@ const getJobById = async (user: User, jobId: number) => {
 				0,
 			),
 		},
-		products: products.map(({ product, ...rest }) => ({
+		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
 			...rest,
-			name: product?.productName, // Move productName to name
-			perAcreRate: product?.perAcreRate, // Move perAcreRate from product
+			name: product ? product?.productName : name, // Move productName to name
+			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
 		})),
 	}))(job);
 
@@ -785,16 +785,16 @@ const updateJobByApplicator = async (
 						},
 					},
 				},
-			
 			});
-			await tx.jobActivity.create({ // update because this job id already has a record in this module 
+			await tx.jobActivity.create({
+				// update because this job id already has a record in this module
 				data: {
-					jobId:job.id,
+					jobId: job.id,
 					changedById: user.id, //Connect to an existing user
-					changedByRole: user.role as UserRole, 
+					changedByRole: user.role as UserRole,
 					oldStatus: currentStatus,
 					newStatus: 'ASSIGNED_TO_PILOT',
-					reason:  null
+					reason: null,
 				},
 			});
 			await sendPushNotifications({
@@ -803,9 +803,7 @@ const updateJobByApplicator = async (
 				message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
 				notificationType: 'JOB_ASSIGNED',
 			});
-		})
-	
-		
+		});
 	}
 	if (requestedStatus) {
 		// Update job status
@@ -818,18 +816,16 @@ const updateJobByApplicator = async (
 				},
 			});
 			await tx.jobActivity.create({
-		
 				data: {
-					jobId:job.id,
+					jobId: job.id,
 					changedById: user.id, //Connect to an existing user
-					changedByRole: user.role as UserRole, 
+					changedByRole: user.role as UserRole,
 					oldStatus: currentStatus,
 					newStatus: data.status,
-					reason:  null
+					reason: null,
 				},
 			});
-		})
-	
+		});
 	}
 
 	return {
@@ -1844,8 +1840,8 @@ const updatePendingJobStatus = async (
 		whereCondition.growerId = id;
 	} else if (role === 'WORKER') {
 		whereCondition.fieldWorkerId = id; // check for pilotid
-		whereCondition.status = 'ASSIGNED_TO_PILOT'; 
-			// Worker can only change status from ASSIGNED_TO_PILOT to PILOT_REJECT or IN_PROGRESS
+		whereCondition.status = 'ASSIGNED_TO_PILOT';
+		// Worker can only change status from ASSIGNED_TO_PILOT to PILOT_REJECT or IN_PROGRESS
 		if (data.status !== 'PILOT_REJECTED' && data.status !== 'IN_PROGRESS') {
 			throw new ApiError(
 				httpStatus.FORBIDDEN,
@@ -1910,7 +1906,7 @@ const updatePendingJobStatus = async (
 								: 'JOB_REJECTED',
 				},
 			});
-			
+
 			await tx.jobActivity.create({
 				data: {
 					jobId: updatedJob.id,
@@ -2975,6 +2971,7 @@ const getJobInvoice = async (user: User, jobId: number) => {
 					name: true,
 					totalAcres: true,
 					price: true,
+					perAcreRate: true,
 					product: {
 						select: {
 							id: true,
@@ -3034,7 +3031,7 @@ const getJobInvoice = async (user: User, jobId: number) => {
 	const { applicator, grower } = job;
 
 	// Format the job objects
-	const formattedJob = (({ ...job }) => ({
+	const formattedJob = (({ products, ...job }) => ({
 		...job,
 		applicator: { ...applicator, state: applicator?.state?.name },
 		grower: { ...grower, state: grower?.state?.name },
@@ -3049,6 +3046,11 @@ const getJobInvoice = async (user: User, jobId: number) => {
 				0,
 			),
 		},
+		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
+			...rest,
+			name: product ? product?.productName : name, // Move productName to name
+			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
+		})),
 	}))(job);
 
 	return formattedJob;
@@ -3106,6 +3108,7 @@ const getMyJobsByPilot = async (
 					fullName: true,
 					email: true,
 					phoneNumber: true,
+					businessName: true,
 				},
 			},
 			fieldWorker: {
@@ -3186,6 +3189,7 @@ const getPilotPendingJobs = async (
 					fullName: true,
 					email: true,
 					phoneNumber: true,
+					businessName: true,
 				},
 			},
 			fieldWorker: {
@@ -3257,7 +3261,6 @@ const getPilotRejectedJobs = async (
 		where: {
 			fieldWorkerId: pilotId,
 			status: 'PILOT_REJECTED',
-
 		},
 		include: {
 			applicator: {
@@ -3267,6 +3270,7 @@ const getPilotRejectedJobs = async (
 					fullName: true,
 					email: true,
 					phoneNumber: true,
+					businessName: true,
 				},
 			},
 			fieldWorker: {
@@ -3318,65 +3322,135 @@ const getPilotRejectedJobs = async (
 };
 const getJobByIdForPilot = async (
 	jobId: number,
-	pilotId : number
+	pilotId: number,
 	// options: PaginateOptions,
 ) => {
-	  const result = await prisma.job.findUnique({
-       where:{
-		id:jobId,
-		fieldWorkerId:pilotId
-	   },
-	   include: {
-		grower: {
-			select: {
-				firstName: true,
-				lastName: true,
-				fullName: true,
-				email: true,
-				phoneNumber: true,
-				businessName: true,
-			},
+	const job = await prisma.job.findUnique({
+		where: {
+			id: jobId,
+			fieldWorkerId: pilotId,
 		},
-		applicator: {
-			select: {
-				firstName: true,
-				lastName: true,
-				fullName: true,
-				email: true,
-				phoneNumber: true,
-				businessName: true,
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
 			},
-		},
-		fieldWorker: {
-			select: {
-				id:true,
-				fullName: true,
+			applicator: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+					businessName: true,
+				},
 			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					id: true,
+					farmImageUrl: true,
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							id: true,
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			products: {
+				select: {
+					id: true,
+					totalAcres: true,
+					price: true,
+					name: true,
+					perAcreRate: true,
+					product: {
+						select: {
+							id: true,
+							productName: true,
+							perAcreRate: true,
+						},
+					},
+				},
+			},
+			applicationFees: true,
 		},
-
-	},
-	omit:{
-		applicatorId:true,
-		growerId:true,
-		fieldWorkerId:true,
+		omit: {
+			applicatorId: true,
+			growerId: true,
+			fieldWorkerId: true,
+		},
+	});
+	if (!job) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'No job found for the given job Id.',
+		);
 	}
-	  })
-	  return{
-		result
-	  }
+	const fields = await prisma.field.findMany({
+		where: {
+			farmId: job.farm.id,
+		},
+		select: {
+			acres: true,
+		},
+	});
+	// Format the job object with conditional removal of applicator or grower
+	const formattedJob = (({ products, ...job }) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		),
+		farm: {
+			...job.farm,
+			totalAcres: fields.reduce(
+				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
+				0,
+			),
+		},
+		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
+			...rest,
+			name: product ? product?.productName : name, // Move productName to name
+			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
+		})),
+	}))(job);
+
+	return formattedJob;
 };
-const getJobActivityById = async (
+const getJobActivitiesByJobId = async (
 	jobId: number,
 	// options: PaginateOptions,
 ) => {
-	  const result = await prisma.jobActivity.findMany({
-       where:{
-		jobId:jobId
-	   },
-	  })
-	  return{
-		result
-	  }
+	const jobActivities = await prisma.jobActivity.findMany({
+		where: {
+			jobId: jobId,
+		},
+	});
+
+	return jobActivities;
 };
 export default {
 	createJob,
@@ -3410,6 +3484,5 @@ export default {
 	getPilotPendingJobs,
 	getPilotRejectedJobs,
 	getJobByIdForPilot,
-	getJobActivityById,
-	
+	getJobActivitiesByJobId,
 };

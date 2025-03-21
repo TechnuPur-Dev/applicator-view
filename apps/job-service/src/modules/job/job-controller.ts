@@ -268,17 +268,19 @@ const getPilotRejectedJobs = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getPilotRejectedJobs(pilotId, options);
 	res.status(httpStatus.OK).json(result);
 });
-const getJobActivityById = catchAsync(async (req: Request, res: Response) => {
-	const jobId = +req.params.jobId;
-	// const options = pick(req.query, ['limit', 'page']);
-	const result = await jobService.getJobActivityById(jobId);
-	res.status(httpStatus.OK).json(result);
-});
+const getJobActivitiesByJobId = catchAsync(
+	async (req: Request, res: Response) => {
+		const jobId = +req.params.jobId;
+		// const options = pick(req.query, ['limit', 'page']);
+		const result = await jobService.getJobActivitiesByJobId(jobId);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
 const getJobByIdForPilot = catchAsync(async (req: Request, res: Response) => {
 	const jobId = +req.params.jobId;
-	const pilotId = req.payload.id
+	const pilotId = req.payload.id;
 	// const options = pick(req.query, ['limit', 'page']);
-	const result = await jobService.getJobByIdForPilot(jobId,pilotId);
+	const result = await jobService.getJobByIdForPilot(jobId, pilotId);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -313,5 +315,5 @@ export default {
 	getPilotPendingJobs,
 	getPilotRejectedJobs,
 	getJobByIdForPilot,
-	getJobActivityById
+	getJobActivitiesByJobId,
 };

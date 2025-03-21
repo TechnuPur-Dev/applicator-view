@@ -194,6 +194,6 @@ router
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.paramsSchema),
-		jobController.getJobActivityById,
+		jobController.getJobActivitiesByJobId,
 	);
 export default router;

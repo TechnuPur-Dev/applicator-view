@@ -1910,6 +1910,12 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 		});
+		if (!invite) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'User not found or invite expired.',
+			);
+		}
 		const user = invite?.grower;
 		const applicator = invite?.applicator;
 
@@ -1966,6 +1972,12 @@ const verifyInviteToken = async (token: string) => {
 				},
 			},
 		});
+		if (!invite) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'User not found or invite expired.',
+			);
+		}
 
 		const user = invite?.applicator;
 		const grower = invite?.grower;
