@@ -1845,7 +1845,7 @@ const updatePendingJobStatus = async (
 		if (data.status !== 'PILOT_REJECTED' && data.status !== 'IN_PROGRESS') {
 			throw new ApiError(
 				httpStatus.FORBIDDEN,
-				'pilot can only update jobs to PILOT_REJECT or IN_PROGRESS',
+				'Pilot can only update jobs to PILOT_REJECTED or IN_PROGRESS',
 			);
 		}
 	}

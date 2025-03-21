@@ -20,7 +20,7 @@ const jobStatusSchema: Schema = Joi.string()
 		'OPEN_FOR_BIDDING',
 		'ASSIGNED_TO_PILOT',
 		'PILOT_REJECTED',
-		'IN_PROGRESS'
+		'IN_PROGRESS',
 	)
 	.required();
 
@@ -64,7 +64,10 @@ const createJobSchema = Joi.object({
 				Joi.object({
 					productName: Joi.string().min(1).max(50).optional(),
 					productId: Joi.number().integer().positive().optional(),
-					perAcreRate: Joi.number().precision(2).positive().optional(),
+					perAcreRate: Joi.number()
+						.precision(2)
+						.positive()
+						.optional(),
 					totalAcres: Joi.number().precision(2).positive().required(),
 					price: Joi.number().precision(2).positive().optional(),
 				}),
@@ -117,7 +120,7 @@ const jobSourceParamSchema: Schema = Joi.object({
 
 const jobStatusParamSchema: Schema = Joi.object({
 	params: Joi.object({
-		jobId: Joi.number().integer().positive(),
+		jobId: Joi.number().integer().positive().required(),
 	}).required(),
 	body: Joi.object({
 		status: Joi.string()
@@ -128,11 +131,14 @@ const jobStatusParamSchema: Schema = Joi.object({
 				'REJECTED',
 			)
 			.required(),
-		rejectionReason: Joi.string().min(1).max(300).when('status', {
-			is: 'REJECTED',
-			then: Joi.required(),
-			otherwise: Joi.forbidden(),
-		}),
+		rejectionReason: Joi.string()
+			.min(1)
+			.max(300)
+			.when('status', {
+				is: Joi.valid('REJECTED', 'PILOT_REJECTED'),
+				then: Joi.required(),
+				otherwise: Joi.forbidden(),
+			}),
 	}).required(),
 });
 
