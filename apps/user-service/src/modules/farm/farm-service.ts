@@ -450,62 +450,116 @@ const deleteFarmPermission = async (user: User, permissionId: number) => {
 const askFarmPermission = async (
 	currentUser: User,
 	growerId: number,
-
-	farmPermission: {
-		farmId: number;
-		canView: boolean;
-		canEdit: boolean;
-	}[],
+	farmPermission: { farmId: number; canView: boolean; canEdit: boolean }[],
 ) => {
 	const { id: applicatorId, role } = currentUser;
 
-	if (role !== 'APPLICATOR')
-		return 'You are not allowed to perform this action.';
-	const grower = await prisma.user.findUnique({
-		where: { id: growerId, role: 'GROWER' },
-	});
-	if (!grower) {
+	// Check if the user is an applicator
+	if (role !== 'APPLICATOR') {
 		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'Grower with email not found.',
+			httpStatus.FORBIDDEN,
+			'You are not allowed to perform this action.',
 		);
 	}
 
+	// Check if the applicator has an accepted invitation from the grower
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
-				growerId: growerId,
-				applicatorId: applicatorId,
+				growerId,
+				applicatorId,
+			},
+		},
+		include: {
+			grower: {
+				select: {
+					email: true,
+				},
 			},
 		},
 	});
-	await prisma.$transaction(async (tx) => {
-		if (existingInvite) {
-			let pendingPermission =
-				await prisma.pendingFarmPermission.findFirst({
-					where: { inviteId: existingInvite.id },
-				});
-			if (pendingPermission) {
-				await tx.pendingFarmPermission.deleteMany({
-					where: { inviteId: existingInvite.id },
-				});
-			}
 
-			await tx.pendingFarmPermission.createMany({
-				data: farmPermission.map((farm) => ({
-					farmId: farm.farmId,
-					inviteId: existingInvite.id,
-					canView: farm.canView,
-					canEdit: farm.canEdit,
-				})),
-			});
-		} else {
-			throw new ApiError(
-				httpStatus.NOT_FOUND,
-				'An active invitation not found',
-			);
-		}
+	if (!existingInvite || existingInvite.inviteStatus !== 'ACCEPTED') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'You are not allowed to perform this action.',
+		);
+	}
+
+	// Validate that all farmIds belong to the given growerId
+	const validFarms = await prisma.farm.findMany({
+		where: {
+			id: { in: farmPermission.map((farm) => farm.farmId) },
+			growerId, // Ensure the farm belongs to the grower
+		},
+		select: { id: true },
 	});
+
+	const validFarmIds = validFarms.map((farm) => farm.id);
+	const invalidFarmIds = farmPermission
+		.map((farm) => farm.farmId)
+		.filter((farmId) => !validFarmIds.includes(farmId));
+
+	if (invalidFarmIds.length > 0) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			`Invalid farm IDs: ${invalidFarmIds.join(', ')}. These farms do not belong to the specified grower.`,
+		);
+	}
+
+	// Proceed with updating pending farm permissions
+	await prisma.$transaction(async (tx) => {
+		// Remove existing pending permissions for this invite
+		await tx.pendingFarmPermission.deleteMany({
+			where: { inviteId: existingInvite.id },
+		});
+
+		// Create new pending permissions
+		await tx.pendingFarmPermission.createMany({
+			data: farmPermission.map((farm) => ({
+				farmId: farm.farmId,
+				inviteId: existingInvite.id,
+				canView: farm.canView,
+				canEdit: farm.canEdit,
+			})),
+		});
+	});
+	const subject = 'Ask for Farm Permissions';
+	const message = `
+	<p>Hello,</p>
+	
+	<p>An applicator is requesting access to manage your farms on our platform.</p>
+  
+	<p>Here are the details of the request:</p>
+  
+	<ul>
+	  <li><strong>Requested by:</strong> ${currentUser.firstName} ${currentUser.lastName}</li>
+	</ul>
+  
+	<p>You can review and approve or deny this request by clicking the link below:</p>
+  
+	<p><a href="[APPROVAL_LINK]" target="_blank">Manage Farm Permissions</a></p>
+  
+	<p>If you were not expecting this request, you can safely ignore this email.</p>
+  
+	<p>Best regards,<br> The Team</p>
+  `;
+
+	const email = existingInvite?.grower?.email;
+
+	if (!email) {
+		throw new Error('Email address is not available for the grower.');
+	}
+
+	const html = await mailHtmlTemplate(subject, message);
+
+	await sendEmail({
+		emailTo: email,
+		subject,
+		text: 'Ask for Farm Permissions',
+		html,
+	});
+
 	return {
 		message: 'Permissions request sent successfully.',
 	};
@@ -623,7 +677,7 @@ const handleFarmPermissions = async (
 	const { id: growerId, role } = currentUser;
 
 	if (role !== 'GROWER')
-		return {message:'You are not allowed to perform this action.'}
+		return { message: 'You are not allowed to perform this action.' };
 
 	const applciator = await prisma.user.findUnique({
 		where: { id: applicatorId, role: 'APPLICATOR' },
@@ -699,27 +753,44 @@ const handleFarmPermissions = async (
 		message: `Permissions ${action.toLowerCase()} successfully.`,
 	};
 };
-const getAvailableApplicators = async (farmId:number) => {
+const getAvailableApplicators = async (user: User, farmId: number) => {
+	const farm = await prisma.farm.findUnique({
+		where: {
+			id: farmId,
+			growerId: user.id,
+		},
+	});
+	if (!farm) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
+	}
 	const availableApplicators = await prisma.user.findMany({
 		where: {
+			// Ensure the applicator is connected to the current grower with an accepted invite
+			applicators: {
+				some: {
+					growerId: user.id,
+					inviteStatus: 'ACCEPTED',
+				},
+			},
+			// Ensure farmPermissions are not already assigned for the given farmId
 			NOT: {
 				farmPermissions: {
 					some: {
-						farmId: farmId
-					}
-				}
+						farmId: farmId,
+					},
+				},
 			},
-			role:"APPLICATOR"
+			role: 'APPLICATOR',
 		},
 		select: {
 			id: true,
 			fullName: true,
 			email: true,
-			role:true
-		}
+		},
 	});
-	return availableApplicators
-}
+	return availableApplicators;
+};
+
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -733,5 +804,5 @@ export default {
 	uploadFarmImage,
 	getAllFarms,
 	handleFarmPermissions,
-	getAvailableApplicators
+	getAvailableApplicators,
 };

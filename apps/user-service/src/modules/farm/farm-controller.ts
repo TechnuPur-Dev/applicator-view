@@ -78,8 +78,12 @@ const deleteFarmPermission = catchAsync(async (req: Request, res: Response) => {
 });
 const askFarmPermission = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const { growerId,farmPermission } = req.body; // Destructure body
-	const result = await farmService.askFarmPermission(currentUser,growerId,farmPermission);
+	const { growerId, farmPermission } = req.body; // Destructure body
+	const result = await farmService.askFarmPermission(
+		currentUser,
+		growerId,
+		farmPermission,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 
@@ -130,17 +134,30 @@ const getAllFarms = catchAsync(async (req: Request, res: Response) => {
 	const userData = await farmService.getAllFarms(growerId, options);
 	res.status(httpStatus.OK).json(userData);
 });
-const handleFarmPermissions = catchAsync(async (req: Request, res: Response) => {
-	const currentUser = req.user;
-	const { applciatorId,action,pendingFarmPermission } = req.body; // Destructure body
-	const result = await farmService.handleFarmPermissions(currentUser,applciatorId,action,pendingFarmPermission);
-	res.status(httpStatus.OK).json(result);
-});
-const getAvailableApplicators = catchAsync(async (req: Request, res: Response) => {
-	const farmId = +req.params.farmId;
-	const userData = await farmService.getAvailableApplicators(farmId);
-	res.status(httpStatus.OK).json(userData);
-});
+const handleFarmPermissions = catchAsync(
+	async (req: Request, res: Response) => {
+		const currentUser = req.user;
+		const { applciatorId, action, pendingFarmPermission } = req.body; // Destructure body
+		const result = await farmService.handleFarmPermissions(
+			currentUser,
+			applciatorId,
+			action,
+			pendingFarmPermission,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+const getAvailableApplicators = catchAsync(
+	async (req: Request, res: Response) => {
+		const farmId = +req.params.farmId;
+		const currentUser = req.user;
+		const result = await farmService.getAvailableApplicators(
+			currentUser,
+			farmId,
+		);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -154,5 +171,5 @@ export default {
 	uploadFarmImage,
 	getAllFarms,
 	handleFarmPermissions,
-	getAvailableApplicators
+	getAvailableApplicators,
 };
