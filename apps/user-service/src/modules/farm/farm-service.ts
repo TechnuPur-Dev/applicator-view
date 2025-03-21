@@ -166,11 +166,30 @@ const getAllFarmsByGrower = async (
 	};
 };
 const getFarmById = async (user: User, id: number) => {
+	const { role } = user;
+	const whereCondition: {
+		id: number;
+		applicatorId?: number;
+		growerId?: number;
+		permissions?: {
+			some: {
+				applicatorId: number;
+			};
+		};
+	} = { id };
+
+	if (role === 'APPLICATOR') {
+		whereCondition.permissions = {
+			some: {
+				applicatorId: user.id,
+			},
+		};
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = user.id;
+	}
+
 	const farm = await prisma.farm.findUnique({
-		where: {
-			id,
-			growerId: user.id,
-		},
+		where: whereCondition,
 		include: {
 			fields: true, // Include related fields in the result
 			permissions: {
