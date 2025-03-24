@@ -75,5 +75,11 @@ router
 		validateSchema(geoDataValidation.paramsSchema),
 		geoDataController.getTownshipsByCounty,
 	);
+	router
+	.route('/address-validate')
+	.get(
+		
+		geoDataController.validateAddress,
+	);
 
 export default router;
