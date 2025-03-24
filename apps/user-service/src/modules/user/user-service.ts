@@ -587,6 +587,7 @@ const getAllApplicatorsByGrower = async (
 			inviteToken: true,
 			email: true,
 			expiresAt: true,
+			inviteInitiator: true,
 			applicator: {
 				include: {
 					state: {
@@ -1543,6 +1544,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			canManageFarms: true,
 			expiresAt: true,
 			inviteToken: true,
+			inviteInitiator: true,
 			grower: {
 				include: {
 					state: {
