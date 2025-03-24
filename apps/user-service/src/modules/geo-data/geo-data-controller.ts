@@ -79,6 +79,12 @@ const getTownshipsByCounty = catchAsync(async (req: Request, res: Response) => {
 	const result = await geoDataService.getTownshipsByCounty(countyId);
 	res.status(httpStatus.OK).json(result);
 });
+const validateAddress = catchAsync(async (req: Request, res: Response) => {
+	const { street, city, state } = req.query as { street: string; city: string; state: string };
+
+	const result = await geoDataService.validateAddress( street, city, state);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createStates,
 	createCounties,
@@ -94,4 +100,5 @@ export default {
 	updateTownship,
 	getCountiesByState,
 	getTownshipsByCounty,
+	validateAddress
 };

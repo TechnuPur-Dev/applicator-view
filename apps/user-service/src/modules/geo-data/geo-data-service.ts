@@ -8,6 +8,7 @@ import {
 	UpdateTownShipData,
 	UpdateCountyData,
 } from './geo-data-types';
+import axios from 'axios';
 
 // to update user profile
 const createStates = async (data: StateData[]) => {
@@ -181,15 +182,37 @@ const updateTownship = async (townshipId: number, data: UpdateTownShipData) => {
 	return updatedTownship;
 };
 export const getCountiesByState = async (stateId: number) => {
-    return await prisma.county.findMany({
-        where: { stateId }
-    });
+	return await prisma.county.findMany({
+		where: { stateId },
+	});
 };
 
 export const getTownshipsByCounty = async (countyId: number) => {
-    return await prisma.township.findMany({
-        where: { countyId }
-    });
+	return await prisma.township.findMany({
+		where: { countyId },
+	});
+};
+
+export const validateAddress = async (
+	street: string,
+	city: string,
+	state: string,
+) => {
+	const AUTH_ID = '3c1db701-d45f-5411-cafd-7ead392570eb';
+	const AUTH_TOKEN = 'cvuxc0QLqUmBhkpuAkxk';
+	try {
+		const url = `https://us-street.api.smarty.com/street-address?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&street=${encodeURIComponent(street)}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
+
+		const response = await axios.get(url);
+
+		if (response.data.length === 0) {
+			return { message: 'Address not found or invalid' };
+		}
+
+		return { message: 'Valid Address' };
+	} catch (error: any) {
+		return { message: error.response?.data || error.message };
+	}
 };
 export default {
 	createStates,
@@ -205,5 +228,6 @@ export default {
 	updateCounty,
 	updateTownship,
 	getCountiesByState,
-	getTownshipsByCounty
+	getTownshipsByCounty,
+	validateAddress,
 };
