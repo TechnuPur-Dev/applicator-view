@@ -653,6 +653,18 @@ const getJobById = async (user: User, jobId: number) => {
 				},
 			},
 			applicationFees: true,
+			JobActivity:{
+				select:{
+					createdAt:true,
+					oldStatus:true,
+					newStatus:true,
+					changedBy:{
+						select:{
+							fullName:true
+						}
+					}
+				}
+			}
 		},
 		omit: {
 			applicatorId: true,
@@ -676,7 +688,7 @@ const getJobById = async (user: User, jobId: number) => {
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ applicator, grower, products, ...job }) => ({
+	const formattedJob = (({ applicator, grower, products,JobActivity, ...job }) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
@@ -695,6 +707,10 @@ const getJobById = async (user: User, jobId: number) => {
 			...rest,
 			name: product ? product?.productName : name, // Move productName to name
 			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
+		})),
+		JobActivity: JobActivity.map(({ changedBy, ...activity }) => ({
+			...activity,
+			updatedBy: changedBy?.fullName || null,
 		})),
 	}))(job);
 
@@ -1845,7 +1861,7 @@ const updatePendingJobStatus = async (
 		if (data.status !== 'PILOT_REJECTED' && data.status !== 'IN_PROGRESS') {
 			throw new ApiError(
 				httpStatus.FORBIDDEN,
-				'Pilot can only update jobs to PILOT_REJECTED or IN_PROGRESS',
+				'pilot can only update jobs to PILOT_REJECT or IN_PROGRESS',
 			);
 		}
 	}
@@ -3396,6 +3412,18 @@ const getJobByIdForPilot = async (
 				},
 			},
 			applicationFees: true,
+			JobActivity:{
+				select:{
+					createdAt:true,
+					oldStatus:true,
+					newStatus:true,
+					changedBy:{
+						select:{
+							fullName:true
+						}
+					}
+				}
+			}
 		},
 		omit: {
 			applicatorId: true,
@@ -3418,7 +3446,7 @@ const getJobByIdForPilot = async (
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ products, ...job }) => ({
+	const formattedJob = (({ products,JobActivity, ...job }) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
@@ -3435,6 +3463,10 @@ const getJobByIdForPilot = async (
 			...rest,
 			name: product ? product?.productName : name, // Move productName to name
 			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
+		})),
+		JobActivity: JobActivity.map(({ changedBy, ...activity }) => ({
+			...activity,
+			updatedBy: changedBy?.fullName || null,
 		})),
 	}))(job);
 
