@@ -653,18 +653,22 @@ const getJobById = async (user: User, jobId: number) => {
 				},
 			},
 			applicationFees: true,
-			JobActivity:{
-				select:{
-					createdAt:true,
-					oldStatus:true,
-					newStatus:true,
-					changedBy:{
-						select:{
-							fullName:true
-						}
-					}
-				}
-			}
+			JobActivity: {
+				select: {
+					createdAt: true,
+					oldStatus: true,
+					newStatus: true,
+					changedBy: {
+						select: {
+							fullName: true,
+						},
+					},
+					reason: true,
+				},
+				orderBy: {
+					id: 'desc',
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -688,7 +692,13 @@ const getJobById = async (user: User, jobId: number) => {
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ applicator, grower, products,JobActivity, ...job }) => ({
+	const formattedJob = (({
+		applicator,
+		grower,
+		products,
+		JobActivity,
+		...job
+	}) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
@@ -3197,20 +3207,16 @@ const getPilotPendingJobs = async (
 			fieldWorkerId: pilotId,
 			status: 'ASSIGNED_TO_PILOT',
 		},
-		include: {
+		select: {
+			id: true,
+			title: true,
+			type: true,
 			applicator: {
 				select: {
 					firstName: true,
 					lastName: true,
 					fullName: true,
-					email: true,
-					phoneNumber: true,
 					businessName: true,
-				},
-			},
-			fieldWorker: {
-				select: {
-					fullName: true,
 				},
 			},
 			farm: {
@@ -3241,14 +3247,22 @@ const getPilotPendingJobs = async (
 			id: 'desc',
 		},
 	});
+
+	const formattedJobs = jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
 	const totalResults = await prisma.job.count({
-		where: { fieldWorkerId: pilotId },
+		where: { fieldWorkerId: pilotId, status: 'ASSIGNED_TO_PILOT' },
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		result: jobs,
+		result: formattedJobs,
 		page,
 		limit,
 		totalPages,
@@ -3275,23 +3289,29 @@ const getPilotRejectedJobs = async (
 
 	const jobs = await prisma.job.findMany({
 		where: {
-			fieldWorkerId: pilotId,
-			status: 'PILOT_REJECTED',
+			JobActivity: {
+				some: {
+					changedById: pilotId,
+					newStatus: 'PILOT_REJECTED',
+				},
+				none: {
+					changedById: pilotId,
+					newStatus: {
+						in: ['IN_PROGRESS', 'SPRAYED'],
+					}, // Exclude accepted reassigned jobs
+				},
+			},
 		},
-		include: {
+		select: {
+			id: true,
+			title: true,
+			type: true,
 			applicator: {
 				select: {
 					firstName: true,
 					lastName: true,
 					fullName: true,
-					email: true,
-					phoneNumber: true,
 					businessName: true,
-				},
-			},
-			fieldWorker: {
-				select: {
-					fullName: true,
 				},
 			},
 			farm: {
@@ -3322,14 +3342,36 @@ const getPilotRejectedJobs = async (
 			id: 'desc',
 		},
 	});
+
+	const formattedJobs = jobs.map((job) => ({
+		...job,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		), // Sum actualAcres, default to 0 if null
+	}));
+
 	const totalResults = await prisma.job.count({
-		where: { fieldWorkerId: pilotId },
+		where: {
+			JobActivity: {
+				some: {
+					changedById: pilotId,
+					newStatus: 'PILOT_REJECTED',
+				},
+				none: {
+					changedById: pilotId,
+					newStatus: {
+						in: ['IN_PROGRESS', 'SPRAYED'],
+					}, // Exclude accepted reassigned jobs
+				},
+			},
+		},
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		result: jobs,
+		result: formattedJobs,
 		page,
 		limit,
 		totalPages,
@@ -3412,18 +3454,22 @@ const getJobByIdForPilot = async (
 				},
 			},
 			applicationFees: true,
-			JobActivity:{
-				select:{
-					createdAt:true,
-					oldStatus:true,
-					newStatus:true,
-					changedBy:{
-						select:{
-							fullName:true
-						}
-					}
-				}
-			}
+			JobActivity: {
+				select: {
+					createdAt: true,
+					oldStatus: true,
+					newStatus: true,
+					changedBy: {
+						select: {
+							fullName: true,
+						},
+					},
+					reason: true,
+				},
+				orderBy: {
+					id: 'desc',
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -3446,7 +3492,7 @@ const getJobByIdForPilot = async (
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ products,JobActivity, ...job }) => ({
+	const formattedJob = (({ products, JobActivity, ...job }) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),

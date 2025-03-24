@@ -157,39 +157,25 @@ router
 		validateSchema(jobValidation.paramsSchema),
 		jobController.acceptJobThroughEmail,
 	);
-	router
+router
 	.route('/pilot/get-myjobs')
-	.get(
-		verifyToken,
-		jobController.getMyJobsByPilot,
-	);
-	
-	router 
-	.route('/pilot/get-pendingjobs')
-	.get(
-		verifyToken,
-		jobController.getPilotPendingJobs,
-	);
-	router 
-	.route('/pilot/get-rejectedjobs')
-	.get(
-		verifyToken,
-		jobController.getPilotRejectedJobs,
-	);
-	router 
-	.route('/pilot/get-rejectedjobs')
-	.get(
-		verifyToken,
-		jobController.getPilotRejectedJobs,
-	);
-	router
+	.get(verifyToken, jobController.getMyJobsByPilot);
+
+router
+	.route('/pilot/get/pending-jobs')
+	.get(verifyToken, jobController.getPilotPendingJobs);
+router
+	.route('/pilot/get/rejected-jobs')
+	.get(verifyToken, jobController.getPilotRejectedJobs);
+
+router
 	.route('/pilot/get-job/:jobId')
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobByIdForPilot,
 	);
-	router
+router
 	.route('/get-jobActivity/:jobId')
 	.get(
 		verifyToken,
