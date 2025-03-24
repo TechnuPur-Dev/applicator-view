@@ -166,11 +166,30 @@ const getAllFarmsByGrower = async (
 	};
 };
 const getFarmById = async (user: User, id: number) => {
+	const { role } = user;
+	const whereCondition: {
+		id: number;
+		applicatorId?: number;
+		growerId?: number;
+		permissions?: {
+			some: {
+				applicatorId: number;
+			};
+		};
+	} = { id };
+
+	if (role === 'APPLICATOR') {
+		whereCondition.permissions = {
+			some: {
+				applicatorId: user.id,
+			},
+		};
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = user.id;
+	}
+
 	const farm = await prisma.farm.findUnique({
-		where: {
-			id,
-			growerId: user.id,
-		},
+		where: whereCondition,
 		include: {
 			fields: true, // Include related fields in the result
 			permissions: {
@@ -450,7 +469,14 @@ const deleteFarmPermission = async (user: User, permissionId: number) => {
 const askFarmPermission = async (
 	currentUser: User,
 	growerId: number,
-	farmPermission: { farmId: number; canView: boolean; canEdit: boolean }[],
+	data: {
+		canManageFarms: boolean;
+		farmPermission: {
+			farmId: number;
+			canView: boolean;
+			canEdit: boolean;
+		}[];
+	},
 ) => {
 	const { id: applicatorId, role } = currentUser;
 
@@ -489,14 +515,16 @@ const askFarmPermission = async (
 	// Validate that all farmIds belong to the given growerId
 	const validFarms = await prisma.farm.findMany({
 		where: {
-			id: { in: farmPermission.map((farm) => farm.farmId) },
+			id: {
+				in: data.farmPermission.map((farm) => farm.farmId),
+			},
 			growerId, // Ensure the farm belongs to the grower
 		},
 		select: { id: true },
 	});
 
 	const validFarmIds = validFarms.map((farm) => farm.id);
-	const invalidFarmIds = farmPermission
+	const invalidFarmIds = data.farmPermission
 		.map((farm) => farm.farmId)
 		.filter((farmId) => !validFarmIds.includes(farmId));
 
@@ -509,6 +537,17 @@ const askFarmPermission = async (
 
 	// Proceed with updating pending farm permissions
 	await prisma.$transaction(async (tx) => {
+		await prisma.applicatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					growerId,
+					applicatorId,
+				},
+			},
+			data: {
+				canManageFarms: data.canManageFarms,
+			},
+		});
 		// Remove existing pending permissions for this invite
 		await tx.pendingFarmPermission.deleteMany({
 			where: { inviteId: existingInvite.id },
@@ -516,7 +555,7 @@ const askFarmPermission = async (
 
 		// Create new pending permissions
 		await tx.pendingFarmPermission.createMany({
-			data: farmPermission.map((farm) => ({
+			data: data.farmPermission.map((farm) => ({
 				farmId: farm.farmId,
 				inviteId: existingInvite.id,
 				canView: farm.canView,
