@@ -1940,10 +1940,7 @@ const updatePendingJobStatus = async (
 					changedByRole: role as UserRole,
 					oldStatus: whereCondition.status,
 					newStatus: data.status,
-					reason:
-						data.status === 'REJECTED'
-							? data.rejectionReason
-							: null,
+					reason: data.rejectionReason,
 				},
 			});
 		});
