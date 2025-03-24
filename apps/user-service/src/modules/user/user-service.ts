@@ -1866,11 +1866,11 @@ const verifyInviteToken = async (token: string) => {
 				expiresAt: {
 					gte: new Date(), // Ensures the invite is still valid
 				},
-				grower: {
-					is: {
-						profileStatus: 'INCOMPLETE',
-					},
-				},
+				// grower: {
+				// 	is: {
+				// 		profileStatus: 'INCOMPLETE',
+				// 	},
+				// },
 			},
 			select: {
 				applicator: {
