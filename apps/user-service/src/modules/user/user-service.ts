@@ -2202,6 +2202,7 @@ const acceptOrRejectInviteThroughEmail = async (
 			'Invalid or expired token.',
 		);
 	}
+	console.log(role,"role")
 	if (role === 'GROWER') {
 		if (inviteStatus === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2254,6 +2255,11 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
 				});
+					//Expire the invite
+					await prisma.applicatorGrower.update({
+						where: { id: invite.id },
+						data: { inviteToken: null, expiresAt: null },
+					});
 			});
 		} else if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2273,6 +2279,10 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
 				});
+				await prisma.applicatorGrower.update({
+					where: { id: invite.id },
+					data: { inviteToken: null, expiresAt: null },
+				});
 			});
 		}
 	} else if (role === 'APPLICATOR') {
@@ -2291,13 +2301,17 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
 				});
+				await prisma.applicatorGrower.update({
+					where: { id: invite.id },
+					data: { inviteToken: null, expiresAt: null },
+				});
 			});
 		}
 	} else if (role === 'WORKER') {
 		if (inviteStatus === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
 				// Update the inviteStatus field
-				await prisma.applicatorWorker.update({
+				const invite = await prisma.applicatorWorker.update({
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
@@ -2319,10 +2333,15 @@ const acceptOrRejectInviteThroughEmail = async (
 					},
 				});
 				// Ensure `applicator` exists before proceeding
+				//expire invite after accepted
+				await prisma.applicatorWorker.update({
+					where: { id: invite.id },
+					data: { inviteToken: null, expiresAt: null },
+				});
 			});
 		} else if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
-				await prisma.applicatorWorker.update({
+			const invite = 	await prisma.applicatorWorker.update({
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
@@ -2333,6 +2352,13 @@ const acceptOrRejectInviteThroughEmail = async (
 					data: {
 						inviteStatus,
 					},
+					select:{
+						id:true
+					}
+				});
+				await prisma.applicatorWorker.update({
+					where: { id: invite.id },
+					data: { inviteToken: null, expiresAt: null },
 				});
 			});
 		}
@@ -2380,86 +2406,181 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 		};
 	}
 	// Todo: udpate this condition to get applciator for grower
-	// if (user.role === 'GROWER') {
-	// 	const pendingInvites = await prisma.applicatorGrower.findUnique({
-	// 		where: {
-	// 			applicatorId_growerId: {
-	// 				applicatorId,
-	// 				growerId: user.id,
-	// 			},
-	// 		},
-	// 		select: {
-	// 			applicatorFirstName: true,
-	// 			applicatorLastName: true,
-	// 			inviteStatus: true,
-	// 			isArchivedByGrower: true,
-	// 			applicator: {
-	// 				include: {
-	// 					state: {
-	// 						select: {
-	// 							id: true,
-	// 							name: true,
-	// 						},
-	// 					},
-	// 					farms: {
-	// 						where: {
-	// 							pendingFarmPermission: {
-	// 								some: {
-	// 									inviteId: applicatorId,
-	// 								},
-	// 							},
-	// 						},
-	// 						include: {
-	// 							pendingFarmPermission: true,
-	// 							fields: true,
-	// 							state: {
-	// 								select: {
-	// 									id: true,
-	// 									name: true,
-	// 								},
-	// 							},
-	// 						},
-	// 					},
-	// 				},
-	// 				omit: {
-	// 					password: true,
-	// 					businessName: true,
-	// 					experience: true,
-	// 					stateId: true,
-	// 				},
-	// 			},
-	// 		},
-	// 	});
+	 if (user.role === 'GROWER') {
+		const invite = await prisma.applicatorGrower.findUnique({
+			where: {
+				applicatorId_growerId: {
+					applicatorId,
+					growerId: user.id,
+				},
+			},
+			select:{
+				id:true,
+				inviteStatus:true
+			}
+		})
+		
+		if(invite?.inviteStatus !== "PENDING" ){
+			const applicators = await prisma.applicatorGrower.findUnique({
+				where: {
+					applicatorId_growerId: {
+						applicatorId,
+						growerId: user.id,
+					},
+					
+					AND: [
+						{
+							OR: [
+								{
+									inviteInitiator: 'GROWER',
+									inviteStatus: 'PENDING',
+								},
+								{
+									inviteStatus: {
+										in: [
+											'ACCEPTED',
+											'REJECTED',
+											'DELETED_BY_APPLICATOR',
+										],
+									},
+								},
+							],
+						},
+					],
+				},
+				select: {
+					applicatorFirstName: true,
+					applicatorLastName: true,
+					inviteStatus: true,
+					isArchivedByGrower: true,
+					canManageFarms: true,
+					inviteToken: true,
+					email: true,
+					expiresAt: true,
+					inviteInitiator: true,		
+					applicator: {
+						include: {
+							state: {
+								select: {
+									id: true,
+									name: true,
+								},
+							},
+							farmPermissions:{
+								where:{
+									applicatorId
+								},
+								select: {
+									farmId: true,
+									canEdit: true,
+									canView: true,
+									farm: {
+										select: {
+											name: true,
+										},
+									},
+								},
+							}
+						
+						},
+						omit: {
+							stateId: true,
+							password: true, // Exclude sensitive data
+						},
+					},
+				},
+		
+			});
+			return{
+				result:applicators
+			}
+		}else{
+			const applicators = await prisma.applicatorGrower.findUnique({
+				where: {
+					applicatorId_growerId: {
+						applicatorId,
+						growerId: user.id,
+					},
+					
+					AND: [
+						{
+							OR: [
+								{
+									inviteInitiator: 'GROWER',
+									inviteStatus: 'PENDING',
+								},
+								{
+									inviteStatus: {
+										in: [
+											'ACCEPTED',
+											'REJECTED',
+											'DELETED_BY_APPLICATOR',
+										],
+									},
+								},
+							],
+						},
+					],
+				},
+				select: {
+					applicatorFirstName: true,
+					applicatorLastName: true,
+					inviteStatus: true,
+					isArchivedByGrower: true,
+					canManageFarms: true,
+					inviteToken: true,
+					email: true,
+					expiresAt: true,
+					inviteInitiator: true,		
+					applicator: {
+						include: {
+							state: {
+								select: {
+									id: true,
+									name: true,
+								},
+							},
+						},
+						omit: {
+							stateId: true,
+							password: true, // Exclude sensitive data
+						},
+					},
+					pendingFarmPermission:{
+						where:{
+							inviteId:invite.id
+						},
+						select: {
+							farmId: true,
+							canEdit: true,
+							canView: true,
+							farm: {
+								select: {
+									name: true,
+								},
+							},
+						},
+					}
+				},
+				
 
-	// 	if (!pendingInvites) return { result: null };
-	// 	const totalAcresByGrower = pendingInvites.applicator?.farms.reduce(
-	// 		(totalAplicatorAcres, farm) => {
-	// 			const totalAcresByFarm = farm.fields.reduce(
-	// 				(totalFarmAcres, field) =>
-	// 					totalFarmAcres +
-	// 					parseFloat(field.acres?.toString() || '0'),
-	// 				0,
-	// 			);
-	// 			return totalAplicatorAcres + totalAcresByFarm;
-	// 		},
-	// 		0,
-	// 	);
+		
+			});
+			// Merge pendingFarmPermission into farmPermissions
+			const formattedResponse = {
+				...applicators,
+				applicator: {
+					...applicators?.applicator,
+					pendingFarmPermission:undefined,
+					farmPermissions: applicators?.pendingFarmPermission || [],
+				},
+			};
 
-	// 	// Extract grower object without farms
-	// 	const { farms, ...growerWithoutFarms } =
-	// 		pendingInvites.applicator || {};
-
-	// 	// Construct the enriched object
-	// 	const enrichedApplicators = {
-	// 		...pendingInvites,
-	// 		grower: { ...growerWithoutFarms },
-	// 		totalAcres: totalAcresByGrower,
-	// 	};
-
-	// 	return {
-	// 		result: enrichedApplicators,
-	// 	};
-	// }
+			return { result: formattedResponse };
+		
+		}
+		
+	 }
 };
 export default {
 	uploadProfileImage,
