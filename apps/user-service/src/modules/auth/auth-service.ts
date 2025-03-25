@@ -364,7 +364,7 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 
 	// Determine the user based on role and update accordingly
 	if (role === 'GROWER') {
-		const grower = await prisma.applicatorGrower.update({
+		const invite = await prisma.applicatorGrower.update({
 			where: {
 				inviteToken: token,
 				expiresAt: {
@@ -394,10 +394,15 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				},
 			},
 			select: {
+				id:true,
 				grower: { include: { state: { select: { name: true } } } },
 			},
 		});
-		email = grower.grower.email;
+		email = invite.grower.email;
+		await prisma.applicatorGrower.update({
+			where: { id: invite.id },
+			data: { inviteToken: null, expiresAt: null },
+		});
 	} else if (role === 'APPLICATOR') {
 		await prisma.$transaction(async (prisma) => {
 			const invite = await prisma.applicatorGrower.update({
@@ -473,9 +478,13 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				where: { inviteId: invite.id },
 			});
 			email = invite.applicator.email;
+			await prisma.applicatorGrower.update({
+				where: { id: invite.id },
+				data: { inviteToken: null, expiresAt: null },
+			});
 		});
 	} else if (role === 'WORKER') {
-		const worker = await prisma.applicatorWorker.update({
+		const invite = await prisma.applicatorWorker.update({
 			where: {
 				inviteToken: token,
 				expiresAt: {
@@ -518,10 +527,15 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 				},
 			},
 			select: {
+				id:true,
 				worker: { include: { state: { select: { name: true } } } },
 			},
 		});
-		email = worker.worker.email;
+		email = invite.worker.email;
+		await prisma.applicatorWorker.update({
+			where: { id: invite.id },
+			data: { inviteToken: null, expiresAt: null },
+		});
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
