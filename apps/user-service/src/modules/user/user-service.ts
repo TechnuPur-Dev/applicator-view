@@ -1264,12 +1264,12 @@ const sendInviteToApplicator = async (
 		);
 	}
 
-	const existingInvite = await prisma.applicatorGrower.findFirst({
+	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
-			growerId: user.id,
-			email: userEmail,
-			applicatorId: applicator?.id,
-			inviteInitiator: 'GROWER',
+			applicatorId_growerId: {
+				growerId: user.id,
+				applicatorId: applicator?.id,
+			},
 		},
 	});
 
@@ -1298,12 +1298,8 @@ const sendInviteToApplicator = async (
 
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (
-				existingInvite.inviteStatus === 'REJECTED' ||
-				existingInvite.inviteStatus === 'PENDING' ||
-				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
-				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
-			) {
+			if (existingInvite.inviteStatus === 'PENDING') {
+				// Preserve previous farm permissions and canManageFarms flag
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
@@ -1313,11 +1309,50 @@ const sendInviteToApplicator = async (
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
 						),
 						inviteInitiator: 'GROWER',
-						canManageFarms: data.canManageFarms,
+						// canManageFarms: existingInvite.canManageFarms, // Keep previous value
 					},
-					select: { id: true }, // Select only required fields
+					select: { id: true },
 				});
 
+				// Keep previous farm permissions
+				// const previousPermissions =
+				// 	await tx.pendingFarmPermission.findMany({
+				// 		where: { inviteId: existingInvite.id },
+				// 	});
+
+				// await tx.pendingFarmPermission.deleteMany({
+				// 	where: { inviteId: existingInvite.id },
+				// });
+
+				// await tx.pendingFarmPermission.createMany({
+				// 	data: previousPermissions.map((farm) => ({
+				// 		farmId: farm.farmId,
+				// 		inviteId: invite.id,
+				// 		canView: farm.canView,
+				// 		canEdit: farm.canEdit,
+				// 	})),
+				// });
+			} else if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
+				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
+			) {
+				// Overwrite with new farm permissions and canManageFarms flag
+				invite = await tx.applicatorGrower.update({
+					where: { id: existingInvite.id },
+					data: {
+						inviteStatus: 'PENDING',
+						inviteToken,
+						expiresAt: new Date(
+							Date.now() + 3 * 24 * 60 * 60 * 1000,
+						),
+						inviteInitiator: 'GROWER',
+						canManageFarms: data.canManageFarms, // Use new value
+					},
+					select: { id: true },
+				});
+
+				// Overwrite farm permissions
 				await tx.pendingFarmPermission.deleteMany({
 					where: { inviteId: existingInvite.id },
 				});
@@ -1325,7 +1360,7 @@ const sendInviteToApplicator = async (
 				await tx.pendingFarmPermission.createMany({
 					data: data.farmPermission.map((farm) => ({
 						farmId: farm.farmId,
-						inviteId: invite.id, // `invite!.id` is safe because we assigned it above
+						inviteId: invite.id,
 						canView: farm.canView,
 						canEdit: farm.canEdit,
 					})),
@@ -1335,9 +1370,9 @@ const sendInviteToApplicator = async (
 					httpStatus.BAD_REQUEST,
 					'An active invitation already exists.',
 				);
-				throw new Error('An active invitation already exists.');
 			}
 		} else {
+			// Fresh invite logic remains unchanged
 			invite = await tx.applicatorGrower.create({
 				data: {
 					applicatorId: applicator?.id ?? null,
@@ -1353,14 +1388,14 @@ const sendInviteToApplicator = async (
 					expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					email: userEmail,
 				},
-				select: { id: true }, // Select only required fields
+				select: { id: true },
 			});
 
 			if (data.farmPermission.length > 0) {
 				await tx.pendingFarmPermission.createMany({
 					data: data.farmPermission.map((farm) => ({
 						farmId: farm.farmId,
-						inviteId: invite.id, // `invite!.id` is safe because we assigned it above
+						inviteId: invite.id,
 						canView: farm.canView,
 						canEdit: farm.canEdit,
 					})),
@@ -1428,12 +1463,8 @@ const sendInviteToGrower = async (
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (
-				existingInvite.inviteStatus === 'REJECTED' ||
-				existingInvite.inviteStatus === 'PENDING' ||
-				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
-				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
-			) {
+			if (existingInvite.inviteStatus === 'PENDING') {
+				// Preserve previous farm permissions and canManageFarms flag
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
@@ -1443,11 +1474,50 @@ const sendInviteToGrower = async (
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
 						),
 						inviteInitiator: 'APPLICATOR',
-						canManageFarms: data.canManageFarms,
+						// canManageFarms: existingInvite.canManageFarms, // Retain previous value
 					},
-					select: { id: true }, // Select only required fields
+					select: { id: true },
 				});
 
+				// Keep previous farm permissions
+				// const previousPermissions =
+				// 	await tx.pendingFarmPermission.findMany({
+				// 		where: { inviteId: existingInvite.id },
+				// 	});
+
+				// await tx.pendingFarmPermission.deleteMany({
+				// 	where: { inviteId: existingInvite.id },
+				// });
+
+				// await tx.pendingFarmPermission.createMany({
+				// 	data: previousPermissions.map((farm) => ({
+				// 		farmId: farm.farmId,
+				// 		inviteId: invite.id,
+				// 		canView: farm.canView,
+				// 		canEdit: farm.canEdit,
+				// 	})),
+				// });
+			} else if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
+				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
+			) {
+				// Overwrite with new farm permissions and canManageFarms flag
+				invite = await tx.applicatorGrower.update({
+					where: { id: existingInvite.id },
+					data: {
+						inviteStatus: 'PENDING',
+						inviteToken: token,
+						expiresAt: new Date(
+							Date.now() + 3 * 24 * 60 * 60 * 1000,
+						),
+						inviteInitiator: 'APPLICATOR',
+						canManageFarms: data.canManageFarms, // Use new value
+					},
+					select: { id: true },
+				});
+
+				// Overwrite farm permissions
 				await tx.pendingFarmPermission.deleteMany({
 					where: { inviteId: existingInvite.id },
 				});
@@ -1455,7 +1525,7 @@ const sendInviteToGrower = async (
 				await tx.pendingFarmPermission.createMany({
 					data: data.farmPermission.map((farm) => ({
 						farmId: farm.farmId,
-						inviteId: invite.id, // `invite!.id` is safe because we assigned it above
+						inviteId: invite.id,
 						canView: farm.canView,
 						canEdit: farm.canEdit,
 					})),
@@ -1465,9 +1535,9 @@ const sendInviteToGrower = async (
 					httpStatus.BAD_REQUEST,
 					'An active invitation already exists.',
 				);
-				throw new Error('An active invitation already exists.');
 			}
 		} else {
+			// Fresh invite logic remains unchanged
 			invite = await tx.applicatorGrower.create({
 				data: {
 					applicatorId: applicatorId,
@@ -1483,14 +1553,14 @@ const sendInviteToGrower = async (
 					expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					email: grower?.email,
 				},
-				select: { id: true }, // Select only required fields
+				select: { id: true },
 			});
 
 			if (data.farmPermission.length > 0) {
 				await tx.pendingFarmPermission.createMany({
 					data: data.farmPermission.map((farm) => ({
 						farmId: farm.farmId,
-						inviteId: invite.id, // `invite!.id` is safe because we assigned it above
+						inviteId: invite.id,
 						canView: farm.canView,
 						canEdit: farm.canEdit,
 					})),
@@ -2202,7 +2272,7 @@ const acceptOrRejectInviteThroughEmail = async (
 			'Invalid or expired token.',
 		);
 	}
-	console.log(role,"role")
+	console.log(role, 'role');
 	if (role === 'GROWER') {
 		if (inviteStatus === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2255,11 +2325,11 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
 				});
-					//Expire the invite
-					await prisma.applicatorGrower.update({
-						where: { id: invite.id },
-						data: { inviteToken: null, expiresAt: null },
-					});
+				//Expire the invite
+				await prisma.applicatorGrower.update({
+					where: { id: invite.id },
+					data: { inviteToken: null, expiresAt: null },
+				});
 			});
 		} else if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2286,6 +2356,58 @@ const acceptOrRejectInviteThroughEmail = async (
 			});
 		}
 	} else if (role === 'APPLICATOR') {
+		if (inviteStatus === 'ACCEPTED') {
+			await prisma.$transaction(async (prisma) => {
+				const invite = await prisma.applicatorGrower.update({
+					where: {
+						inviteToken: token,
+						inviteStatus: 'PENDING',
+					},
+					data: {
+						inviteStatus,
+					},
+					select: {
+						id: true,
+						applicator: {
+							select: {
+								id: true,
+								state: { select: { name: true } },
+							},
+						},
+						pendingFarmPermission: true,
+					},
+				});
+				// Delete pending permissions only if `invite.id` is valid
+				await prisma.pendingFarmPermission.deleteMany({
+					where: { inviteId: invite.id },
+				});
+
+				// Ensure `applicator` exists
+				if (!invite.applicator?.id) {
+					throw new Error('Applicator ID is missing');
+				}
+
+				// Transfer pending farm permissions if they exist
+				if (
+					Array.isArray(invite.pendingFarmPermission) &&
+					invite.pendingFarmPermission.length > 0
+				) {
+					await prisma.farmPermission.createMany({
+						data: invite.pendingFarmPermission.map((perm) => ({
+							farmId: perm.farmId,
+							applicatorId: invite?.applicator?.id ?? 0,
+							canView: perm.canView,
+							canEdit: perm.canEdit,
+						})),
+					});
+
+					// Remove pending permissions after transfer
+					await prisma.pendingFarmPermission.deleteMany({
+						where: { inviteId: invite.id },
+					});
+				}
+			});
+		}
 		if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
 				const invite = await prisma.applicatorGrower.update({
@@ -2341,7 +2463,7 @@ const acceptOrRejectInviteThroughEmail = async (
 			});
 		} else if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
-			const invite = 	await prisma.applicatorWorker.update({
+				const invite = await prisma.applicatorWorker.update({
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
@@ -2352,9 +2474,9 @@ const acceptOrRejectInviteThroughEmail = async (
 					data: {
 						inviteStatus,
 					},
-					select:{
-						id:true
-					}
+					select: {
+						id: true,
+					},
 				});
 				await prisma.applicatorWorker.update({
 					where: { id: invite.id },
@@ -2406,7 +2528,7 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 		};
 	}
 	// Todo: udpate this condition to get applciator for grower
-	 if (user.role === 'GROWER') {
+	if (user.role === 'GROWER') {
 		const invite = await prisma.applicatorGrower.findUnique({
 			where: {
 				applicatorId_growerId: {
@@ -2414,20 +2536,20 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 					growerId: user.id,
 				},
 			},
-			select:{
-				id:true,
-				inviteStatus:true
-			}
-		})
-		
-		if(invite?.inviteStatus !== "PENDING" ){
+			select: {
+				id: true,
+				inviteStatus: true,
+			},
+		});
+
+		if (invite?.inviteStatus !== 'PENDING') {
 			const applicators = await prisma.applicatorGrower.findUnique({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
 						growerId: user.id,
 					},
-					
+
 					AND: [
 						{
 							OR: [
@@ -2457,7 +2579,7 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 					inviteToken: true,
 					email: true,
 					expiresAt: true,
-					inviteInitiator: true,		
+					inviteInitiator: true,
 					applicator: {
 						include: {
 							state: {
@@ -2466,9 +2588,9 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 									name: true,
 								},
 							},
-							farmPermissions:{
-								where:{
-									applicatorId
+							farmPermissions: {
+								where: {
+									applicatorId,
 								},
 								select: {
 									farmId: true,
@@ -2480,8 +2602,7 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 										},
 									},
 								},
-							}
-						
+							},
 						},
 						omit: {
 							stateId: true,
@@ -2489,19 +2610,18 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						},
 					},
 				},
-		
 			});
-			return{
-				result:applicators
-			}
-		}else{
+			return {
+				result: applicators,
+			};
+		} else {
 			const applicators = await prisma.applicatorGrower.findUnique({
 				where: {
 					applicatorId_growerId: {
 						applicatorId,
 						growerId: user.id,
 					},
-					
+
 					AND: [
 						{
 							OR: [
@@ -2531,7 +2651,7 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 					inviteToken: true,
 					email: true,
 					expiresAt: true,
-					inviteInitiator: true,		
+					inviteInitiator: true,
 					applicator: {
 						include: {
 							state: {
@@ -2546,9 +2666,9 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 							password: true, // Exclude sensitive data
 						},
 					},
-					pendingFarmPermission:{
-						where:{
-							inviteId:invite.id
+					pendingFarmPermission: {
+						where: {
+							inviteId: invite.id,
 						},
 						select: {
 							farmId: true,
@@ -2560,27 +2680,22 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 								},
 							},
 						},
-					}
+					},
 				},
-				
-
-		
 			});
 			// Merge pendingFarmPermission into farmPermissions
 			const formattedResponse = {
 				...applicators,
 				applicator: {
 					...applicators?.applicator,
-					pendingFarmPermission:undefined,
+					pendingFarmPermission: undefined,
 					farmPermissions: applicators?.pendingFarmPermission || [],
 				},
 			};
 
 			return { result: formattedResponse };
-		
 		}
-		
-	 }
+	}
 };
 export default {
 	uploadProfileImage,
