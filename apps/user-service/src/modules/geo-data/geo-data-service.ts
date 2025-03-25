@@ -200,13 +200,33 @@ export const validateAddress = async (
 ) => {
 	const AUTH_ID = '3c1db701-d45f-5411-cafd-7ead392570eb';
 	const AUTH_TOKEN = 'cvuxc0QLqUmBhkpuAkxk';
+
 	try {
-		const url = `https://us-street.api.smarty.com/street-address?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&street=${encodeURIComponent(street)}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
+		// Step 1: Validate City and State
+		const cityStateUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
+		const cityStateResponse = await axios.get(cityStateUrl);
 
-		const response = await axios.get(url);
+		if (
+			cityStateResponse.data[0].reason ||
+			cityStateResponse.data[0].status
+		) {
+			throw new ApiError(
+				httpStatus.UNAUTHORIZED,
+				cityStateResponse.data[0].reason,
+			);
+		}
 
-		if (response.data.length === 0) {
-			return { message: 'Address not found or invalid' };
+		// Step 2: Validate Full Address if City and State are valid
+		if (street) {
+			const streetUrl = `https://us-street.api.smarty.com/street-address?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&street=${encodeURIComponent(street)}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
+			const streetResponse = await axios.get(streetUrl);
+
+			if (!streetResponse.data || streetResponse.data.length === 0) {
+				throw new ApiError(
+					httpStatus.NOT_FOUND,
+					'Invalid Street Address',
+				);
+			}
 		}
 
 		return { message: 'Valid Address' };
@@ -214,6 +234,7 @@ export const validateAddress = async (
 		return { message: error.response?.data || error.message };
 	}
 };
+
 export default {
 	createStates,
 	createCounties,
