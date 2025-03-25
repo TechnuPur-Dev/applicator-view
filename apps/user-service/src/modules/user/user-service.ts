@@ -587,6 +587,7 @@ const getAllApplicatorsByGrower = async (
 			inviteToken: true,
 			email: true,
 			expiresAt: true,
+			inviteInitiator: true,
 			applicator: {
 				include: {
 					state: {
@@ -1543,6 +1544,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			canManageFarms: true,
 			expiresAt: true,
 			inviteToken: true,
+			inviteInitiator: true,
 			grower: {
 				include: {
 					state: {
@@ -1866,11 +1868,11 @@ const verifyInviteToken = async (token: string) => {
 				expiresAt: {
 					gte: new Date(), // Ensures the invite is still valid
 				},
-				grower: {
-					is: {
-						profileStatus: 'INCOMPLETE',
-					},
-				},
+				// grower: {
+				// 	is: {
+				// 		profileStatus: 'INCOMPLETE',
+				// 	},
+				// },
 			},
 			select: {
 				applicator: {
@@ -1900,7 +1902,10 @@ const verifyInviteToken = async (token: string) => {
 					},
 				},
 				pendingFarmPermission: {
-					include: {
+					select: {
+						farmId: true,
+						canEdit: true,
+						canView: true,
 						farm: {
 							select: {
 								name: true,
@@ -1927,6 +1932,15 @@ const verifyInviteToken = async (token: string) => {
 			);
 		}
 		const { state } = user;
+		const flattenedPerissions = invite.pendingFarmPermission.map(
+			(farmPermission) => {
+				const { farm, ...permission } = farmPermission;
+				return {
+					farmName: farm.name,
+					...permission,
+				};
+			},
+		);
 		// Return only the role-specific user data
 		return {
 			...user,
@@ -1934,7 +1948,7 @@ const verifyInviteToken = async (token: string) => {
 			applicator,
 			isAlreadyExist:
 				invite.grower.profileStatus === 'COMPLETE' ? true : false,
-			pendingFarmPermissions: invite.pendingFarmPermission,
+			pendingFarmPermissions: flattenedPerissions,
 		};
 	} else if (role === 'APPLICATOR') {
 		const invite = await prisma.applicatorGrower.findFirst({
@@ -1970,6 +1984,17 @@ const verifyInviteToken = async (token: string) => {
 						},
 					},
 				},
+				pendingFarmPermission: {
+					select: {
+						canView: true,
+						canEdit: true,
+						farm: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
 			},
 		});
 		if (!invite) {
@@ -1981,6 +2006,15 @@ const verifyInviteToken = async (token: string) => {
 
 		const user = invite?.applicator;
 		const grower = invite?.grower;
+		const flattenedPerissions = invite.pendingFarmPermission.map(
+			(farmPermission) => {
+				const { farm, ...permission } = farmPermission;
+				return {
+					farmName: farm.name,
+					...permission,
+				};
+			},
+		);
 
 		// If no user is found, throw an error
 		if (user) {
@@ -1992,6 +2026,7 @@ const verifyInviteToken = async (token: string) => {
 				// applicator,
 				grower,
 				isAlreadyExist: true,
+				pendingFarmPermissions: flattenedPerissions,
 			};
 		} else {
 			return {
@@ -1999,6 +2034,7 @@ const verifyInviteToken = async (token: string) => {
 				email: invite?.email,
 				grower,
 				isAlreadyExist: false,
+				pendingFarmPermissions: flattenedPerissions,
 			};
 		}
 	} else if (role === 'WORKER') {

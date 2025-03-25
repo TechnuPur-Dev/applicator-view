@@ -653,7 +653,7 @@ const getJobById = async (user: User, jobId: number) => {
 				},
 			},
 			applicationFees: true,
-			JobActivity: {
+			jobActivities: {
 				select: {
 					createdAt: true,
 					oldStatus: true,
@@ -701,7 +701,7 @@ const getJobById = async (user: User, jobId: number) => {
 		applicator,
 		grower,
 		products,
-		JobActivity,
+		jobActivities,
 		...job
 	}) => ({
 		...job,
@@ -723,7 +723,7 @@ const getJobById = async (user: User, jobId: number) => {
 			name: product ? product?.productName : name, // Move productName to name
 			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
 		})),
-		JobActivity: JobActivity.map(({ changedBy, ...activity }) => ({
+		jobActivities: jobActivities.map(({ changedBy, ...activity }) => ({
 			...activity,
 			updatedBy: changedBy?.fullName || null,
 		})),
@@ -1961,10 +1961,7 @@ const updatePendingJobStatus = async (
 					changedByRole: role as UserRole,
 					oldStatus: whereCondition.status,
 					newStatus: data.status,
-					reason:
-						data.status === 'REJECTED'
-							? data.rejectionReason
-							: null,
+					reason: data.rejectionReason,
 				},
 			});
 		});
@@ -3326,7 +3323,7 @@ const getPilotRejectedJobs = async (
 
 	const jobs = await prisma.job.findMany({
 		where: {
-			JobActivity: {
+			jobActivities: {
 				some: {
 					changedById: pilotId,
 					newStatus: 'PILOT_REJECTED',
@@ -3390,7 +3387,7 @@ const getPilotRejectedJobs = async (
 
 	const totalResults = await prisma.job.count({
 		where: {
-			JobActivity: {
+			jobActivities: {
 				some: {
 					changedById: pilotId,
 					newStatus: 'PILOT_REJECTED',
@@ -3491,7 +3488,7 @@ const getJobByIdForPilot = async (
 				},
 			},
 			applicationFees: true,
-			JobActivity: {
+			jobActivities: {
 				select: {
 					createdAt: true,
 					oldStatus: true,
@@ -3533,7 +3530,7 @@ const getJobByIdForPilot = async (
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ products, JobActivity, ...job }) => ({
+	const formattedJob = (({ products, jobActivities, ...job }) => ({
 		...job,
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
@@ -3551,7 +3548,7 @@ const getJobByIdForPilot = async (
 			name: product ? product?.productName : name, // Move productName to name
 			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
 		})),
-		JobActivity: JobActivity.map(({ changedBy, ...activity }) => ({
+		jobActivities: jobActivities.map(({ changedBy, ...activity }) => ({
 			...activity,
 			updatedBy: changedBy?.fullName || null,
 		})),

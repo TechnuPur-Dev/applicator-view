@@ -240,7 +240,7 @@ model Job {
   supportTickets      SupportTicket[]
   Notification        Notification?
   Bid                 Bid[]
-  JobActivity         JobActivity[]
+  jobActivities       JobActivity[]
 }
 
 model Bid {

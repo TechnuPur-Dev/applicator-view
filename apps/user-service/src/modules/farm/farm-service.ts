@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
@@ -138,14 +138,14 @@ const getAllFarmsByGrower = async (
 	}); // Fetch all users
 	// Calculate total acres for each grower and each farm
 	const enrichedFarms = farms.map((farm) => {
+		// Ensure totalFarmAcres is a Decimal to prevent floating-point errors
 		const totalAcresByFarm = farm.fields.reduce((totalFarmAcres, field) => {
-			return totalFarmAcres + parseFloat(field.acres?.toString() || '0');
-		}, 0);
+			return totalFarmAcres.plus(new Decimal(field.acres || 0));
+		}, new Decimal(0));
 
-		// Add total acres to the grower object
 		return {
 			...farm,
-			totalAcres: totalAcresByFarm,
+			totalAcres: totalAcresByFarm.toFixed(2), // Convert back to string with 2 decimal places
 		};
 	});
 

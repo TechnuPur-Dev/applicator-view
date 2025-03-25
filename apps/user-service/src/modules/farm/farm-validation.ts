@@ -32,7 +32,7 @@ const farmUpdateSchema: Schema = Joi.object({
 		farmId: Joi.number().integer().positive().required(), // growerId should be a positive number
 	}).required(),
 	body: Joi.object({
-		farmImageUrl: Joi.string().optional(),
+		farmImageUrl: Joi.string().allow(null).optional(),
 		name: Joi.string().min(1).max(50).optional(), // First name with minimum and maximum length
 		stateId: Joi.number().integer().positive().optional(), // StateId
 		county: Joi.string().max(50).optional(), // County name
