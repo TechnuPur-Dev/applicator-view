@@ -65,6 +65,11 @@ router.route('/get-all/by-grower').get(verifyToken, farmController.getAllFarms);
 router
 	.route('/permission/accept-reject')
 	.post(verifyToken, farmController.handleFarmPermissions);
-router.route('/available-applicators/:farmId').get(verifyToken, farmController.getAvailableApplicators);
+router
+	.route('/available-applicators/:farmId')
+	.get(verifyToken, farmController.getAvailableApplicators);
+router
+	.route('/growers/:growerId/farms-with-permissions')
+	.get(verifyToken, farmController.getFarmsWithPermissions);
 
 export default router;
