@@ -853,11 +853,18 @@ const getFarmsWithPermissions = async (user: User, growerId: number) => {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
 	}
 
-	// Transform the farms array, setting permissions to null if empty
-	return farms.map((farm) => ({
-		...farm,
-		permissions: farm.permissions.length > 0 ? farm.permissions : null,
-	}));
+	// Flatten permissions into top-level keys
+	return farms.map((farm) => {
+		const permission =
+			farm.permissions.length > 0 ? farm.permissions[0] : null;
+		return {
+			farmId: farm.id,
+			name: farm.name,
+			permissionId: permission ? permission.id : null,
+			canView: permission ? permission.canView : false,
+			canEdit: permission ? permission.canEdit : false,
+		};
+	});
 };
 
 export default {
