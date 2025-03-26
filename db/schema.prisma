@@ -83,7 +83,7 @@ model ApplicatorWorker {
   code                   String?
   lastLogin              DateTime?
   isActive               Boolean      @default(true)
-  inviteStatus           InviteStatus @default(NOT_SENT)
+  inviteStatus           InviteStatus @default(PENDING)
   inviteToken            String?      @unique
   expiresAt              DateTime? // Optional: Invite expiration time
   createdAt              DateTime     @default(now())
@@ -94,6 +94,8 @@ model ApplicatorWorker {
   @@unique([applicatorId, workerId])
 }
 
+
+// TODO: remove email because the flow is updated now 
 model ApplicatorGrower {
   id                     Int              @id @default(autoincrement())
   applicatorId           Int?
