@@ -2688,9 +2688,9 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 				...applicators,
 				applicator: {
 					...applicators?.applicator,
-					pendingFarmPermission: undefined,
 					farmPermissions: applicators?.pendingFarmPermission || [],
 				},
+				pendingFarmPermission: undefined,
 			};
 
 			return { result: formattedResponse };
