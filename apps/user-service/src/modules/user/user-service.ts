@@ -2554,7 +2554,6 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						{
 							OR: [
 								{
-									inviteInitiator: 'GROWER',
 									inviteStatus: 'PENDING',
 								},
 								{
@@ -2626,7 +2625,6 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						{
 							OR: [
 								{
-									inviteInitiator: 'GROWER',
 									inviteStatus: 'PENDING',
 								},
 								{
