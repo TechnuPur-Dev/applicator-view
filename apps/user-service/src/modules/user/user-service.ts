@@ -1605,6 +1605,18 @@ const sendInviteToGrower = async (
 };
 const getGrowerById = async (applicatorId: number, growerId: number) => {
 	// Fetch growers with their farms and fields
+	const invite = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId,
+				growerId,
+			},
+		},
+		select:{
+			id:true,
+			inviteStatus:true
+		}
+	})
 	const grower = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -1629,7 +1641,8 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 							name: true,
 						},
 					},
-					farms: {
+					farms:invite?.inviteStatus !== "PENDING"?
+					 {
 						where: {
 							permissions: {
 								some: {
@@ -1642,6 +1655,41 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 								where: {
 									applicatorId,
 								},
+								select:{
+									farmId:true,
+									canEdit:true,
+									canView:true
+								}
+							}, // Include permissions to calculate farm permissions for the applicator
+							fields: true, // Include fields to calculate total acres
+							state: {
+								select: {
+									id: true,
+									name: true,
+								},
+							},
+						
+						},
+						orderBy: {
+							id: 'desc',
+						},
+					}:{
+						where: {
+							pendingFarmPermission: {
+								some: {
+									inviteId:invite.id,
+								},
+							},
+						},
+						include: {
+							pendingFarmPermission: {
+								where: {
+									inviteId:invite.id,
+								},
+								select:{
+									canEdit:true,
+									canView:true
+								}
 							}, // Include permissions to calculate farm permissions for the applicator
 							fields: true, // Include fields to calculate total acres
 							state: {
@@ -1667,7 +1715,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 	});
 
 	// Calculate total acres for each grower and each farm
-
+ 
 	const totalAcresByGrower = grower?.grower?.farms.reduce(
 		(totalGrowerAcres, farm) => {
 			// Calculate total acres for this farm
@@ -1700,6 +1748,8 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 				: true;
 		}
 	}
+
+
 	// Add total acres to the grower object
 	return {
 		...responseData,
