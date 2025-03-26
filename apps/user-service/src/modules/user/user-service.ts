@@ -1298,7 +1298,10 @@ const sendInviteToApplicator = async (
 
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (existingInvite.inviteStatus === 'PENDING') {
+			if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'PENDING'
+			) {
 				// Preserve previous farm permissions and canManageFarms flag
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
@@ -1333,7 +1336,7 @@ const sendInviteToApplicator = async (
 				// 	})),
 				// });
 			} else if (
-				existingInvite.inviteStatus === 'REJECTED' ||
+				// existingInvite.inviteStatus === 'REJECTED' ||
 				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
 				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
 			) {
@@ -1463,7 +1466,10 @@ const sendInviteToGrower = async (
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (existingInvite.inviteStatus === 'PENDING') {
+			if (
+				existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'PENDING'
+			) {
 				// Preserve previous farm permissions and canManageFarms flag
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
@@ -1498,7 +1504,7 @@ const sendInviteToGrower = async (
 				// 	})),
 				// });
 			} else if (
-				existingInvite.inviteStatus === 'REJECTED' ||
+				// existingInvite.inviteStatus === 'REJECTED' ||
 				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
 				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
 			) {
@@ -2549,25 +2555,6 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						applicatorId,
 						growerId: user.id,
 					},
-
-					AND: [
-						{
-							OR: [
-								{
-									inviteStatus: 'PENDING',
-								},
-								{
-									inviteStatus: {
-										in: [
-											'ACCEPTED',
-											'REJECTED',
-											'DELETED_BY_APPLICATOR',
-										],
-									},
-								},
-							],
-						},
-					],
 				},
 				select: {
 					applicatorFirstName: true,
@@ -2613,19 +2600,19 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 			const formattedResponse = {
 				...applicators,
 				applicator: {
-				  ...applicators?.applicator,
-				  farmPermissions: [
-					...(applicators?.applicator?.farmPermissions?.map(fp => ({
-					  ...fp,
-					  farm:undefined,
-					  farmName: fp.farm?.name ?? null, // Add farm name if exists
-					})) || []),
-				
-				  ],
+					...applicators?.applicator,
+					farmPermissions: [
+						...(applicators?.applicator?.farmPermissions?.map(
+							(fp) => ({
+								...fp,
+								farm: undefined,
+								farmName: fp.farm?.name ?? null, // Add farm name if exists
+							}),
+						) || []),
+					],
 				},
-				
-			  };
-			  
+			};
+
 			return {
 				result: formattedResponse,
 			};
@@ -2636,25 +2623,6 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						applicatorId,
 						growerId: user.id,
 					},
-
-					AND: [
-						{
-							OR: [
-								{
-									inviteStatus: 'PENDING',
-								},
-								{
-									inviteStatus: {
-										in: [
-											'ACCEPTED',
-											'REJECTED',
-											'DELETED_BY_APPLICATOR',
-										],
-									},
-								},
-							],
-						},
-					],
 				},
 				select: {
 					applicatorFirstName: true,
@@ -2703,13 +2671,12 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 				applicator: {
 					...applicators?.applicator,
 					farmPermissions: [
-						...(applicators?.pendingFarmPermission?.map(fp => ({
-						  ...fp,
-						  farm:undefined,
-						  farmName: fp.farm?.name ?? null, // Add farm name if exists
+						...(applicators?.pendingFarmPermission?.map((fp) => ({
+							...fp,
+							farm: undefined,
+							farmName: fp.farm?.name ?? null, // Add farm name if exists
 						})) || []),
-					
-					  ],
+					],
 				},
 				pendingFarmPermission: undefined,
 			};
