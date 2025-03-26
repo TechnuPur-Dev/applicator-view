@@ -2610,8 +2610,24 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 					},
 				},
 			});
+			const formattedResponse = {
+				...applicators,
+				applicator: {
+				  ...applicators?.applicator,
+				  farmPermissions: [
+					...(applicators?.applicator?.farmPermissions?.map(fp => ({
+					  ...fp,
+					  farm:undefined,
+					  farmName: fp.farm?.name ?? null, // Add farm name if exists
+					})) || []),
+				
+				  ],
+				},
+				
+			  };
+			  
 			return {
-				result: applicators,
+				result: formattedResponse,
 			};
 		} else {
 			const applicators = await prisma.applicatorGrower.findUnique({
@@ -2686,7 +2702,14 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 				...applicators,
 				applicator: {
 					...applicators?.applicator,
-					farmPermissions: applicators?.pendingFarmPermission || [],
+					farmPermissions: [
+						...(applicators?.pendingFarmPermission?.map(fp => ({
+						  ...fp,
+						  farm:undefined,
+						  farmName: fp.farm?.name ?? null, // Add farm name if exists
+						})) || []),
+					
+					  ],
 				},
 				pendingFarmPermission: undefined,
 			};
