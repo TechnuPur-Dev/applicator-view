@@ -1,4 +1,5 @@
 import httpStatus from 'http-status';
+import { Decimal } from '@prisma/client/runtime/library';
 // import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
@@ -487,16 +488,13 @@ const getAllGrowersByApplicator = async (
 			(totalGrowerAcres, farm) => {
 				const totalAcresByFarm = farm.fields.reduce(
 					(totalFarmAcres, field) => {
-						return (
-							totalFarmAcres +
-							parseFloat(field.acres?.toString() || '0')
-						);
+							return totalFarmAcres.plus(new Decimal(field.acres || 0));
 					},
-					0,
+				new Decimal(0)
 				);
-				return totalGrowerAcres + totalAcresByFarm;
+				return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
 			},
-			0,
+			new Decimal(0)
 		);
 
 		// Return the grower object without farms
@@ -912,16 +910,13 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-							return (
-								totalFarmAcres +
-								parseFloat(field.acres?.toString() || '0')
-							);
+								return totalFarmAcres.plus(new Decimal(field.acres || 0));
 						},
-						0,
+					new Decimal(0)
 					);
-					return totalGrowerAcres + totalAcresByFarm;
+					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
 				},
-				0,
+				new Decimal(0)
 			);
 
 			// Return the grower object without farms
@@ -1002,19 +997,16 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 		// Calculate total acres for each grower
 		const enrichedApplicators = pendingInvites.map((applicator) => {
 			const totalAcresByGrower = applicator.applicator?.farms.reduce(
-				(totalApplicatorAcres, farm) => {
+				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-							return (
-								totalFarmAcres +
-								parseFloat(field.acres?.toString() || '0')
-							);
+								return totalFarmAcres.plus(new Decimal(field.acres || 0));
 						},
-						0,
+					new Decimal(0)
 					);
-					return totalApplicatorAcres + totalAcresByFarm;
+					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
 				},
-				0,
+				new Decimal(0)
 			);
 
 			// Return the grower object without farms
@@ -1298,10 +1290,7 @@ const sendInviteToApplicator = async (
 
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (
-				existingInvite.inviteStatus === 'REJECTED' ||
-				existingInvite.inviteStatus === 'PENDING'
-			) {
+			if (existingInvite.inviteStatus === 'PENDING') {
 				// Preserve previous farm permissions and canManageFarms flag
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
@@ -1336,7 +1325,7 @@ const sendInviteToApplicator = async (
 				// 	})),
 				// });
 			} else if (
-				// existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'REJECTED' ||
 				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
 				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
 			) {
@@ -1466,10 +1455,7 @@ const sendInviteToGrower = async (
 	let invite: { id: number };
 	await prisma.$transaction(async (tx) => {
 		if (existingInvite) {
-			if (
-				existingInvite.inviteStatus === 'REJECTED' ||
-				existingInvite.inviteStatus === 'PENDING'
-			) {
+			if (existingInvite.inviteStatus === 'PENDING') {
 				// Preserve previous farm permissions and canManageFarms flag
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
@@ -1504,7 +1490,7 @@ const sendInviteToGrower = async (
 				// 	})),
 				// });
 			} else if (
-				// existingInvite.inviteStatus === 'REJECTED' ||
+				existingInvite.inviteStatus === 'REJECTED' ||
 				existingInvite.inviteStatus === 'DELETED_BY_GROWER' ||
 				existingInvite.inviteStatus === 'DELETED_BY_APPLICATOR'
 			) {
@@ -1721,12 +1707,9 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			// Calculate total acres for this farm
 			const totalAcresByFarm = farm.fields.reduce(
 				(totalFarmAcres, field) => {
-					return (
-						totalFarmAcres +
-						parseFloat(field.acres?.toString() || '0')
-					);
+						return totalFarmAcres.plus(new Decimal(field.acres || 0));
 				},
-				0,
+			new Decimal(0)
 			);
 
 			// Type assertion to inform TypeScript about `totalAcres`
@@ -1734,9 +1717,9 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			(farm as any).totalAcres = totalAcresByFarm;
 
 			// Accumulate total grower acres
-			return totalGrowerAcres + totalAcresByFarm;
+			return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
 		},
-		0,
+		new Decimal(0)
 	);
 	const responseData: ResponseData = { ...grower };
 	if (grower) {
@@ -1836,16 +1819,13 @@ const getPendingInvitesFromOthers = async (
 				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-							return (
-								totalFarmAcres +
-								parseFloat(field.acres?.toString() || '0')
-							);
+								return totalFarmAcres.plus(new Decimal(field.acres || 0));
 						},
-						0,
+					new Decimal(0)
 					);
-					return totalGrowerAcres + totalAcresByFarm;
+					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
 				},
-				0,
+				new Decimal(0)
 			);
 
 			// Return the grower object without farms
@@ -1930,19 +1910,16 @@ const getPendingInvitesFromOthers = async (
 		// Calculate total acres for each grower
 		const enrichedApplicators = pendingInvites.map((applicator) => {
 			const totalAcresByGrower = applicator.applicator?.farms.reduce(
-				(totalApplicatorAcres, farm) => {
+				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-							return (
-								totalFarmAcres +
-								parseFloat(field.acres?.toString() || '0')
-							);
+								return totalFarmAcres.plus(new Decimal(field.acres || 0));
 						},
-						0,
+					new Decimal(0)
 					);
-					return totalApplicatorAcres + totalAcresByFarm;
+					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
 				},
-				0,
+				new Decimal(0)
 			);
 
 			// Return the grower object without farms
@@ -2605,6 +2582,25 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						applicatorId,
 						growerId: user.id,
 					},
+
+					AND: [
+						{
+							OR: [
+								{
+									inviteStatus: 'PENDING',
+								},
+								{
+									inviteStatus: {
+										in: [
+											'ACCEPTED',
+											'REJECTED',
+											'DELETED_BY_APPLICATOR',
+										],
+									},
+								},
+							],
+						},
+					],
 				},
 				select: {
 					applicatorFirstName: true,
@@ -2650,19 +2646,19 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 			const formattedResponse = {
 				...applicators,
 				applicator: {
-					...applicators?.applicator,
-					farmPermissions: [
-						...(applicators?.applicator?.farmPermissions?.map(
-							(fp) => ({
-								...fp,
-								farm: undefined,
-								farmName: fp.farm?.name ?? null, // Add farm name if exists
-							}),
-						) || []),
-					],
+				  ...applicators?.applicator,
+				  farmPermissions: [
+					...(applicators?.applicator?.farmPermissions?.map(fp => ({
+					  ...fp,
+					  farm:undefined,
+					  farmName: fp.farm?.name ?? null, // Add farm name if exists
+					})) || []),
+				
+				  ],
 				},
-			};
-
+				
+			  };
+			  
 			return {
 				result: formattedResponse,
 			};
@@ -2673,6 +2669,25 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 						applicatorId,
 						growerId: user.id,
 					},
+
+					AND: [
+						{
+							OR: [
+								{
+									inviteStatus: 'PENDING',
+								},
+								{
+									inviteStatus: {
+										in: [
+											'ACCEPTED',
+											'REJECTED',
+											'DELETED_BY_APPLICATOR',
+										],
+									},
+								},
+							],
+						},
+					],
 				},
 				select: {
 					applicatorFirstName: true,
@@ -2721,12 +2736,13 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 				applicator: {
 					...applicators?.applicator,
 					farmPermissions: [
-						...(applicators?.pendingFarmPermission?.map((fp) => ({
-							...fp,
-							farm: undefined,
-							farmName: fp.farm?.name ?? null, // Add farm name if exists
+						...(applicators?.pendingFarmPermission?.map(fp => ({
+						  ...fp,
+						  farm:undefined,
+						  farmName: fp.farm?.name ?? null, // Add farm name if exists
 						})) || []),
-					],
+					
+					  ],
 				},
 				pendingFarmPermission: undefined,
 			};
