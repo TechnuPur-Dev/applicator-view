@@ -2565,9 +2565,6 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 				},
 			},
 		});
-		if (!farms || farms.length === 0) {
-			throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
-		}
 
 		const applicator = await prisma.applicatorGrower.findUnique({
 			where: {
