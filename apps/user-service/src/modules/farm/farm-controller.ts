@@ -166,7 +166,7 @@ const getFarmsWithPermissions = catchAsync(
 			currentUser,
 			growerId,
 		);
-		res.status(httpStatus.OK).json({ result });
+		res.status(httpStatus.OK).json(result);
 	},
 );
 export default {

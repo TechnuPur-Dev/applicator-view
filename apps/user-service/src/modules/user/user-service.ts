@@ -232,13 +232,9 @@ const getAllUsers = async (options: PaginateOptions) => {
 
 // getUserByEmail
 const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
-	const grower = await prisma.user.findFirst({
+	const grower = await prisma.user.findUnique({
 		where: {
-			email: {
-				equals: userEmail,
-				mode: 'insensitive',
-			},
-			role: 'GROWER',
+			email: userEmail,
 		},
 		include: {
 			state: {
@@ -275,8 +271,14 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 
 	if (!grower) {
 		throw new ApiError(
-			httpStatus.CONFLICT,
+			httpStatus.NOT_FOUND,
 			'Grower with this email not found.',
+		);
+	}
+	if (grower?.role !== 'GROWER') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'User exists but is not a grower.',
 		);
 	}
 
@@ -1605,18 +1607,6 @@ const sendInviteToGrower = async (
 };
 const getGrowerById = async (applicatorId: number, growerId: number) => {
 	// Fetch growers with their farms and fields
-	const invite = await prisma.applicatorGrower.findUnique({
-		where: {
-			applicatorId_growerId: {
-				applicatorId,
-				growerId,
-			},
-		},
-		select:{
-			id:true,
-			inviteStatus:true
-		}
-	})
 	const grower = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -1641,8 +1631,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 							name: true,
 						},
 					},
-					farms:invite?.inviteStatus !== "PENDING"?
-					 {
+					farms: {
 						where: {
 							permissions: {
 								some: {
@@ -1655,43 +1644,12 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 								where: {
 									applicatorId,
 								},
-								select:{
-									farmId:true,
-									canEdit:true,
-									canView:true
-								}
 							}, // Include permissions to calculate farm permissions for the applicator
-							fields: true, // Include fields to calculate total acres
-							state: {
-								select: {
-									id: true,
-									name: true,
+							fields: {
+								omit: {
+									config: true,
 								},
-							},
-						
-						},
-						orderBy: {
-							id: 'desc',
-						},
-					}:{
-						where: {
-							pendingFarmPermission: {
-								some: {
-									inviteId:invite.id,
-								},
-							},
-						},
-						include: {
-							pendingFarmPermission: {
-								where: {
-									inviteId:invite.id,
-								},
-								select:{
-									canEdit:true,
-									canView:true
-								}
-							}, // Include permissions to calculate farm permissions for the applicator
-							fields: true, // Include fields to calculate total acres
+							}, // Include fields to calculate total acres
 							state: {
 								select: {
 									id: true,
@@ -1715,7 +1673,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 	});
 
 	// Calculate total acres for each grower and each farm
- 
+
 	const totalAcresByGrower = grower?.grower?.farms.reduce(
 		(totalGrowerAcres, farm) => {
 			// Calculate total acres for this farm
@@ -1748,8 +1706,6 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 				: true;
 		}
 	}
-
-
 	// Add total acres to the grower object
 	return {
 		...responseData,
@@ -2585,7 +2541,35 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 	}
 	// Todo: udpate this condition to get applciator for grower
 	if (user.role === 'GROWER') {
-		const invite = await prisma.applicatorGrower.findUnique({
+		const farms = await prisma.farm.findMany({
+			where: {
+				growerId: user.id,
+				permissions: {
+					some: {
+						applicatorId,
+					},
+				},
+			},
+			select: {
+				id: true,
+				name: true,
+				permissions: {
+					where: {
+						applicatorId,
+					},
+					select: {
+						id: true,
+						canView: true,
+						canEdit: true,
+					},
+				},
+			},
+		});
+		if (!farms || farms.length === 0) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
+		}
+
+		const applicator = await prisma.applicatorGrower.findUnique({
 			where: {
 				applicatorId_growerId: {
 					applicatorId,
@@ -2593,146 +2577,85 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 				},
 			},
 			select: {
-				id: true,
+				applicatorFirstName: true,
+				applicatorLastName: true,
 				inviteStatus: true,
+				isArchivedByGrower: true,
+				canManageFarms: true,
+				inviteToken: true,
+				email: true,
+				expiresAt: true,
+				inviteInitiator: true,
+				applicator: {
+					include: {
+						state: {
+							select: {
+								id: true,
+								name: true,
+							},
+						},
+						// farmPermissions: {
+						// 	// where: {
+						// 	// 	applicatorId,
+						// 	// },
+						// 	select: {
+						// 		farmId: true,
+						// 		canEdit: true,
+						// 		canView: true,
+						// 		farm: {
+						// 			select: {
+						// 				name: true,
+						// 			},
+						// 		},
+						// 	},
+						// },
+					},
+					omit: {
+						stateId: true,
+						password: true, // Exclude sensitive data
+					},
+				},
+				pendingFarmPermission: {
+					select: {
+						farmId: true,
+						canEdit: true,
+						canView: true,
+						farm: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
 			},
 		});
+		const formattedResponse = {
+			...applicator,
+			applicator: {
+				...applicator?.applicator,
+				farmPermissions: [
+					...(farms?.map((fp) => ({
+						farmId: fp.id,
+						farmName: fp.name,
+						canView: fp.permissions[0]?.canView,
+						canEdit: fp.permissions[0]?.canEdit,
+					})) || []),
+				],
+				pendingFarmPermissions: [
+					...(applicator?.pendingFarmPermission?.map((fp) => ({
+						farmId: fp.farmId,
+						canView: fp.canView,
+						canEdit: fp.canEdit,
+						farmName: fp.farm?.name ?? null, // Add farm name if exists
+					})) || []),
+				],
+			},
+			pendingFarmPermission: undefined,
+		};
 
-		if (invite?.inviteStatus !== 'PENDING') {
-			const applicators = await prisma.applicatorGrower.findUnique({
-				where: {
-					applicatorId_growerId: {
-						applicatorId,
-						growerId: user.id,
-					},
-				},
-				select: {
-					applicatorFirstName: true,
-					applicatorLastName: true,
-					inviteStatus: true,
-					isArchivedByGrower: true,
-					canManageFarms: true,
-					inviteToken: true,
-					email: true,
-					expiresAt: true,
-					inviteInitiator: true,
-					applicator: {
-						include: {
-							state: {
-								select: {
-									id: true,
-									name: true,
-								},
-							},
-							farmPermissions: {
-								where: {
-									applicatorId,
-								},
-								select: {
-									farmId: true,
-									canEdit: true,
-									canView: true,
-									farm: {
-										select: {
-											name: true,
-										},
-									},
-								},
-							},
-						},
-						omit: {
-							stateId: true,
-							password: true, // Exclude sensitive data
-						},
-					},
-				},
-			});
-			const formattedResponse = {
-				...applicators,
-				applicator: {
-					...applicators?.applicator,
-					farmPermissions: [
-						...(applicators?.applicator?.farmPermissions?.map(
-							(fp) => ({
-								...fp,
-								farm: undefined,
-								farmName: fp.farm?.name ?? null, // Add farm name if exists
-							}),
-						) || []),
-					],
-				},
-			};
-
-			return {
-				result: formattedResponse,
-			};
-		} else {
-			const applicators = await prisma.applicatorGrower.findUnique({
-				where: {
-					applicatorId_growerId: {
-						applicatorId,
-						growerId: user.id,
-					},
-				},
-				select: {
-					applicatorFirstName: true,
-					applicatorLastName: true,
-					inviteStatus: true,
-					isArchivedByGrower: true,
-					canManageFarms: true,
-					inviteToken: true,
-					email: true,
-					expiresAt: true,
-					inviteInitiator: true,
-					applicator: {
-						include: {
-							state: {
-								select: {
-									id: true,
-									name: true,
-								},
-							},
-						},
-						omit: {
-							stateId: true,
-							password: true, // Exclude sensitive data
-						},
-					},
-					pendingFarmPermission: {
-						where: {
-							inviteId: invite.id,
-						},
-						select: {
-							farmId: true,
-							canEdit: true,
-							canView: true,
-							farm: {
-								select: {
-									name: true,
-								},
-							},
-						},
-					},
-				},
-			});
-			// Merge pendingFarmPermission into farmPermissions
-			const formattedResponse = {
-				...applicators,
-				applicator: {
-					...applicators?.applicator,
-					farmPermissions: [
-						...(applicators?.pendingFarmPermission?.map((fp) => ({
-							...fp,
-							farm: undefined,
-							farmName: fp.farm?.name ?? null, // Add farm name if exists
-						})) || []),
-					],
-				},
-				pendingFarmPermission: undefined,
-			};
-
-			return { result: formattedResponse };
-		}
+		return {
+			result: formattedResponse,
+		};
 	}
 };
 export default {
