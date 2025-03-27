@@ -829,6 +829,43 @@ const getAvailableApplicators = async (user: User, farmId: number) => {
 	});
 	return availableApplicators;
 };
+const getFarmsWithPermissions = async (user: User, growerId: number) => {
+	const farms = await prisma.farm.findMany({
+		where: {
+			growerId,
+		},
+		select: {
+			id: true,
+			name: true,
+			permissions: {
+				where: {
+					applicatorId: user.id,
+				},
+				select: {
+					id: true,
+					canView: true,
+					canEdit: true,
+				},
+			},
+		},
+	});
+	if (!farms || farms.length === 0) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
+	}
+
+	// Flatten permissions into top-level keys
+	return farms.map((farm) => {
+		const permission =
+			farm.permissions.length > 0 ? farm.permissions[0] : null;
+		return {
+			farmId: farm.id,
+			name: farm.name,
+			permissionId: permission ? permission.id : null,
+			canView: permission ? permission.canView : false,
+			canEdit: permission ? permission.canEdit : false,
+		};
+	});
+};
 
 export default {
 	createFarm,
@@ -844,4 +881,5 @@ export default {
 	getAllFarms,
 	handleFarmPermissions,
 	getAvailableApplicators,
+	getFarmsWithPermissions,
 };
