@@ -455,6 +455,10 @@ const getAllJobsByApplicator = async (
 					],
 				};
 				break;
+			case 'growerId':
+				searchFilter.growerId = parseInt(searchValue, 10);
+
+				break;
 			case 'status':
 				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
 				break;
