@@ -753,9 +753,20 @@ const updateJobByApplicator = async (
 	jobId: number,
 	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
 ) => {
+	const whereCondition: {
+	     id:number,
+		applicatorId?: number;
+		fieldWorkerId?: number;
+	} ={id: jobId}
+	if(user.role === "APPLICATOR"){
+		whereCondition.applicatorId= user.id
+	}
+	if(user.role === "WORKER"){
+		whereCondition.fieldWorkerId= user.id
+	}
 	// Fetch current job status from database
 	const job = await prisma.job.findUnique({
-		where: { id: jobId, applicatorId: user.id },
+		where: whereCondition,
 		select: {
 			id: true,
 			status: true,
@@ -805,7 +816,7 @@ const updateJobByApplicator = async (
 		);
 	}
 
-	if (fieldWorkerId) {
+	if (fieldWorkerId && user.role === "APPLICATOR") {
 		await prisma.$transaction(async (tx) => {
 			await tx.job.update({
 				where: { id: jobId },
@@ -3421,6 +3432,7 @@ const getJobByIdForPilot = async (
 	pilotId: number,
 	// options: PaginateOptions,
 ) => {
+	console.log(jobId,pilotId,"jobId")
 	const job = await prisma.job.findUnique({
 		where: {
 			id: jobId,
