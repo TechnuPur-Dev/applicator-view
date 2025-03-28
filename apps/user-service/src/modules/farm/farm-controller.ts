@@ -166,7 +166,15 @@ const getFarmsWithPermissions = catchAsync(
 			currentUser,
 			growerId,
 		);
-		res.status(httpStatus.OK).json({ result });
+		res.status(httpStatus.OK).json(result);
+	},
+);
+const getGrowerFarmsByAppllicator = catchAsync(
+	async (req: Request, res: Response) => {
+		const options = pick(req.query, ['limit', 'page']);
+		const growerId = +req.params.growerId;
+		const userData = await farmService.getAllFarms(growerId, options);
+		res.status(httpStatus.OK).json(userData);
 	},
 );
 export default {
@@ -184,4 +192,5 @@ export default {
 	handleFarmPermissions,
 	getAvailableApplicators,
 	getFarmsWithPermissions,
+	getGrowerFarmsByAppllicator,
 };

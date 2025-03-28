@@ -71,5 +71,8 @@ router
 router
 	.route('/growers/:growerId/farms-with-permissions')
 	.get(verifyToken, farmController.getFarmsWithPermissions);
+router
+	.route('/by-applicator/:growerId')
+	.get(verifyToken, farmController.getGrowerFarmsByAppllicator);
 
 export default router;

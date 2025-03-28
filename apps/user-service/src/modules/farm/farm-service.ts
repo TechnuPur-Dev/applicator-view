@@ -470,13 +470,10 @@ const askFarmPermission = async (
 	currentUser: User,
 	growerId: number,
 	data: {
-		canManageFarms: boolean;
-		farmPermission: {
-			farmId: number;
-			canView: boolean;
-			canEdit: boolean;
-		}[];
-	},
+		farmId: number;
+		canView: boolean;
+		canEdit: boolean;
+	}[],
 ) => {
 	const { id: applicatorId, role } = currentUser;
 
@@ -516,7 +513,7 @@ const askFarmPermission = async (
 	const validFarms = await prisma.farm.findMany({
 		where: {
 			id: {
-				in: data.farmPermission.map((farm) => farm.farmId),
+				in: data.map((farm) => farm.farmId),
 			},
 			growerId, // Ensure the farm belongs to the grower
 		},
@@ -524,7 +521,7 @@ const askFarmPermission = async (
 	});
 
 	const validFarmIds = validFarms.map((farm) => farm.id);
-	const invalidFarmIds = data.farmPermission
+	const invalidFarmIds = data
 		.map((farm) => farm.farmId)
 		.filter((farmId) => !validFarmIds.includes(farmId));
 
@@ -534,34 +531,60 @@ const askFarmPermission = async (
 			`Invalid farm IDs: ${invalidFarmIds.join(', ')}. These farms do not belong to the specified grower.`,
 		);
 	}
+	// **Step 1: Filter out farms where `canView` is false**
+	const farmsToCheck = data.filter((farm) => !farm.canView);
+	const farmsToProcess = data.filter((farm) => farm.canView);
+
+	// **Step 2: Check if these farms exist in `pendingFarmPermission`**
+	const existingPermissions = await prisma.pendingFarmPermission.findMany({
+		where: {
+			farmId: { in: farmsToCheck.map((farm) => farm.farmId) },
+			inviteId: existingInvite.id,
+		},
+		select: { id: true, farmId: true },
+	});
+
+	const existingFarmIds = existingPermissions.map((perm) => perm.farmId);
+
+	// **Step 3: Delete records that exist, ignore others**
+	if (existingFarmIds.length > 0) {
+		await prisma.pendingFarmPermission.deleteMany({
+			where: {
+				inviteId: existingInvite.id,
+				farmId: { in: existingFarmIds },
+			},
+		});
+	}
 
 	// Proceed with updating pending farm permissions
 	await prisma.$transaction(async (tx) => {
-		await prisma.applicatorGrower.update({
-			where: {
-				applicatorId_growerId: {
-					growerId,
-					applicatorId,
-				},
-			},
-			data: {
-				canManageFarms: data.canManageFarms,
-			},
-		});
+		// await prisma.applicatorGrower.update({
+		// 	where: {
+		// 		applicatorId_growerId: {
+		// 			growerId,
+		// 			applicatorId,
+		// 		},
+		// 	},
+		// 	data: {
+		// 		canManageFarms: data.canManageFarms,
+		// 	},
+		// });
 		// Remove existing pending permissions for this invite
 		await tx.pendingFarmPermission.deleteMany({
 			where: { inviteId: existingInvite.id },
 		});
 
-		// Create new pending permissions
-		await tx.pendingFarmPermission.createMany({
-			data: data.farmPermission.map((farm) => ({
-				farmId: farm.farmId,
-				inviteId: existingInvite.id,
-				canView: farm.canView,
-				canEdit: farm.canEdit,
-			})),
-		});
+		// Create new pending permissions only for farms with `canView: true`
+		if (farmsToProcess.length > 0) {
+			await tx.pendingFarmPermission.createMany({
+				data: farmsToProcess.map((farm) => ({
+					farmId: farm.farmId,
+					inviteId: existingInvite.id,
+					canView: farm.canView,
+					canEdit: farm.canEdit,
+				})),
+			});
+		}
 	});
 	const subject = 'Ask for Farm Permissions';
 	const message = `
@@ -830,6 +853,18 @@ const getAvailableApplicators = async (user: User, farmId: number) => {
 	return availableApplicators;
 };
 const getFarmsWithPermissions = async (user: User, growerId: number) => {
+	const invite = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId: user.id,
+				growerId,
+			},
+		},
+		select: {
+			id: true,
+		},
+	});
+
 	const farms = await prisma.farm.findMany({
 		where: {
 			growerId,
@@ -847,24 +882,48 @@ const getFarmsWithPermissions = async (user: User, growerId: number) => {
 					canEdit: true,
 				},
 			},
+			pendingFarmPermission: {
+				where: {
+					inviteId: invite?.id,
+				},
+				select: {
+					id: true,
+					canView: true,
+					canEdit: true,
+				},
+			},
 		},
 	});
+
 	if (!farms || farms.length === 0) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
 	}
 
-	// Flatten permissions into top-level keys
-	return farms.map((farm) => {
-		const permission =
-			farm.permissions.length > 0 ? farm.permissions[0] : null;
-		return {
+	// Separate farms into two arrays
+	const farmPermissions = farms
+		.filter((farm) => farm.permissions.length > 0)
+		.map((farm) => ({
 			farmId: farm.id,
 			name: farm.name,
-			permissionId: permission ? permission.id : null,
-			canView: permission ? permission.canView : false,
-			canEdit: permission ? permission.canEdit : false,
-		};
-	});
+			permissionId: farm.permissions[0].id,
+			canView: farm.permissions[0].canView,
+			canEdit: farm.permissions[0].canEdit,
+		}));
+
+	const pendingFarmPermissions = farms
+		.filter((farm) => farm.pendingFarmPermission.length > 0)
+		.map((farm) => ({
+			farmId: farm.id,
+			name: farm.name,
+			permissionId: farm.pendingFarmPermission[0].id,
+			canView: farm.pendingFarmPermission[0].canView,
+			canEdit: farm.pendingFarmPermission[0].canEdit,
+		}));
+
+	return {
+		farmPermissions,
+		pendingFarmPermissions,
+	};
 };
 
 export default {
