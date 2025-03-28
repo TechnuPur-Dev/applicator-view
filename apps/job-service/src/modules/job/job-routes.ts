@@ -85,6 +85,7 @@ router
 		jobController.getJobs,
 	);
 router.route('/open-jobs').get(verifyToken, jobController.getOpenJobs);
+router.route('/my-bids').get(verifyToken, jobController.getMyBidJobs);
 router
 	.route('/pending/from-me')
 	.get(verifyToken, jobController.getJobsPendingFromMe);
@@ -181,5 +182,12 @@ router
 		verifyToken,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobActivitiesByJobId,
+	);
+	router
+	.route('/place-bids')
+	.post(
+		verifyToken,
+		validateSchema(jobValidation.placeBidJobSchema),
+		jobController.placeBidForJob,
 	);
 export default router;

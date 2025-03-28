@@ -169,6 +169,33 @@ const headerStatsSchema: Schema = Joi.object({
 			.allow(null),
 	}).required(),
 });
+const placeBidJobSchema = Joi.object({
+	body: Joi.object({
+		// Job ID validation
+		jobId: Joi.number().integer().positive().required(),
+
+		// Products array validation
+		products: Joi.array()
+			.items(
+				Joi.object({
+					productId: Joi.number().integer().positive().required(),
+					bidRateAcre: Joi.number().precision(2).positive().required(),
+					bidPrice: Joi.number().precision(2).positive().required(),
+				}),
+			)
+			.default([]), // Default empty array if no products are given
+
+		// Application Fees array validation
+		applicationFees: Joi.array()
+			.items(
+				Joi.object({
+					feeId: Joi.number().integer().positive().required(),
+					bidAmount: Joi.number().precision(2).positive().required(),
+				}),
+			)
+			.default([]), // Default empty array if no fees are given
+	}).required(),
+});
 
 export default {
 	createJobSchema,
@@ -179,4 +206,5 @@ export default {
 	pilotJobsParamSchema,
 	monthParamsSchema,
 	headerStatsSchema,
+	placeBidJobSchema
 };

@@ -508,7 +508,7 @@ const getAllGrowersByApplicator = async (
 			grower: {
 				...growerWithoutFarms,
 			},
-			totalAcres: totalAcresByGrower,
+			totalAcres: totalAcresByGrower.toDecimalPlaces(2).toNumber(),
 		};
 	});
 	const totalResults = await prisma.applicatorGrower.count({
@@ -930,7 +930,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 				grower: {
 					...growerWithoutFarms,
 				},
-				totalAcres: totalAcresByGrower,
+				totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 			};
 		});
 		const totalResults = await prisma.applicatorGrower.count({
@@ -1021,7 +1021,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 				grower: {
 					...growerWithoutFarms,
 				},
-				totalAcres: totalAcresByGrower,
+				totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 			};
 		});
 
@@ -1692,7 +1692,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 	// Add total acres to the grower object
 	return {
 		...responseData,
-		totalAcres: totalAcresByGrower,
+		totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 	};
 };
 const getPendingInvitesFromOthers = async (
@@ -1793,7 +1793,7 @@ const getPendingInvitesFromOthers = async (
 				grower: {
 					...growerWithoutFarms,
 				},
-				totalAcres: totalAcresByGrower,
+				totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 			};
 		});
 		const totalResults = await prisma.applicatorGrower.count({
@@ -1888,7 +1888,7 @@ const getPendingInvitesFromOthers = async (
 				grower: {
 					...growerWithoutFarms,
 				},
-				totalAcres: totalAcresByGrower,
+				totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 			};
 		});
 
