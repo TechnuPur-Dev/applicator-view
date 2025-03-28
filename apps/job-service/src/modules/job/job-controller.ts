@@ -132,6 +132,12 @@ const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getOpenJobs(options);
 	res.status(httpStatus.OK).json(result);
 });
+const getMyBidJobs = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
+	const result = await jobService.getMyBidJobs(options,user);
+	res.status(httpStatus.OK).json(result);
+});
 // for applicator approval screen
 const getJobsPendingFromMe = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
@@ -283,6 +289,13 @@ const getJobByIdForPilot = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getJobByIdForPilot(jobId, pilotId);
 	res.status(httpStatus.OK).json(result);
 });
+//controller for place bid 
+const placeBidForJob = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const data = req.body;
+	const result = await jobService.placeBidForJob(currentUser, data);
+	res.status(httpStatus.CREATED).json(result);
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -298,6 +311,7 @@ export default {
 	uploadJobAttachments,
 	getJobs,
 	getOpenJobs,
+	getMyBidJobs,
 	getJobsPendingFromMe,
 	getJobsPendingFromGrower,
 	// getJobsPendingFromApplicators,
@@ -316,4 +330,5 @@ export default {
 	getPilotRejectedJobs,
 	getJobByIdForPilot,
 	getJobActivitiesByJobId,
+	placeBidForJob
 };
