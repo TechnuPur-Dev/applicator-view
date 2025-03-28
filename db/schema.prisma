@@ -94,7 +94,6 @@ model ApplicatorWorker {
   @@unique([applicatorId, workerId])
 }
 
-
 // TODO: remove email because the flow is updated now 
 model ApplicatorGrower {
   id                     Int              @id @default(autoincrement())
@@ -249,19 +248,47 @@ model Bid {
   id           Int       @id @default(autoincrement())
   jobId        Int
   applicatorId Int
-  amount       Decimal
   status       BidStatus @default(PENDING) // PENDING, ACCEPTED, REJECTED
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  job        Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  applicator User @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
+  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicator  User                @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
+  bidProducts BidProduct[]
+  bidFees     BidApplicationFee[]
+
+  @@unique([jobId, applicatorId]) // Ensures an applicator bids once per job
 }
 
 enum BidStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+model BidProduct {
+  id          Int      @id @default(autoincrement())
+  bidId       Int
+  productId   Int
+  bidRateAcre Decimal?
+  bidPrice    Decimal?
+
+  bid     Bid        @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  product JobProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([bidId])
+}
+
+model BidApplicationFee {
+  id        Int     @id @default(autoincrement())
+  bidId     Int
+  feeId     Int
+  bidAmount Decimal
+
+  bid            Bid               @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  applicationFee JobApplicationFee @relation(fields: [feeId], references: [id], onDelete: Cascade)
+
+  @@index([bidId])
 }
 
 model FieldJob {
@@ -278,26 +305,29 @@ model FieldJob {
 }
 
 model JobProduct {
-  id          Int      @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   jobId       Int
   name        String?
   productId   Int?
   perAcreRate Decimal?
   totalAcres  Decimal
   price       Decimal
-  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  product     Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  job         Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  product     Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  BidProduct  BidProduct[]
 
+  
   @@index([jobId])
 }
 
 model JobApplicationFee {
-  id          Int     @id @default(autoincrement())
-  jobId       Int
-  description String
-  rateUoM     Decimal
-  perAcre     Boolean
-  job         Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id                Int                 @id @default(autoincrement())
+  jobId             Int
+  description       String
+  rateUoM           Decimal
+  perAcre           Boolean
+  job               Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  BidApplicationFee BidApplicationFee[]
 
   @@index([jobId])
 }
