@@ -1672,7 +1672,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 
 			// Type assertion to inform TypeScript about `totalAcres`
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(farm as any).totalAcres = totalAcresByFarm;
+			(farm as any).totalAcres = totalAcresByFarm?.toDecimalPlaces(2).toNumber();
 
 			// Accumulate total grower acres
 			return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
