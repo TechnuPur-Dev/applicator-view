@@ -296,6 +296,26 @@ const placeBidForJob = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.placeBidForJob(currentUser, data);
 	res.status(httpStatus.CREATED).json(result);
 });
+const getAllBidsByJobId = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const jobId = +req.params.jobId
+	const result = await jobService.getAllBidsByJobId(currentUser,jobId);
+	res.status(httpStatus.OK).json(result);
+});
+
+const updateBidJobStatus = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.params.bidId;
+		const userData = req.user;
+		const data = req.body;
+		const result = await jobService.updateBidJobStatus(
+			data,
+			id,
+			userData,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -330,5 +350,7 @@ export default {
 	getPilotRejectedJobs,
 	getJobByIdForPilot,
 	getJobActivitiesByJobId,
-	placeBidForJob
+	placeBidForJob,
+	getAllBidsByJobId,
+	updateBidJobStatus
 };

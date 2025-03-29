@@ -24,6 +24,15 @@ const jobStatusSchema: Schema = Joi.string()
 	)
 	.required();
 
+	const bidStatusSchema: Schema = Joi.string()
+	.valid(
+		
+		'PENDING',
+		'ACCEPTED',
+		'REJECTED',
+	
+	)
+	.required();
 const createJobSchema = Joi.object({
 	body: Joi.object({
 		// Job details
@@ -196,7 +205,17 @@ const placeBidJobSchema = Joi.object({
 			.default([]), // Default empty array if no fees are given
 	}).required(),
 });
-
+const updateBidStatusSchema = Joi.object({
+	params: Joi.object({
+		bidId: Joi.number().integer().positive().required(),
+	}).required(),
+	body: Joi.alternatives()
+		.try(
+			
+			Joi.object({ status: bidStatusSchema.required() }),
+		)
+		.required(),
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -206,5 +225,6 @@ export default {
 	pilotJobsParamSchema,
 	monthParamsSchema,
 	headerStatsSchema,
-	placeBidJobSchema
+	placeBidJobSchema,
+	updateBidStatusSchema
 };
