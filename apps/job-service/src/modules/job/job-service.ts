@@ -1541,14 +1541,14 @@ const getMyBidJobs = async (
 				},
 			},
 		},
-		
+
 		skip,
 		take: limit,
 		orderBy: {
 			id: 'desc',
 		},
 	});
-	
+
 	const formattedBids = bidData.map((bid) => ({
 		...bid,
 		job: {
@@ -3111,20 +3111,20 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 							perAcreRate: true,
 						},
 					},
-					BidProduct:{
-						select:{
-							bidRateAcre:true,
-							bidPrice:true,
-							
+					BidProduct: {
+						select: {
+							bidRateAcre: true,
+							bidPrice: true,
+
 						}
 					}
 				},
 			},
 			applicationFees: {
-				include:{
-					BidApplicationFee:{
-						select:{
-							bidAmount:true
+				include: {
+					BidApplicationFee: {
+						select: {
+							bidAmount: true
 						}
 					}
 				}
@@ -3152,7 +3152,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ applicator, grower,products,applicationFees, ...job }) => ({
+	const formattedJob = (({ applicator, grower, products, applicationFees, ...job }) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
@@ -3170,10 +3170,10 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 		products: products.map(({ product, BidProduct, name, ...rest }) => ({
 			...rest,
 			name: product ? product?.productName : name, // Move productName to name
-			bidRateAcre: BidProduct?.[0]?.bidRateAcre ?? null, 
-			bidPrice: BidProduct?.[0]?.bidPrice ?? null 
+			bidRateAcre: BidProduct?.[0]?.bidRateAcre ?? null,
+			bidPrice: BidProduct?.[0]?.bidPrice ?? null
 		})),
-	
+
 		applicationFees: applicationFees.map(({ BidApplicationFee, ...rest }) => ({
 			...rest,
 			bidAmount: BidApplicationFee?.[0]?.bidAmount // Add bidAmount from BidApplicationFee
@@ -3802,15 +3802,15 @@ const placeBidForJob = async (user: User, data: { jobId: number, products: any[]
 		throw new Error('Only an applicator can place a bid');
 	}
 
-	const { jobId, products, applicationFees } = data;	
-		// Check if job exists
-		const jobExists = await prisma.job.findUnique({
-			where: { id: jobId },
-			select: { growerId: true,products:true, applicationFees:true },
-		});
-		if (!jobExists) {
-			throw new Error('Job not found');
-		}
+	const { jobId, products, applicationFees } = data;
+	// Check if job exists
+	const jobExists = await prisma.job.findUnique({
+		where: { id: jobId },
+		select: { growerId: true, products: true, applicationFees: true },
+	});
+	if (!jobExists) {
+		throw new Error('Job not found');
+	}
 	// Validate that all products on which user place bid belong to the job
 	const jobProductIds = jobExists.products.map(p => p.id);
 	const invalidProducts = products.filter(p => !jobProductIds.includes(p.productId));
@@ -3824,19 +3824,19 @@ const placeBidForJob = async (user: User, data: { jobId: number, products: any[]
 	if (invalidFees.length > 0) {
 		throw new Error('Some application fees do not belong to the selected job');
 	}
-		const existingBid = await prisma.bid.findUnique({
-			where: {
-				jobId_applicatorId: {
-					jobId,
-					applicatorId: user.id,
-				},
+	const existingBid = await prisma.bid.findUnique({
+		where: {
+			jobId_applicatorId: {
+				jobId,
+				applicatorId: user.id,
 			},
-		});
-		if (existingBid) {
-			throw new Error('You have already placed a bid for this job.');
-		}
+		},
+	});
+	if (existingBid) {
+		throw new Error('You have already placed a bid for this job.');
+	}
 
-		// Create a new bid
+	// Create a new bid
 	const result = await prisma.$transaction(async (prisma) => {
 		const newBid = await prisma.bid.create({
 			data: {
@@ -3869,7 +3869,7 @@ const placeBidForJob = async (user: User, data: { jobId: number, products: any[]
 			});
 		}
 
-		return { newBid};
+		return { newBid };
 	});
 
 	// Send push notification outside transaction
@@ -3885,26 +3885,26 @@ const placeBidForJob = async (user: User, data: { jobId: number, products: any[]
 
 
 const getAllBidsByJobId = async (user: User, jobId: number) => {
-    
-	if(user.role !== "GROWER"){
-        throw new Error('grower can only access these bids');
+
+	if (user.role !== "GROWER") {
+		throw new Error('grower can only access these bids');
 	}
-     const result = await prisma.bid.findMany({
-          where:{
+	const result = await prisma.bid.findMany({
+		where: {
 			jobId,
-			status:"PENDING",
+			status: "PENDING",
 			job: {
 				growerId: user.id, // Ensure the job belongs to the logged-in grower
-				status:'OPEN_FOR_BIDDING'
+				status: 'OPEN_FOR_BIDDING'
 			},
-		  },
-		  include:{
-			job:{
-				select:{
-					id:true,
-					title:true,
-					type:true,
-					status:true,
+		},
+		include: {
+			job: {
+				select: {
+					id: true,
+					title: true,
+					type: true,
+					status: true,
 				}
 			},
 			applicator: {
@@ -3917,97 +3917,104 @@ const getAllBidsByJobId = async (user: User, jobId: number) => {
 					businessName: true,
 				},
 			},
-			bidProducts:{
-				include:{
-					product:true
+			bidProducts: {
+				include: {
+					product: true
 				}
 			},
-			bidFees:{
-				include:{
-					applicationFee:true
+			bidFees: {
+				include: {
+					applicationFee: true
 				}
 			}
-		  }
-	 })
-	 return result;
-	
+		}
+	})
+	return result;
+
 
 };
 
 const updateBidJobStatus = async (
-	data: { status:BidStatus },
-	bidId:number,
+	data: { status: BidStatus },
+	bidId: number,
 	user: User,
 ) => {
 	const whereCondition: {
-		id:number,
+		id: number,
 		status: 'PENDING'; // Worker condition added
-	} = {id:bidId, status: 'PENDING' };
+	} = { id: bidId, status: 'PENDING' };
 	// Fetch current job  from database
-	const {id, role } = user;
-	if(role !== "GROWER"){
-        throw new Error('only can grower update the job status');
+	const { id, role } = user;
+	if (role !== "GROWER") {
+		throw new Error('only can grower update the job status');
+	}
+	const bidExist = await prisma.bid.findUnique({
+		where: {
+			id: bidId
+		}
+	})
+	if (!bidExist) {
+		throw new Error('bid id is not found')
 	}
 	// Check if requested  is valid
 	if (data.status) {
 		await prisma.$transaction(async (tx) => {
 			// update bid status first
 			const updatedBid = await tx.bid.update({
-				where:whereCondition,
+				where: whereCondition,
 				data: {
 					status: data.status,
 				},
 				select: {
 					id: true,
-					jobId:true,
+					jobId: true,
 					status: true,
 					applicatorId: true,
 				},
 			});
 			// Update the job status 
-		 if(data.status === 'ACCEPTED')
-			{
-			const updatedJob =   await tx.job.update({
-				where: {
-					id:updatedBid.jobId,
-					status:'OPEN_FOR_BIDDING'
-				},
-				data: {
-					applicatorId:updatedBid.applicatorId, //update applicatorId
-					status:'READY_TO_SPRAY',
-				},
-				select: {
-					id: true,
-					status: true,
-					applicatorId: true,
-					growerId: true,
-					fieldWorkerId: true,
-				},
-			});
-			 // Determine userId for the notification
-			 const notificationUserId = updatedBid?.applicatorId
-			 // Create the notification separately
-			 await tx.notification.create({
-				 data: {
-					 userId: notificationUserId , // Notify the appropriate user
-					 jobId:data.status=== 'ACCEPTED'? updatedBid.jobId : null,
-					 type:'BID_ACCEPTED'
-				 },
-			 });
-			await tx.jobActivity.create({
-				data: {
-					jobId: updatedJob.id,
-					changedById: id, //Connect to an existing user
-					changedByRole: role as UserRole,
-					oldStatus: 'OPEN_FOR_BIDDING',
-					newStatus: 'READY_TO_SPRAY',
-				},
-			});
-			
-		   }
-         
-			
-		
+			if (data.status === 'ACCEPTED') {
+				const updatedJob = await tx.job.update({
+					where: {
+						id: updatedBid.jobId,
+						status: 'OPEN_FOR_BIDDING'
+					},
+					data: {
+						applicatorId: updatedBid.applicatorId, //update applicatorId
+						status: 'READY_TO_SPRAY',
+					},
+					select: {
+						id: true,
+						status: true,
+						applicatorId: true,
+						growerId: true,
+						fieldWorkerId: true,
+					},
+				});
+				// Determine userId for the notification
+				const notificationUserId = updatedBid?.applicatorId
+				// Create the notification separately
+				await tx.notification.create({
+					data: {
+						userId: notificationUserId, // Notify the appropriate user
+						jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
+						type: 'BID_ACCEPTED'
+					},
+				});
+				await tx.jobActivity.create({
+					data: {
+						jobId: updatedJob.id,
+						changedById: id, //Connect to an existing user
+						changedByRole: role as UserRole,
+						oldStatus: 'OPEN_FOR_BIDDING',
+						newStatus: 'READY_TO_SPRAY',
+					},
+				});
+
+			}
+
+
+
 		});
 	}
 	// await sendPushNotifications({
@@ -4018,7 +4025,7 @@ const updateBidJobStatus = async (
 	// });
 
 	return {
-		message: data.status === 'ACCEPTED'? `Bid accepted successfully.`:`Bid rejected successfully.`,
+		message: data.status === 'ACCEPTED' ? `Bid accepted successfully.` : `Bid rejected successfully.`,
 	};
 };
 
