@@ -190,4 +190,18 @@ router
 		validateSchema(jobValidation.placeBidJobSchema),
 		jobController.placeBidForJob,
 	);
+	router
+	.route('/all-bids/:jobId')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getAllBidsByJobId,
+	);
+	router
+	.route('/update/bid-status/:bidId')
+	.put(
+		verifyToken,
+		validateSchema(jobValidation.updateBidStatusSchema),
+		jobController.updateBidJobStatus
+	);
 export default router;
