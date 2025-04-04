@@ -688,9 +688,12 @@ const getJobById = async (user: User, jobId: number) => {
 			'No job found for the given job Id.',
 		);
 	}
-	if (role === "GROWER") {
-		if (job.status === "ASSIGNED_TO_PILOT" || job.status === "PILOT_REJECTED") {
-			job.status = "READY_TO_SPRAY";
+	if (role === 'GROWER') {
+		if (
+			job.status === 'ASSIGNED_TO_PILOT' ||
+			job.status === 'PILOT_REJECTED'
+		) {
+			job.status = 'READY_TO_SPRAY';
 		}
 	}
 	const fields = await prisma.field.findMany({
@@ -755,15 +758,15 @@ const updateJobByApplicator = async (
 	data: { status: JobStatus; fieldWorkerId?: number }, // fieldWorkerId optional
 ) => {
 	const whereCondition: {
-		id: number,
+		id: number;
 		applicatorId?: number;
 		fieldWorkerId?: number;
-	} = { id: jobId }
-	if (user.role === "APPLICATOR") {
-		whereCondition.applicatorId = user.id
+	} = { id: jobId };
+	if (user.role === 'APPLICATOR') {
+		whereCondition.applicatorId = user.id;
 	}
-	if (user.role === "WORKER") {
-		whereCondition.fieldWorkerId = user.id
+	if (user.role === 'WORKER') {
+		whereCondition.fieldWorkerId = user.id;
 	}
 	// Fetch current job status from database
 	const job = await prisma.job.findUnique({
@@ -817,7 +820,7 @@ const updateJobByApplicator = async (
 		);
 	}
 
-	if (fieldWorkerId && user.role === "APPLICATOR") {
+	if (fieldWorkerId && user.role === 'APPLICATOR') {
 		await prisma.$transaction(async (tx) => {
 			await tx.job.update({
 				where: { id: jobId },
@@ -1170,8 +1173,11 @@ const getJobs = async (
 
 	// }));
 	const formattedJobs = jobs.map((job) => {
-		if (job.status === "ASSIGNED_TO_PILOT" || job.status === "PILOT_REJECTED") {
-			job.status = "READY_TO_SPRAY";
+		if (
+			job.status === 'ASSIGNED_TO_PILOT' ||
+			job.status === 'PILOT_REJECTED'
+		) {
+			job.status = 'READY_TO_SPRAY';
 		}
 
 		return {
@@ -1179,8 +1185,10 @@ const getJobs = async (
 			applicatorFullName: job.applicator?.fullName || null,
 			applicatorBusinessName: job.applicator?.businessName || null,
 			farmName: job.farm?.name || null,
-			totalAcres: job.fields.reduce((sum, f) => sum + (f.actualAcres || 0), 0),
-
+			totalAcres: job.fields.reduce(
+				(sum, f) => sum + (f.actualAcres || 0),
+				0,
+			),
 		};
 	});
 	const totalResults = jobs.length;
@@ -1550,17 +1558,21 @@ const getMyBidJobs = async (
 	});
 
 	const formattedBids = bidData.map((bid) => ({
-		...bid,
-		job: {
-			...bid.job,
-			farm: {
-				...bid.job.farm,
-				totalAcres: bid.job.fields.reduce(
-					(sum, f) => sum + (f.actualAcres || 0),
-					0,
-				),
-			},
+		id: bid.id,
+		title: bid.job.title,
+		type: bid.job.type,
+		grower: bid.job.grower,
+		farm: {
+			name: bid.job.farm.name,
+			state: bid.job.farm.state, // Ensures it contains `{ id, name }`
+			county: bid.job.farm.county,
+			township: bid.job.farm.township,
 		},
+		fields: bid.job.fields, // Keeps fields as an array
+		totalAcres: bid.job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		),
 	}));
 
 	const totalResults = await prisma.bid.count({
@@ -2211,13 +2223,12 @@ const getJobByPilot = async (
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	const formattedJobs = jobs.map((job) => {
-		if (job.status === "INVOICED" || job.status === "PAID") {
-			job.status = "SPRAYED";
+		if (job.status === 'INVOICED' || job.status === 'PAID') {
+			job.status = 'SPRAYED';
 		}
 
 		return {
 			...job,
-
 		};
 	});
 	return {
@@ -2236,10 +2247,11 @@ const getAssignedJobs = async (applicatorId: number) => {
 
 const addOpenForBiddingJob = async (user: User, data: CreateJob) => {
 	if (user.role === 'GROWER') {
+		const { id: growerId } = user;
 		const {
 			title,
 			type,
-			userId: growerId,
+			// userId: growerId,
 			startDate,
 			endDate,
 			description,
@@ -2252,9 +2264,6 @@ const addOpenForBiddingJob = async (user: User, data: CreateJob) => {
 			products = [],
 			applicationFees = [],
 		} = data;
-		if (typeof user.id !== 'number') {
-			throw new Error('growerId is required and must be a number');
-		}
 
 		const fieldIds = fields.map(({ fieldId }) => fieldId);
 		const fieldCount = await prisma.field.count({
@@ -2502,26 +2511,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-							totalExpenditures:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}
+								totalExpenditures:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}
 						: {
-							totalRevenue:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}),
+								totalRevenue:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-							totalApplicators:
-								dashboardtotalGrowersorApplicators,
-						}),
+								totalApplicators:
+									dashboardtotalGrowersorApplicators,
+							}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -2609,17 +2618,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-							totalAcres:
-								myJobsTotalAcres._sum.actualAcres || 0,
-						}),
+								totalAcres:
+									myJobsTotalAcres._sum.actualAcres || 0,
+							}),
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								myJobsTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									myJobsTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicatorJobs,
-						}),
+								totalApplicatorJobs,
+							}),
 				};
 				break;
 			}
@@ -2654,13 +2663,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								openJobTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									openJobTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicators:
-								openJobTotalGrowersorApplicators.length,
-						}),
+								totalApplicators:
+									openJobTotalGrowersorApplicators.length,
+							}),
 				};
 				break;
 			}
@@ -2695,11 +2704,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -2711,11 +2720,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -2751,11 +2760,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -2767,11 +2776,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -2784,13 +2793,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -2798,13 +2807,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}),
 					},
 				};
 				break;
@@ -3115,19 +3124,18 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 						select: {
 							bidRateAcre: true,
 							bidPrice: true,
-
-						}
-					}
+						},
+					},
 				},
 			},
 			applicationFees: {
 				include: {
 					BidApplicationFee: {
 						select: {
-							bidAmount: true
-						}
-					}
-				}
+							bidAmount: true,
+						},
+					},
+				},
 			},
 		},
 		omit: {
@@ -3152,7 +3160,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 		},
 	});
 	// Format the job object with conditional removal of applicator or grower
-	const formattedJob = (({ applicator, grower, products, applicationFees, ...job }) => ({
+	const formattedJob = (({
+		applicator,
+		grower,
+		products,
+		applicationFees,
+		...job
+	}) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
@@ -3171,13 +3185,15 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 			...rest,
 			name: product ? product?.productName : name, // Move productName to name
 			bidRateAcre: BidProduct?.[0]?.bidRateAcre ?? null,
-			bidPrice: BidProduct?.[0]?.bidPrice ?? null
+			bidPrice: BidProduct?.[0]?.bidPrice ?? null,
 		})),
 
-		applicationFees: applicationFees.map(({ BidApplicationFee, ...rest }) => ({
-			...rest,
-			bidAmount: BidApplicationFee?.[0]?.bidAmount // Add bidAmount from BidApplicationFee
-		}))
+		applicationFees: applicationFees.map(
+			({ BidApplicationFee, ...rest }) => ({
+				...rest,
+				bidAmount: BidApplicationFee?.[0]?.bidAmount, // Add bidAmount from BidApplicationFee
+			}),
+		),
 	}))(job);
 
 	return formattedJob;
@@ -3434,7 +3450,10 @@ const getMyJobsByPilot = async (
 	// Modify status if it is "INVOICED" or "PAID"
 	const modifiedJobs = jobs.map((job) => ({
 		...job,
-		status: job.status === "INVOICED" || job.status === "PAID" ? "SPRAYED" : job.status,
+		status:
+			job.status === 'INVOICED' || job.status === 'PAID'
+				? 'SPRAYED'
+				: job.status,
 	}));
 
 	return {
@@ -3644,7 +3663,7 @@ const getJobByIdForPilot = async (
 	pilotId: number,
 	// options: PaginateOptions,
 ) => {
-	console.log(jobId, pilotId, "jobId")
+	console.log(jobId, pilotId, 'jobId');
 	const job = await prisma.job.findUnique({
 		where: {
 			id: jobId,
@@ -3746,8 +3765,8 @@ const getJobByIdForPilot = async (
 		);
 	}
 	// Modify status if it is "INVOICED" or "PAID"
-	if (job.status === "INVOICED" || job.status === "PAID") {
-		job.status = "SPRAYED";
+	if (job.status === 'INVOICED' || job.status === 'PAID') {
+		job.status = 'SPRAYED';
 	}
 	const fields = await prisma.field.findMany({
 		where: {
@@ -3797,7 +3816,10 @@ const getJobActivitiesByJobId = async (
 
 	return jobActivities;
 };
-const placeBidForJob = async (user: User, data: { jobId: number, products: any[]; applicationFees: any[] }) => {
+const placeBidForJob = async (
+	user: User,
+	data: { jobId: number; products: any[]; applicationFees: any[] },
+) => {
 	if (user.role !== 'APPLICATOR') {
 		throw new Error('Only an applicator can place a bid');
 	}
@@ -3812,17 +3834,23 @@ const placeBidForJob = async (user: User, data: { jobId: number, products: any[]
 		throw new Error('Job not found');
 	}
 	// Validate that all products on which user place bid belong to the job
-	const jobProductIds = jobExists.products.map(p => p.id);
-	const invalidProducts = products.filter(p => !jobProductIds.includes(p.productId));
+	const jobProductIds = jobExists.products.map((p) => p.id);
+	const invalidProducts = products.filter(
+		(p) => !jobProductIds.includes(p.productId),
+	);
 	if (invalidProducts.length > 0) {
 		throw new Error('Some products do not belong to the selected job');
 	}
 
 	// Validate that all application fees on which user place bid belong to the job
-	const jobFeeIds = jobExists.applicationFees.map(f => f.id);
-	const invalidFees = applicationFees.filter(f => !jobFeeIds.includes(f.feeId));
+	const jobFeeIds = jobExists.applicationFees.map((f) => f.id);
+	const invalidFees = applicationFees.filter(
+		(f) => !jobFeeIds.includes(f.feeId),
+	);
 	if (invalidFees.length > 0) {
-		throw new Error('Some application fees do not belong to the selected job');
+		throw new Error(
+			'Some application fees do not belong to the selected job',
+		);
 	}
 	const existingBid = await prisma.bid.findUnique({
 		where: {
@@ -3877,25 +3905,23 @@ const placeBidForJob = async (user: User, data: { jobId: number, products: any[]
 		userIds: jobExists.growerId ?? [],
 		title: `Place a bid for job`,
 		message: `${user.firstName} ${user.lastName} placed a bid for a job that needs your confirmation.`,
-		notificationType: 'BID_PLACED'
+		notificationType: 'BID_PLACED',
 	});
 
-	return result.newBid
+	return result.newBid;
 };
 
-
 const getAllBidsByJobId = async (user: User, jobId: number) => {
-
-	if (user.role !== "GROWER") {
+	if (user.role !== 'GROWER') {
 		throw new Error('grower can only access these bids');
 	}
 	const result = await prisma.bid.findMany({
 		where: {
 			jobId,
-			status: "PENDING",
+			status: 'PENDING',
 			job: {
 				growerId: user.id, // Ensure the job belongs to the logged-in grower
-				status: 'OPEN_FOR_BIDDING'
+				status: 'OPEN_FOR_BIDDING',
 			},
 		},
 		include: {
@@ -3905,7 +3931,7 @@ const getAllBidsByJobId = async (user: User, jobId: number) => {
 					title: true,
 					type: true,
 					status: true,
-				}
+				},
 			},
 			applicator: {
 				select: {
@@ -3919,19 +3945,17 @@ const getAllBidsByJobId = async (user: User, jobId: number) => {
 			},
 			bidProducts: {
 				include: {
-					product: true
-				}
+					product: true,
+				},
 			},
 			bidFees: {
 				include: {
-					applicationFee: true
-				}
-			}
-		}
-	})
+					applicationFee: true,
+				},
+			},
+		},
+	});
 	return result;
-
-
 };
 
 const updateBidJobStatus = async (
@@ -3940,21 +3964,21 @@ const updateBidJobStatus = async (
 	user: User,
 ) => {
 	const whereCondition: {
-		id: number,
+		id: number;
 		status: 'PENDING'; // Worker condition added
 	} = { id: bidId, status: 'PENDING' };
 	// Fetch current job  from database
 	const { id, role } = user;
-	if (role !== "GROWER") {
+	if (role !== 'GROWER') {
 		throw new Error('only can grower update the job status');
 	}
 	const bidExist = await prisma.bid.findUnique({
 		where: {
-			id: bidId
-		}
-	})
+			id: bidId,
+		},
+	});
 	if (!bidExist) {
-		throw new Error('bid id is not found')
+		throw new Error('bid id is not found');
 	}
 	// Check if requested  is valid
 	if (data.status) {
@@ -3972,12 +3996,12 @@ const updateBidJobStatus = async (
 					applicatorId: true,
 				},
 			});
-			// Update the job status 
+			// Update the job status
 			if (data.status === 'ACCEPTED') {
 				const updatedJob = await tx.job.update({
 					where: {
 						id: updatedBid.jobId,
-						status: 'OPEN_FOR_BIDDING'
+						status: 'OPEN_FOR_BIDDING',
 					},
 					data: {
 						applicatorId: updatedBid.applicatorId, //update applicatorId
@@ -3992,13 +4016,16 @@ const updateBidJobStatus = async (
 					},
 				});
 				// Determine userId for the notification
-				const notificationUserId = updatedBid?.applicatorId
+				const notificationUserId = updatedBid?.applicatorId;
 				// Create the notification separately
 				await tx.notification.create({
 					data: {
 						userId: notificationUserId, // Notify the appropriate user
-						jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
-						type: 'BID_ACCEPTED'
+						jobId:
+							data.status === 'ACCEPTED'
+								? updatedBid.jobId
+								: null,
+						type: 'BID_ACCEPTED',
 					},
 				});
 				await tx.jobActivity.create({
@@ -4010,11 +4037,7 @@ const updateBidJobStatus = async (
 						newStatus: 'READY_TO_SPRAY',
 					},
 				});
-
 			}
-
-
-
 		});
 	}
 	// await sendPushNotifications({
@@ -4025,7 +4048,10 @@ const updateBidJobStatus = async (
 	// });
 
 	return {
-		message: data.status === 'ACCEPTED' ? `Bid accepted successfully.` : `Bid rejected successfully.`,
+		message:
+			data.status === 'ACCEPTED'
+				? `Bid accepted successfully.`
+				: `Bid rejected successfully.`,
 	};
 };
 
@@ -4065,5 +4091,5 @@ export default {
 	getJobActivitiesByJobId,
 	placeBidForJob,
 	getAllBidsByJobId,
-	updateBidJobStatus
+	updateBidJobStatus,
 };

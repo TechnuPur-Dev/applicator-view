@@ -64,6 +64,8 @@ model User {
   Bid                    Bid[]
   ForecastCity           ForecastCity[]
   JobActivity            JobActivity[]
+  applicatorUser         ApplicatorUser[]       @relation("ApplicatorToUsers")
+  assignedUsers          ApplicatorUser[]       @relation("UserToApplicators")
 }
 
 model ApplicatorWorker {
@@ -316,7 +318,6 @@ model JobProduct {
   product     Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
   BidProduct  BidProduct[]
 
-  
   @@index([jobId])
 }
 
@@ -472,6 +473,39 @@ model JobActivity {
   changedBy User @relation(fields: [changedById], references: [id])
 }
 
+model ApplicatorUser {
+  id           Int      @id @default(autoincrement())
+  applicatorId Int
+  userId       Int
+  createdAt    DateTime @default(now())
+
+  applicator  User                       @relation("ApplicatorToUsers", fields: [applicatorId], references: [id])
+  user        User                       @relation("UserToApplicators", fields: [userId], references: [id])
+  permissions ApplicatorUserPermission[]
+
+  @@unique([applicatorId, userId]) // Prevent duplicate entries
+}
+
+model Permission {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  applicatorUserPermissions ApplicatorUserPermission[]
+}
+
+model ApplicatorUserPermission {
+  id           Int     @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  canView      Boolean @default(true)
+  canEdit      Boolean @default(false)
+
+  user       ApplicatorUser @relation(fields: [userId], references: [id])
+  permission Permission     @relation(fields: [permissionId], references: [id])
+
+  @@unique([userId, permissionId]) // Ensure a user has unique permissions per applicator
+}
+
 enum NotificationType {
   JOB_REQUEST
   JOB_ASSIGNED
@@ -561,6 +595,7 @@ enum UserRole {
   GROWER
   APPLICATOR
   WORKER
+  APPLICATOR_USER
 }
 
 enum InviteStatus {
