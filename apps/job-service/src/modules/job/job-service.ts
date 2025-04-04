@@ -1558,7 +1558,7 @@ const getMyBidJobs = async (
 	});
 
 	const formattedBids = bidData.map((bid) => ({
-		id: bid.id,
+		id: bid.job.id,
 		title: bid.job.title,
 		type: bid.job.type,
 		grower: bid.job.grower,

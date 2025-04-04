@@ -478,6 +478,7 @@ model ApplicatorUser {
   applicatorId Int
   userId       Int
   createdAt    DateTime @default(now())
+  inviteToken  String?  @unique
 
   applicator  User                       @relation("ApplicatorToUsers", fields: [applicatorId], references: [id])
   user        User                       @relation("UserToApplicators", fields: [userId], references: [id])
