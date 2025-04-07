@@ -1,0 +1,292 @@
+import httpStatus from 'http-status';
+// import { Prisma } from '@prisma/client';
+import { prisma } from '../../../../../shared/libs/prisma-client';
+import { ApplicatorUser, } from './applicator-users-types';
+import ApiError from '../../../../../shared/utils/api-error';
+
+import { 
+	User, 
+	PaginateOptions
+ } from '../../../../../shared/types/global';
+
+import {
+	mailHtmlTemplate,
+	sendEmail,
+} from '../../../../../shared/helpers/node-mailer';
+import { generateInviteToken } from '../../helper/invite-token';
+//
+const searchApplicatorUserByEmail = async (applicatorId: number, email: string) => {
+	// Find all users matching the email pattern (debounced search)
+	const user = await prisma.user.findUnique({
+		where: {
+			email,
+		},
+		include: {
+			state: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+		omit: {
+			password: true, // Exclude sensitive data
+		},
+	});
+
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'user with this email not found.',
+		);
+	}
+
+	if (user.role !== 'APPLICATOR_USER') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'User exists but is not an applicator user.',
+		);
+	}
+	return {
+		user
+	};
+};
+const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
+	if (user.role !== 'APPLICATOR') {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'You are not authorized to perform this action.',
+		);
+	}
+	const {
+		userPermission = [],
+	} = data;
+	const token = generateInviteToken('APPLICATOR_USER');
+	return prisma.$transaction(async (prisma) => {
+		const userData = await prisma.user.create({
+			data: {
+				firstName: data.firstName,
+				lastName: data.lastName,
+				fullName: `${data.firstName} ${data.lastName}`,
+				email: data.email.toLowerCase(),
+				phoneNumber: data.phoneNumber,
+				// businessName: data.businessName,
+				address1: data.address1,
+				address2: data.address2,
+				stateId: data.stateId,
+				county: data.county,
+				township: data.township,
+				zipCode: data.zipCode,
+				role: 'APPLICATOR_USER',
+			},
+			omit: {
+				password: true, // Exclude sensitive data
+				experience: true,
+				bio: true,
+				additionalInfo: true,
+				profileStatus: true,
+				updatedAt: true,
+				role: true,
+				businessName: true,
+			},
+		});
+
+		const applicatorUser = await prisma.applicatorUser.create({
+			data: {
+				applicatorId: user.id,
+				userId: userData.id,
+				inviteToken: token,
+				permissions: {
+					create: userPermission.map(
+						({ permissionId,canView, canEdit }) => ({
+							permissionId,
+							canView,
+							canEdit,
+						}),
+					),
+				},
+			},
+			include:{
+				permissions:true
+			},
+			omit: {
+				id: true,
+				userId:true,
+				applicatorId: true,
+			},
+		});
+		const inviteLink = `https://applicator-ac.netlify.app/#/userInvitationView?token=${token}`;
+		const subject = 'Invitation Email';
+		const message = `
+	  You are invited to join our platform!<br><br>
+	  Click the link below to join.<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
+	  If you did not expect this invitation, please ignore this email.
+	`;
+		// Construct invite link
+
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: data.email,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+
+		return { ...userData, ...applicatorUser };
+	});
+};
+
+const getAllApplicatorUser = async (
+	applicatorId: number,
+	options: PaginateOptions,
+) => {
+	// Set pagination parameters
+	const limit =
+		options.limit && parseInt(options.limit.toString(), 10) > 0
+			? parseInt(options.limit.toString(), 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page.toString(), 10) > 0
+			? parseInt(options.page.toString(), 10)
+			: 1;
+	const skip = (page - 1) * limit;
+
+	// Fetch workers with included user details
+	const applicatorUser = await prisma.applicatorUser.findMany({
+		where: { applicatorId },
+		include: {
+			user: {
+				select: {
+					id: true,
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					phoneNumber: true,
+					email: true,
+					address1: true,
+					address2: true,
+					stateId: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+		},
+		skip,
+		take: limit,
+		orderBy: { id: 'desc' },
+	});
+
+
+
+	// Total workers count
+	const totalResults = await prisma.applicatorUser.count({
+		where: { applicatorId },
+	});
+	const totalPages = Math.ceil(totalResults / limit);
+
+	// Return paginated results
+	return {
+		result: applicatorUser,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+};
+
+const sendInviteToUser = async (
+	applicatorId: number,
+	data: {
+		userId:number,
+		userPermission:{
+			permissionId:number,
+			canView:boolean,
+			canEdit:boolean
+		}[]
+	},
+) => {
+	const {
+		userId,
+		userPermission = [],
+	} = data;
+	let invite;
+	const token = generateInviteToken('APPLICATOR_USER');
+
+	const existingInvite = await prisma.applicatorUser.findUnique({
+		where: {
+			applicatorId_userId: { applicatorId, userId },
+		},
+	});
+	if (existingInvite) {
+			throw new ApiError(
+				httpStatus.BAD_REQUEST,
+				'An active invitation already exists.',
+			);
+		
+	} else {
+		invite = await prisma.applicatorUser.create({
+			data: {
+				applicatorId,
+				userId:userId,
+				inviteToken: token,
+				permissions: {
+					create: userPermission.map(
+						({ permissionId,canView, canEdit }) => ({
+							permissionId,
+							canView,
+							canEdit,
+						}),
+					),
+				},
+
+			},
+			select: {
+				user: {
+					select: { email: true },
+				},
+			},
+		});
+	}
+
+	const inviteLink = `https://applicator-ac.netlify.app/#/userInvitationView?token=${token}`;
+	const subject = 'Invitation Email';
+
+	const message = `
+	  You are invited to join our platform!<br><br>
+	  Click the link below to join.<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
+	  If you did not expect this invitation, please ignore this email.
+	`;
+	if (invite) {
+		const email = invite?.user?.email;
+
+		if (!email) {
+			throw new Error('Email address is not available for this user.');
+		}
+
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Request Invitation',
+			html,
+		});
+		return {
+			message: 'Invite sent successfully.',
+		};
+	}
+};
+
+
+
+export default {
+	getAllApplicatorUser,
+	createApplicatorUser,
+	searchApplicatorUserByEmail,
+	sendInviteToUser
+
+};
