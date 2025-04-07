@@ -4,9 +4,9 @@ import httpStatus from 'http-status';
 import permissionServices from './permission-services';
 
 const createPermission = catchAsync(async (req: Request, res: Response) => {
-	const { name } = req.body;
+	const data = req.body;
 	const result = await permissionServices.createPermission(
-		name,
+		data
 	);
 	res.status(httpStatus.CREATED).json(result);
 });
@@ -45,10 +45,16 @@ const deletePermission = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(result);
 });
+const getAllPermissionTypes = catchAsync(async (req: Request, res: Response) => {
+	const workerData =
+		await permissionServices.getAllPermissionTypes();
+	res.status(httpStatus.OK).json(workerData);
+});
 export default {
 	createPermission,
 	getAllPermissions,
 	getPermissionById,
 	updatePermission,
 	deletePermission,
+	getAllPermissionTypes
 };
