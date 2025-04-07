@@ -184,7 +184,7 @@ router
 		jobController.getJobActivitiesByJobId,
 	);
 	router
-	.route('/place-bids')
+	.route('/place-bid')
 	.post(
 		verifyToken,
 		validateSchema(jobValidation.placeBidJobSchema),

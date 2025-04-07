@@ -480,16 +480,16 @@ model ApplicatorUser {
   createdAt    DateTime @default(now())
   inviteToken  String?  @unique
 
-  applicator  User                       @relation("ApplicatorToUsers", fields: [applicatorId], references: [id])
-  user        User                       @relation("UserToApplicators", fields: [userId], references: [id])
+  applicator  User                       @relation("ApplicatorToUsers", fields: [applicatorId], references: [id], onDelete: Cascade)
+  user        User                       @relation("UserToApplicators", fields: [userId], references: [id], onDelete: Cascade)
   permissions ApplicatorUserPermission[]
 
   @@unique([applicatorId, userId]) // Prevent duplicate entries
 }
 
 model Permission {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id   Int            @id @default(autoincrement())
+  name PermissionType
 
   applicatorUserPermissions ApplicatorUserPermission[]
 }
@@ -501,10 +501,47 @@ model ApplicatorUserPermission {
   canView      Boolean @default(true)
   canEdit      Boolean @default(false)
 
-  user       ApplicatorUser @relation(fields: [userId], references: [id])
-  permission Permission     @relation(fields: [permissionId], references: [id])
+  user       ApplicatorUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission     @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permissionId]) // Ensure a user has unique permissions per applicator
+}
+
+enum PermissionType {
+  // Dashboard
+  DASHBOARD
+
+  // Jobs
+  JOBS
+  MY_JOBS
+  BIDDING_JOBS
+  PENDING_APPROVALS
+  REJECTED_JOBS
+
+  // Growers
+  GROWERS
+  MY_GROWERS
+  PENDING_INVITES
+
+  // Equipment
+  EQUIPMENT
+  WARRANTY_REGISTRATION
+  SUPPORT_TICKETS
+  FORUM
+
+  // Reports
+  REPORTS
+
+  // Pilots/Operators
+  PILOTS_OPERATORS
+  MY_PILOTS_OPERATORS
+  PILOT_PENDING_INVITES
+
+  // Settings
+  SETTINGS
+  PRODUCTS
+  INTEGRATIONS
+  USER_ADMIN
 }
 
 enum NotificationType {

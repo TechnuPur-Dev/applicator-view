@@ -895,7 +895,7 @@ const getFarmsWithPermissions = async (user: User, growerId: number) => {
 		},
 	});
 
-	if (!farms || farms.length === 0) {
+	if (!farms) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
 	}
 

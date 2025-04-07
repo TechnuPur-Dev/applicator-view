@@ -3139,6 +3139,11 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 				},
 			},
+			Bid: {
+				where: {
+					applicatorId: id,
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -3166,6 +3171,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 		grower,
 		products,
 		applicationFees,
+		Bid,
 		...job
 	}) => {
 		// Format products
@@ -3204,7 +3210,8 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 						: 0),
 				0,
 			);
-
+		// Check if the current applicator has placed a bid
+		const bidPlaced = Bid && Bid.length > 0;
 		return {
 			...job,
 			...(role === 'APPLICATOR' ? { grower } : {}),
@@ -3223,6 +3230,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 			products: formattedProducts,
 			applicationFees: formattedApplicationFees,
 			totalBidAmount,
+			bidPlaced,
 		};
 	})(job);
 
