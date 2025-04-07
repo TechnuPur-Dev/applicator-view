@@ -1,13 +1,10 @@
 import httpStatus from 'http-status';
 // import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { ApplicatorUser, } from './applicator-users-types';
+import { ApplicatorUser } from './applicator-users-types';
 import ApiError from '../../../../../shared/utils/api-error';
 
-import { 
-	User, 
-	PaginateOptions
- } from '../../../../../shared/types/global';
+import { User, PaginateOptions } from '../../../../../shared/types/global';
 
 import {
 	mailHtmlTemplate,
@@ -15,7 +12,10 @@ import {
 } from '../../../../../shared/helpers/node-mailer';
 import { generateInviteToken } from '../../helper/invite-token';
 //
-const searchApplicatorUserByEmail = async (applicatorId: number, email: string) => {
+const searchApplicatorUserByEmail = async (
+	applicatorId: number,
+	email: string,
+) => {
 	// Find all users matching the email pattern (debounced search)
 	const user = await prisma.user.findUnique({
 		where: {
@@ -48,7 +48,7 @@ const searchApplicatorUserByEmail = async (applicatorId: number, email: string) 
 		);
 	}
 	return {
-		user
+		user,
 	};
 };
 const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
@@ -58,9 +58,7 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 			'You are not authorized to perform this action.',
 		);
 	}
-	const {
-		userPermission = [],
-	} = data;
+	const { userPermission = [] } = data;
 	const token = generateInviteToken('APPLICATOR_USER');
 	return prisma.$transaction(async (prisma) => {
 		const userData = await prisma.user.create({
@@ -98,7 +96,7 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 				inviteToken: token,
 				permissions: {
 					create: userPermission.map(
-						({ permissionId,canView, canEdit }) => ({
+						({ permissionId, canView, canEdit }) => ({
 							permissionId,
 							canView,
 							canEdit,
@@ -106,12 +104,12 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 					),
 				},
 			},
-			include:{
-				permissions:true
+			include: {
+				permissions: true,
 			},
 			omit: {
 				id: true,
-				userId:true,
+				userId: true,
 				applicatorId: true,
 			},
 		});
@@ -171,6 +169,11 @@ const getAllApplicatorUser = async (
 					county: true,
 					township: true,
 					zipCode: true,
+					state: {
+						select: {
+							name: true,
+						},
+					},
 				},
 			},
 		},
@@ -178,8 +181,6 @@ const getAllApplicatorUser = async (
 		take: limit,
 		orderBy: { id: 'desc' },
 	});
-
-
 
 	// Total workers count
 	const totalResults = await prisma.applicatorUser.count({
@@ -189,7 +190,15 @@ const getAllApplicatorUser = async (
 
 	// Return paginated results
 	return {
-		result: applicatorUser,
+		result: applicatorUser.map((appUser) => ({
+			...appUser,
+			user: {
+				...appUser.user,
+				stateName: appUser.user.state?.name ?? null,
+				// remove nested state if not needed
+				state: undefined,
+			},
+		})),
 		page,
 		limit,
 		totalPages,
@@ -200,18 +209,15 @@ const getAllApplicatorUser = async (
 const sendInviteToUser = async (
 	applicatorId: number,
 	data: {
-		userId:number,
-		userPermission:{
-			permissionId:number,
-			canView:boolean,
-			canEdit:boolean
-		}[]
+		userId: number;
+		userPermission: {
+			permissionId: number;
+			canView: boolean;
+			canEdit: boolean;
+		}[];
 	},
 ) => {
-	const {
-		userId,
-		userPermission = [],
-	} = data;
+	const { userId, userPermission = [] } = data;
 	let invite;
 	const token = generateInviteToken('APPLICATOR_USER');
 
@@ -221,27 +227,25 @@ const sendInviteToUser = async (
 		},
 	});
 	if (existingInvite) {
-			throw new ApiError(
-				httpStatus.BAD_REQUEST,
-				'An active invitation already exists.',
-			);
-		
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'An active invitation already exists.',
+		);
 	} else {
 		invite = await prisma.applicatorUser.create({
 			data: {
 				applicatorId,
-				userId:userId,
+				userId: userId,
 				inviteToken: token,
 				permissions: {
 					create: userPermission.map(
-						({ permissionId,canView, canEdit }) => ({
+						({ permissionId, canView, canEdit }) => ({
 							permissionId,
 							canView,
 							canEdit,
 						}),
 					),
 				},
-
 			},
 			select: {
 				user: {
@@ -281,12 +285,9 @@ const sendInviteToUser = async (
 	}
 };
 
-
-
 export default {
 	getAllApplicatorUser,
 	createApplicatorUser,
 	searchApplicatorUserByEmail,
-	sendInviteToUser
-
+	sendInviteToUser,
 };

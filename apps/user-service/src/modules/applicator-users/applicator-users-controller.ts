@@ -5,15 +5,17 @@ import applicatorUserServices from './applicator-users-services';
 import pick from '../../../../../shared/utils/pick';
 
 //search applicator user by email
-const searchApplicatorUserByEmail = catchAsync(async (req: Request, res: Response) => {
-	const applicatorId = req.payload.id;
-	const email = req.params.email;
-	const result = await applicatorUserServices.searchApplicatorUserByEmail(
-		applicatorId,
-		email,
-	);
-	res.status(httpStatus.OK).json(result);
-});
+const searchApplicatorUserByEmail = catchAsync(
+	async (req: Request, res: Response) => {
+		const applicatorId = req.payload.id;
+		const email = req.params.email;
+		const result = await applicatorUserServices.searchApplicatorUserByEmail(
+			applicatorId,
+			email,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 
 const createApplicatorUser = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
@@ -44,17 +46,9 @@ const getAllApplicatorUser = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(UserData);
 });
 
-
-
-
-
-
-
-
 export default {
 	getAllApplicatorUser,
 	searchApplicatorUserByEmail,
 	createApplicatorUser,
 	sendInviteToUser,
-
 };
