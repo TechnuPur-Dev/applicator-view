@@ -1559,6 +1559,8 @@ const getMyBidJobs = async (
 
 	const formattedBids = bidData.map((bid) => ({
 		id: bid.job.id,
+		bidId: bid.id,
+		status: bid.status,
 		title: bid.job.title,
 		type: bid.job.type,
 		grower: bid.job.grower,
@@ -3159,42 +3161,70 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 			acres: true,
 		},
 	});
-	// Format the job object with conditional removal of applicator or grower
 	const formattedJob = (({
 		applicator,
 		grower,
 		products,
 		applicationFees,
 		...job
-	}) => ({
-		...job,
-		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
-		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
-		totalAcres: job.fields.reduce(
-			(sum, f) => sum + (f.actualAcres || 0),
-			0,
-		),
-		farm: {
-			...job.farm,
-			totalAcres: fields.reduce(
-				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
-				0,
-			),
-		},
-		products: products.map(({ product, BidProduct, name, ...rest }) => ({
-			...rest,
-			name: product ? product?.productName : name, // Move productName to name
-			bidRateAcre: BidProduct?.[0]?.bidRateAcre ?? null,
-			bidPrice: BidProduct?.[0]?.bidPrice ?? null,
-		})),
+	}) => {
+		// Format products
+		const formattedProducts = products.map(
+			({ product, BidProduct, name, ...rest }) => ({
+				...rest,
+				name: product ? product?.productName : name,
+				bidRateAcre: BidProduct?.[0]?.bidRateAcre ?? null,
+				bidPrice: BidProduct?.[0]?.bidPrice ?? null,
+			}),
+		);
 
-		applicationFees: applicationFees.map(
+		// Format applicationFees
+		const formattedApplicationFees = applicationFees.map(
 			({ BidApplicationFee, ...rest }) => ({
 				...rest,
-				bidAmount: BidApplicationFee?.[0]?.bidAmount, // Add bidAmount from BidApplicationFee
+				bidAmount: BidApplicationFee?.[0]?.bidAmount ?? null,
 			}),
-		),
-	}))(job);
+		);
+
+		// Calculate totalBidAmount with Prisma.Decimal safety
+		const totalBidAmount =
+			formattedProducts.reduce(
+				(sum, p) =>
+					sum +
+					(p.bidPrice
+						? (p.bidPrice as Prisma.Decimal).toNumber()
+						: 0),
+				0,
+			) +
+			formattedApplicationFees.reduce(
+				(sum, f) =>
+					sum +
+					(f.bidAmount
+						? (f.bidAmount as Prisma.Decimal).toNumber()
+						: 0),
+				0,
+			);
+
+		return {
+			...job,
+			...(role === 'APPLICATOR' ? { grower } : {}),
+			...(role === 'GROWER' ? { applicator } : {}),
+			totalAcres: job.fields.reduce(
+				(sum, f) => sum + (f.actualAcres || 0),
+				0,
+			),
+			farm: {
+				...job.farm,
+				totalAcres: fields.reduce(
+					(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
+					0,
+				),
+			},
+			products: formattedProducts,
+			applicationFees: formattedApplicationFees,
+			totalBidAmount,
+		};
+	})(job);
 
 	return formattedJob;
 };
