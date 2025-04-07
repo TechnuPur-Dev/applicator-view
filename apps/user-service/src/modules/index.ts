@@ -10,6 +10,7 @@ import  permission from './permission/permission-routes';
 
 import geoData from './geo-data/geo-data-routes';
 import userNotification from './notification/notification-routes'
+import applicatorUser  from './applicator-users/applicator-users-routes';
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -51,6 +52,10 @@ const defaultRoutes = [
 	{
 		path:'/forecast-city',
 		route: forecastCity
+	},
+	{
+		path:'/applicator-users',
+		route:applicatorUser
 	},
 	{
 		path:'/permission',
