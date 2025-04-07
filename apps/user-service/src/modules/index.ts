@@ -6,6 +6,8 @@ import farm from './farm/farm-routes';
 import table from './table-view/table-view-routes';
 import  applicatorWorker from './applicator-workers/applicator-workers-routes';
 import  forecastCity from './forecast-city/forecast-city-routes';
+import  permission from './permission/permission-routes';
+
 import geoData from './geo-data/geo-data-routes';
 import userNotification from './notification/notification-routes'
 import applicatorUser  from './applicator-users/applicator-users-routes';
@@ -54,6 +56,10 @@ const defaultRoutes = [
 	{
 		path:'/applicator-users',
 		route:applicatorUser
+	},
+	{
+		path:'/permission',
+		route: permission
 	},
 ];
 
