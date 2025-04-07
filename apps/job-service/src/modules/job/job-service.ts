@@ -958,6 +958,7 @@ const getGrowerListForApplicator = async (applicatorId: number) => {
 	const growers = await prisma.applicatorGrower.findMany({
 		where: {
 			applicatorId,
+			inviteStatus: 'ACCEPTED',
 		},
 		select: {
 			grower: {

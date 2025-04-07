@@ -2,9 +2,9 @@ import { PermissionType } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { Permission } from './permission-types';
 
-const createPermission = async (data: Permission,) => {
+const createPermission = async (data: Permission) => {
 	const permission = await prisma.permission.create({
-		data: data
+		data: data,
 	});
 
 	return permission;
@@ -25,11 +25,7 @@ const getPermissionById = async (permissionId: number) => {
 
 	return permission;
 };
-const updatePermission = async (
-	permissionId: number,
-	data: Permission,
-	
-) => {
+const updatePermission = async (permissionId: number, data: Permission) => {
 	const permission = await prisma.permission.update({
 		where: { id: permissionId },
 		data: data,
@@ -41,7 +37,7 @@ const updatePermission = async (
 const deletePermission = async (permissionId: number) => {
 	await prisma.permission.delete({
 		where: {
-			id: permissionId
+			id: permissionId,
 		},
 	});
 
@@ -58,5 +54,5 @@ export default {
 	getPermissionById,
 	updatePermission,
 	deletePermission,
-	getAllPermissionTypes
+	getAllPermissionTypes,
 };
