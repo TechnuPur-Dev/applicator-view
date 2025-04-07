@@ -1,6 +1,7 @@
+import { PermissionType } from "@prisma/client";
 
 interface Permission {
-	name:string;
+	name:PermissionType;
 }
 
 export { Permission  };

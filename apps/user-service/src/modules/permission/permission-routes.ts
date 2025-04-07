@@ -35,4 +35,6 @@ router
 		validateSchema(permissionValidation.paramsSchema),
 		permission.deletePermission,
 	);
+router.route('/get/permission-types').get(verifyToken, permission.getAllPermissionTypes);
+
 	export default router;
