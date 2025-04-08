@@ -11,6 +11,7 @@ import {
 	sendEmail,
 } from '../../../../../shared/helpers/node-mailer';
 import { generateInviteToken } from '../../helper/invite-token';
+import { permission } from 'process';
 //
 const searchApplicatorUserByEmail = async (
 	applicatorId: number,
@@ -218,14 +219,31 @@ const sendInviteToUser = async (
 	},
 ) => {
 	const { userId, userPermission = [] } = data;
+	console.log(userId, applicatorId, "idss")
 	let invite;
 	const token = generateInviteToken('APPLICATOR_USER');
 
-	const existingInvite = await prisma.applicatorUser.findUnique({
+	const existingInvite = await prisma.applicatorUser.findFirst({
 		where: {
-			applicatorId_userId: { applicatorId, userId },
+			userId: userId,
+			applicatorId: applicatorId
 		},
 	});
+	const permissionIds = userPermission.map(p => p.permissionId);
+	// Fetch all matching permissions from the DB
+	const existingPermissions = await prisma.permission.findMany({
+		where: {
+			id: {
+				in: permissionIds,
+			},
+		},
+	});
+	if (existingPermissions.length !== permissionIds.length) { // check permission exsit in db or not 
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'One or more permissions do not exist.',
+		);
+	}
 	if (existingInvite) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
@@ -285,9 +303,41 @@ const sendInviteToUser = async (
 	}
 };
 
+const deleteApplicatorUser = async (
+	applicatorId: number,
+	userId: number,
+) => {
+
+	const applicatorUser = await prisma.applicatorUser.findUnique({
+		where: {
+			applicatorId,
+			id: userId
+		}
+	})
+	if (!applicatorUser) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'user not found for this applicator',
+		);
+	}
+	// delete applicator user
+	await prisma.applicatorUser.delete({
+		where: {
+			id: userId,
+			applicatorId: applicatorId
+		},
+
+	});
+
+	// Return  results
+	return {
+		result: "user deleted successfully"
+	}
+};
 export default {
 	getAllApplicatorUser,
 	createApplicatorUser,
 	searchApplicatorUserByEmail,
 	sendInviteToUser,
+	deleteApplicatorUser
 };
