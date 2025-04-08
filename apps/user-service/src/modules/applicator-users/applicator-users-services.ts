@@ -11,7 +11,6 @@ import {
 	sendEmail,
 } from '../../../../../shared/helpers/node-mailer';
 import { generateInviteToken } from '../../helper/invite-token';
-import { permission } from 'process';
 //
 const searchApplicatorUserByEmail = async (
 	applicatorId: number,
@@ -302,29 +301,19 @@ const sendInviteToUser = async (
 };
 
 const deleteApplicatorUser = async (applicatorId: number, userId: number) => {
-	const applicatorUser = await prisma.applicatorUser.findUnique({
-		where: {
-			applicatorId,
-			id: userId,
-		},
-	});
-	if (!applicatorUser) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'user not found for this applicator',
-		);
-	}
 	// delete applicator user
 	await prisma.applicatorUser.delete({
 		where: {
-			id: userId,
-			applicatorId: applicatorId,
+			applicatorId_userId: {
+				applicatorId,
+				userId,
+			},
 		},
 	});
 
 	// Return  results
 	return {
-		result: 'user deleted successfully',
+		result: 'User deleted successfully',
 	};
 };
 export default {
