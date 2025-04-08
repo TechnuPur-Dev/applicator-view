@@ -192,13 +192,10 @@ const getAllApplicatorUser = async (
 	// Return paginated results
 	return {
 		result: applicatorUser.map((appUser) => ({
-			...appUser,
-			user: {
-				...appUser.user,
-				stateName: appUser.user.state?.name ?? null,
-				// remove nested state if not needed
-				state: undefined,
-			},
+			...appUser.user,
+			stateName: appUser.user.state?.name ?? null,
+			// remove nested state if not needed
+			state: undefined,
 		})),
 		page,
 		limit,
@@ -219,17 +216,17 @@ const sendInviteToUser = async (
 	},
 ) => {
 	const { userId, userPermission = [] } = data;
-	console.log(userId, applicatorId, "idss")
+	console.log(userId, applicatorId, 'idss');
 	let invite;
 	const token = generateInviteToken('APPLICATOR_USER');
 
 	const existingInvite = await prisma.applicatorUser.findFirst({
 		where: {
 			userId: userId,
-			applicatorId: applicatorId
+			applicatorId: applicatorId,
 		},
 	});
-	const permissionIds = userPermission.map(p => p.permissionId);
+	const permissionIds = userPermission.map((p) => p.permissionId);
 	// Fetch all matching permissions from the DB
 	const existingPermissions = await prisma.permission.findMany({
 		where: {
@@ -238,7 +235,8 @@ const sendInviteToUser = async (
 			},
 		},
 	});
-	if (existingPermissions.length !== permissionIds.length) { // check permission exsit in db or not 
+	if (existingPermissions.length !== permissionIds.length) {
+		// check permission exsit in db or not
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
 			'One or more permissions do not exist.',
@@ -303,17 +301,13 @@ const sendInviteToUser = async (
 	}
 };
 
-const deleteApplicatorUser = async (
-	applicatorId: number,
-	userId: number,
-) => {
-
+const deleteApplicatorUser = async (applicatorId: number, userId: number) => {
 	const applicatorUser = await prisma.applicatorUser.findUnique({
 		where: {
 			applicatorId,
-			id: userId
-		}
-	})
+			id: userId,
+		},
+	});
 	if (!applicatorUser) {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
@@ -324,20 +318,19 @@ const deleteApplicatorUser = async (
 	await prisma.applicatorUser.delete({
 		where: {
 			id: userId,
-			applicatorId: applicatorId
+			applicatorId: applicatorId,
 		},
-
 	});
 
 	// Return  results
 	return {
-		result: "user deleted successfully"
-	}
+		result: 'user deleted successfully',
+	};
 };
 export default {
 	getAllApplicatorUser,
 	createApplicatorUser,
 	searchApplicatorUserByEmail,
 	sendInviteToUser,
-	deleteApplicatorUser
+	deleteApplicatorUser,
 };

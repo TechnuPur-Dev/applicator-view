@@ -899,15 +899,24 @@ const getFarmsWithPermissions = async (user: User, growerId: number) => {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Farm not found.');
 	}
 
+	console.log(farms);
+
 	// Separate farms into two arrays
 	const farmPermissions = farms
-		.filter((farm) => farm.permissions.length > 0)
+		// .filter((farm) => farm.permissions.length > 0)
 		.map((farm) => ({
 			farmId: farm.id,
 			name: farm.name,
-			permissionId: farm.permissions[0].id,
-			canView: farm.permissions[0].canView,
-			canEdit: farm.permissions[0].canEdit,
+			permissionId:
+				farm.permissions.length > 0 ? farm.permissions[0].id : null,
+			canView:
+				farm.permissions.length > 0
+					? farm.permissions[0].canView
+					: null,
+			canEdit:
+				farm.permissions.length > 0
+					? farm.permissions[0].canEdit
+					: null,
 		}));
 
 	const pendingFarmPermissions = farms
