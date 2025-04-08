@@ -28,6 +28,8 @@ router
 		applicatorUser.sendInviteToUser,
 	);
 router.route('/get/all').get(verifyToken, applicatorUser.getAllApplicatorUser);
+router.route('/delete/:id').delete(verifyToken, applicatorUser.deleteApplicatorUser);
+
 
 
 

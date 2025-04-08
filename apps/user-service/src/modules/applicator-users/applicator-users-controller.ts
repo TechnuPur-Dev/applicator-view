@@ -45,10 +45,19 @@ const getAllApplicatorUser = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(UserData);
 });
-
+const deleteApplicatorUser  = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = req.payload.id;
+	const applicatorUserId = +req.params.id
+	const UserData = await applicatorUserServices.deleteApplicatorUser(
+		applicatorId,
+		applicatorUserId
+	);
+	res.status(httpStatus.OK).json(UserData);
+});
 export default {
 	getAllApplicatorUser,
 	searchApplicatorUserByEmail,
 	createApplicatorUser,
 	sendInviteToUser,
+	deleteApplicatorUser
 };
