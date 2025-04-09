@@ -33,7 +33,7 @@ const inviteStatusSchema: Schema = Joi.string()
 	.valid('NOT_SENT', 'PENDING', 'ACCEPTED', 'REJECTED')
 	.required();
 const userRoleSchema: Schema = Joi.string()
-	.valid('GROWER', 'APPLICATOR', 'WORKER')
+	.valid('GROWER', 'APPLICATOR', 'WORKER', 'APPLICATOR_USER')
 	.required();
 const otpSchema = Joi.number().integer().positive().min(100000).max(999999);
 
