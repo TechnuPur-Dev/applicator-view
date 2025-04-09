@@ -129,13 +129,14 @@ const getJobs = catchAsync(async (req: Request, res: Response) => {
 });
 const getOpenJobs = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
-	const result = await jobService.getOpenJobs(options);
+	const user = req.user;
+	const result = await jobService.getOpenJobs(user, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getMyBidJobs = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
-	const result = await jobService.getMyBidJobs(options,user);
+	const result = await jobService.getMyBidJobs(options, user);
 	res.status(httpStatus.OK).json(result);
 });
 // for applicator approval screen
@@ -289,7 +290,7 @@ const getJobByIdForPilot = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getJobByIdForPilot(jobId, pilotId);
 	res.status(httpStatus.OK).json(result);
 });
-//controller for place bid 
+//controller for place bid
 const placeBidForJob = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
 	const data = req.body;
@@ -298,24 +299,18 @@ const placeBidForJob = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllBidsByJobId = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const jobId = +req.params.jobId
-	const result = await jobService.getAllBidsByJobId(currentUser,jobId);
+	const jobId = +req.params.jobId;
+	const result = await jobService.getAllBidsByJobId(currentUser, jobId);
 	res.status(httpStatus.OK).json(result);
 });
 
-const updateBidJobStatus = catchAsync(
-	async (req: Request, res: Response) => {
-		const id = +req.params.bidId;
-		const userData = req.user;
-		const data = req.body;
-		const result = await jobService.updateBidJobStatus(
-			data,
-			id,
-			userData,
-		);
-		res.status(httpStatus.OK).json(result);
-	},
-);
+const updateBidJobStatus = catchAsync(async (req: Request, res: Response) => {
+	const id = +req.params.bidId;
+	const userData = req.user;
+	const data = req.body;
+	const result = await jobService.updateBidJobStatus(data, id, userData);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -352,5 +347,5 @@ export default {
 	getJobActivitiesByJobId,
 	placeBidForJob,
 	getAllBidsByJobId,
-	updateBidJobStatus
+	updateBidJobStatus,
 };

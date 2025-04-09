@@ -18,13 +18,13 @@ model Otp {
 }
 
 model User {
-  id                     Int                    @id @default(autoincrement())
+  id                     Int                     @id @default(autoincrement())
   profileImage           String?
   thumbnailProfileImage  String?
   firstName              String?
   lastName               String?
-  fullName               String?                @default("")
-  email                  String?                @unique
+  fullName               String?                 @default("")
+  email                  String?                 @unique
   phoneNumber            String?
   password               String?
   role                   UserRole
@@ -38,24 +38,24 @@ model User {
   zipCode                String?
   bio                    String?
   additionalInfo         String?
-  profileStatus          ProfileStatus          @default(INCOMPLETE)
-  state                  State?                 @relation(fields: [stateId], references: [id])
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
+  profileStatus          ProfileStatus           @default(INCOMPLETE)
+  state                  State?                  @relation(fields: [stateId], references: [id])
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
   joiningDate            DateTime?
-  applicators            ApplicatorGrower[]     @relation("Applicators")
-  growers                ApplicatorGrower[]     @relation("Growers")
-  applicatorWorkers      ApplicatorWorker[]     @relation("ApplicatorToWorkers")
-  assignedWorkers        ApplicatorWorker[]     @relation("WorkerAssignments")
-  farmsCreated           Farm[]                 @relation("FarmCreator")
-  farms                  Farm[]                 @relation("FarmGrower")
+  applicators            ApplicatorGrower[]      @relation("Applicators")
+  growers                ApplicatorGrower[]      @relation("Growers")
+  applicatorWorkers      ApplicatorWorker[]      @relation("ApplicatorToWorkers")
+  assignedWorkers        ApplicatorWorker[]      @relation("WorkerAssignments")
+  farmsCreated           Farm[]                  @relation("FarmCreator")
+  farms                  Farm[]                  @relation("FarmGrower")
   farmPermissions        FarmPermission[]
-  fieldsCreated          Field[]                @relation("FieldCreator")
-  applicatorJobs         Job[]                  @relation("ApplicatorJob")
-  fieldWorkerJobs        Job[]                  @relation("FieldWorkerJob")
-  growerJobs             Job[]                  @relation("GrowerJob")
-  supportTicketsAssigned SupportTicket[]        @relation("SupportTicketAssigned")
-  supportTicketsCreated  SupportTicket[]        @relation("SupportTicketCreated")
+  fieldsCreated          Field[]                 @relation("FieldCreator")
+  applicatorJobs         Job[]                   @relation("ApplicatorJob")
+  fieldWorkerJobs        Job[]                   @relation("FieldWorkerJob")
+  growerJobs             Job[]                   @relation("GrowerJob")
+  supportTicketsAssigned SupportTicket[]         @relation("SupportTicketAssigned")
+  supportTicketsCreated  SupportTicket[]         @relation("SupportTicketCreated")
   tableViews             TableView[]
   warrantyRegistrations  WarrantyRegistration[]
   Notification           Notification[]
@@ -64,8 +64,9 @@ model User {
   Bid                    Bid[]
   ForecastCity           ForecastCity[]
   JobActivity            JobActivity[]
-  applicatorUser         ApplicatorUser[]       @relation("ApplicatorToUsers")
-  assignedUsers          ApplicatorUser[]       @relation("UserToApplicators")
+  applicatorUser         ApplicatorUser[]        @relation("ApplicatorToUsers")
+  assignedUsers          ApplicatorUser[]        @relation("UserToApplicators")
+  SupportTicketActivity  SupportTicketActivity[]
 }
 
 model ApplicatorWorker {
@@ -251,6 +252,7 @@ model Bid {
   jobId        Int
   applicatorId Int
   status       BidStatus @default(PENDING) // PENDING, ACCEPTED, REJECTED
+  description  String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -334,20 +336,21 @@ model JobApplicationFee {
 }
 
 model SupportTicket {
-  id            Int            @id @default(autoincrement())
-  createdById   Int
-  subject       String         @db.VarChar(255)
-  description   String
-  status        TicketStatus
-  assigneeId    Int?
-  jobId         Int?
-  category      TicketCategory
-  priority      TicketPriority
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  assigneeUser  User?          @relation("SupportTicketAssigned", fields: [assigneeId], references: [id], onDelete: Cascade)
-  createdByUser User           @relation("SupportTicketCreated", fields: [createdById], references: [id], onDelete: Cascade)
-  job           Job?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id                    Int                     @id @default(autoincrement())
+  createdById           Int
+  subject               String                  @db.VarChar(255)
+  description           String
+  status                TicketStatus
+  assigneeId            Int?
+  jobId                 Int?
+  category              TicketCategory
+  priority              TicketPriority
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  assigneeUser          User?                   @relation("SupportTicketAssigned", fields: [assigneeId], references: [id], onDelete: Cascade)
+  createdByUser         User                    @relation("SupportTicketCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  job                   Job?                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  SupportTicketActivity SupportTicketActivity[]
 
   @@index([jobId])
 }
@@ -505,6 +508,19 @@ model ApplicatorUserPermission {
   permission Permission     @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permissionId]) // Ensure a user has unique permissions per applicator
+}
+
+model SupportTicketActivity {
+  id            Int       @id @default(autoincrement())
+  jobId         Int // Link to the Job
+  updatedById   Int? // User who changed the status (Applicator, Pilot, or Grower)
+  oldStatus     TicketStatus
+  newStatus     TicketStatus
+  reason        String? // Optional: Store rejection reasons if applicable
+  createdAt     DateTime  @default(now())
+
+  supportTicket SupportTicket @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  updatedBy     User?         @relation(fields: [updatedById], references: [id])
 }
 
 enum PermissionType {
