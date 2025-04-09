@@ -6,55 +6,57 @@ import { verifyToken } from '../../../../../shared/middlewares/auth-middleware';
 import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import warrantyValidation from './warranty-registration-validation';
 import uploadMiddleware from '../../../../../shared/middlewares/multer-middleware';
-
+import { normalizeApplicatorUser } from '../../../../../shared/middlewares/normalize-user-middleware';
 const router: Router = express.Router();
+router.use(verifyToken);
+router.use(normalizeApplicatorUser);
 
 router
 	.route('/all-types')
-	.get(verifyToken, warrantyRegisterationController.getAllEquipmentType);
+	.get( warrantyRegisterationController.getAllEquipmentType);
 router
 	.route('/upload/image')
 	.post(
-		verifyToken,
+		// verifyToken,
 		uploadMiddleware,
 		warrantyRegisterationController.uploadImage,
 	);
 router
 	.route('/upload/doc-attachment')
 	.post(
-		verifyToken,
+		// verifyToken,
 		uploadMiddleware,
 		warrantyRegisterationController.uploadDocAttachments,
 	);
 router
 	.route('/create')
 	.post(
-		verifyToken,
+		// verifyToken,
 		validateSchema(warrantyValidation.createSchema),
 		warrantyRegisterationController.createWarrantyReg,
 	);
 
 router
 	.route('/all')
-	.get(verifyToken, warrantyRegisterationController.getAllWarrantyRegList);
+	.get( warrantyRegisterationController.getAllWarrantyRegList);
 router
 	.route('/by-id/:id')
 	.get(
-		verifyToken,
+		// verifyToken,
 		validateSchema(warrantyValidation.paramsSchema),
 		warrantyRegisterationController.getWarrantyRegById,
 	);
 router
 	.route('/update/:id')
 	.put(
-		verifyToken,
+		// verifyToken,
 		validateSchema(warrantyValidation.updateSchema),
 		warrantyRegisterationController.updateWarrantyReg,
 	);
 router
 	.route('/delete/:id')
 	.delete(
-		verifyToken,
+		// verifyToken,
 		validateSchema(warrantyValidation.paramsSchema),
 		warrantyRegisterationController.deleteWarrantyReg,
 	);
