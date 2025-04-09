@@ -1204,11 +1204,13 @@ const getJobs = async (
 };
 // get apis for Bidding screen
 const getOpenJobs = async (
+	user: User,
 	options: PaginateOptions & {
 		label?: string;
 		searchValue?: string;
 	},
 ) => {
+	const { id: applicatorId } = user;
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -1224,7 +1226,14 @@ const getOpenJobs = async (
 		source: 'BIDDING',
 		status: 'OPEN_FOR_BIDDING',
 	};
-
+	// Exclude jobs already bid on by this applicator
+	if (applicatorId) {
+		filters.Bid = {
+			none: {
+				applicatorId,
+			},
+		};
+	}
 	// Apply dynamic label filtering
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
@@ -3857,13 +3866,18 @@ const getJobActivitiesByJobId = async (
 };
 const placeBidForJob = async (
 	user: User,
-	data: { jobId: number; products: any[]; applicationFees: any[] },
+	data: {
+		jobId: number;
+		products: any[];
+		applicationFees: any[];
+		description: string;
+	},
 ) => {
 	if (user.role !== 'APPLICATOR') {
 		throw new Error('Only an applicator can place a bid');
 	}
 
-	const { jobId, products, applicationFees } = data;
+	const { jobId, products, applicationFees, description } = data;
 	// Check if job exists
 	const jobExists = await prisma.job.findUnique({
 		where: { id: jobId },
@@ -3900,7 +3914,10 @@ const placeBidForJob = async (
 		},
 	});
 	if (existingBid) {
-		throw new Error('You have already placed a bid for this job.');
+		throw new ApiError(
+			httpStatus.CONFLICT,
+			'You have already placed a bid for this job.',
+		);
 	}
 
 	// Create a new bid
@@ -3910,6 +3927,7 @@ const placeBidForJob = async (
 				jobId,
 				applicatorId: user.id,
 				status: 'PENDING',
+				description,
 			},
 		});
 
@@ -3957,44 +3975,84 @@ const getAllBidsByJobId = async (user: User, jobId: number) => {
 	const result = await prisma.bid.findMany({
 		where: {
 			jobId,
-			status: 'PENDING',
+			// status: 'PENDING',
 			job: {
 				growerId: user.id, // Ensure the job belongs to the logged-in grower
-				status: 'OPEN_FOR_BIDDING',
+				// status: 'OPEN_FOR_BIDDING',
+				source: 'BIDDING',
 			},
 		},
 		include: {
-			job: {
-				select: {
-					id: true,
-					title: true,
-					type: true,
-					status: true,
-				},
-			},
 			applicator: {
 				select: {
+					profileImage: true,
+					thumbnailProfileImage: true,
 					firstName: true,
 					lastName: true,
 					fullName: true,
 					email: true,
-					phoneNumber: true,
 					businessName: true,
 				},
 			},
 			bidProducts: {
-				include: {
-					product: true,
+				select: {
+					bidRateAcre: true,
+					bidPrice: true,
+					product: {
+						select: {
+							name: true,
+							perAcreRate: true,
+							totalAcres: true,
+							price: true,
+						},
+					},
 				},
 			},
 			bidFees: {
-				include: {
-					applicationFee: true,
+				select: {
+					bidAmount: true,
+					applicationFee: {
+						select: {
+							description: true,
+							rateUoM: true,
+							perAcre: true,
+						},
+					},
 				},
 			},
 		},
 	});
-	return result;
+	// Flatten product/applicationFee and calculate totalBidAmount
+	const flattened = result.map((bid) => {
+		const bidProducts = bid.bidProducts.map((bp) => ({
+			bidRateAcre: bp.bidRateAcre,
+			bidPrice: bp.bidPrice,
+			...bp.product,
+		}));
+
+		const bidFees = bid.bidFees.map((bf) => ({
+			bidAmount: bf.bidAmount,
+			...bf.applicationFee,
+		}));
+
+		const productTotal = bidProducts.reduce(
+			(sum, p) => sum + (p.bidPrice ? p.bidPrice.toNumber() : 0),
+			0,
+		);
+		const feeTotal = bidFees.reduce(
+			(sum, f) => sum + (f.bidAmount ? f.bidAmount.toNumber() : 0),
+			0,
+		);
+
+		return {
+			...bid,
+			bidProducts,
+			bidFees,
+			totalBidAmount: productTotal + feeTotal,
+		};
+	});
+
+	return flattened;
 };
 
 const updateBidJobStatus = async (

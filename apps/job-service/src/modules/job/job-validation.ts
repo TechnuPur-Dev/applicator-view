@@ -24,14 +24,8 @@ const jobStatusSchema: Schema = Joi.string()
 	)
 	.required();
 
-	const bidStatusSchema: Schema = Joi.string()
-	.valid(
-		
-		'PENDING',
-		'ACCEPTED',
-		'REJECTED',
-	
-	)
+const bidStatusSchema: Schema = Joi.string()
+	.valid('PENDING', 'ACCEPTED', 'REJECTED')
 	.required();
 const createJobSchema = Joi.object({
 	body: Joi.object({
@@ -188,7 +182,10 @@ const placeBidJobSchema = Joi.object({
 			.items(
 				Joi.object({
 					productId: Joi.number().integer().positive().required(),
-					bidRateAcre: Joi.number().precision(2).positive().required(),
+					bidRateAcre: Joi.number()
+						.precision(2)
+						.positive()
+						.required(),
 					bidPrice: Joi.number().precision(2).positive().required(),
 				}),
 			)
@@ -203,6 +200,7 @@ const placeBidJobSchema = Joi.object({
 				}),
 			)
 			.default([]), // Default empty array if no fees are given
+		description: Joi.string().max(300).optional(),
 	}).required(),
 });
 const updateBidStatusSchema = Joi.object({
@@ -210,10 +208,7 @@ const updateBidStatusSchema = Joi.object({
 		bidId: Joi.number().integer().positive().required(),
 	}).required(),
 	body: Joi.alternatives()
-		.try(
-			
-			Joi.object({ status: bidStatusSchema.required() }),
-		)
+		.try(Joi.object({ status: bidStatusSchema.required() }))
 		.required(),
 });
 export default {
@@ -226,5 +221,5 @@ export default {
 	monthParamsSchema,
 	headerStatsSchema,
 	placeBidJobSchema,
-	updateBidStatusSchema
+	updateBidStatusSchema,
 };
