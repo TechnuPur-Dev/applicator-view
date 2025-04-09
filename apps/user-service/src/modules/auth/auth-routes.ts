@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import authValidation from './auth-validation';
 import authController from './auth-controller';
-
+import { normalizeApplicatorUser } from '../../../../../shared/middlewares/normalize-user-middleware';
 const router: Router = express.Router();
 
 // Define routes
@@ -37,6 +37,7 @@ router
 router
 	.route('/accept-invite/sign-up')
 	.put(
+		normalizeApplicatorUser,
 		validateSchema(authValidation.acceptInviteAndSignUp),
 		authController.acceptInviteAndSignUp,
 	);

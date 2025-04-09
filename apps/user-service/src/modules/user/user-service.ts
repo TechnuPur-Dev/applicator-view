@@ -1193,7 +1193,7 @@ const getApplicatorByEmail = async (growerId: number, email: string) => {
 		);
 	}
 
-	if (user.role !== 'APPLICATOR') {
+	if (user.role !== 'APPLICATOR' && user.role !== 'APPLICATOR_USER') {
 		throw new ApiError(
 			httpStatus.FORBIDDEN,
 			'User exists but is not an applicator.',
@@ -1257,7 +1257,7 @@ const sendInviteToApplicator = async (
 		return { message: 'Invite sent successfully.' };
 	}
 
-	if (applicator?.role !== 'APPLICATOR') {
+	if (applicator?.role !== 'APPLICATOR' && applicator?.role !== 'APPLICATOR_USER') {
 		throw new ApiError(
 			httpStatus.FORBIDDEN,
 			'User exists but is not an applicator.',
