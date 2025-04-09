@@ -9,6 +9,7 @@ import {
 import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import jobValidation from './job-validation';
 import uploadMiddleware from '../../../../../shared/middlewares/multer-middleware';
+import { normalizeApplicatorUser } from '../../../../../shared/middlewares/normalize-user-middleware';
 const router: Router = express.Router();
 
 // Get all jobs for applicator by applicatorId (My Jobs Screen)
@@ -16,6 +17,7 @@ router
 	.route('/my-jobs')
 	.get(
 		verifyToken,
+		normalizeApplicatorUser,
 		authorize('APPLICATOR'),
 		jobController.getAllJobsByApplicator,
 	);
@@ -24,6 +26,7 @@ router
 	.route('/create-job')
 	.post(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.createJobSchema),
 		jobController.createJob,
 	);
@@ -33,6 +36,7 @@ router
 	.route('/get-job/:jobId')
 	.get(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobById,
 	);
@@ -41,6 +45,7 @@ router
 	.route('/update/:jobId')
 	.put(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.updateJobSchema),
 		jobController.updateJobByApplicator,
 	);
@@ -54,7 +59,7 @@ router
 //Required  Drop down for job creation
 router
 	.route('/all-pilots/dropdown')
-	.get(verifyToken, jobController.getAllPilotsByApplicator);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getAllPilotsByApplicator);
 
 //job type
 router.route('/all-types').get(verifyToken, jobController.getAllJobTypes);
@@ -65,13 +70,13 @@ router
 	.get(verifyToken, jobController.getAllJobStatus);
 router
 	.route('/growers-list/by-applicator')
-	.get(verifyToken, jobController.getGrowerListForApplicator);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getGrowerListForApplicator);
 router
 	.route('/applicators-list/by-grower')
 	.get(verifyToken, jobController.getApplicatorListForGrower);
 router
 	.route('/farms-list/:growerId')
-	.get(verifyToken, jobController.getFarmListByGrowerId);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getFarmListByGrowerId);
 
 //upload job attachments
 router
@@ -85,13 +90,13 @@ router
 		jobController.getJobs,
 	);
 router.route('/open-jobs').get(verifyToken, jobController.getOpenJobs);
-router.route('/my-bids').get(verifyToken, jobController.getMyBidJobs);
+router.route('/my-bids').get(verifyToken,normalizeApplicatorUser, jobController.getMyBidJobs);
 router
 	.route('/pending/from-me')
-	.get(verifyToken, jobController.getJobsPendingFromMe);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getJobsPendingFromMe);
 router
 	.route('/pending/from-grower')
-	.get(verifyToken, jobController.getJobsPendingFromGrower);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getJobsPendingFromGrower);
 // router
 // 	.route('/pending/from-applicator')
 // 	.get(verifyToken, jobController.getJobsPendingFromApplicators);
@@ -99,17 +104,19 @@ router
 	.route('/update/job-status/:jobId')
 	.put(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.jobStatusParamSchema),
 		jobController.updatePendingJobStatus,
 	);
 
 router
 	.route('/get-assignedjobs')
-	.get(verifyToken, jobController.getAssignedJobs);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getAssignedJobs);
 router
 	.route('/get-jobsbypilot/:pilotId')
 	.get(
 		verifyToken,
+		normalizeApplicatorUser,// this end point for applicator to get pilote
 		validateSchema(jobValidation.pilotJobsParamSchema),
 		jobController.getJobByPilot,
 	);
@@ -132,16 +139,18 @@ router
 	.route('/headers-stats')
 	.get(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.headerStatsSchema),
 		jobController.getHeadersData,
 	);
 router
 	.route('/get-rejectedjobs')
-	.get(verifyToken, jobController.getRejectedJobs);
+	.get(verifyToken,normalizeApplicatorUser, jobController.getRejectedJobs);
 router
 	.route('/get/open-job/:jobId')
 	.get(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getBiddingJobById,
 	);
@@ -149,6 +158,7 @@ router // TODO: Update service accroding to the business logic
 	.route('/get/job-invoice/:jobId')
 	.get(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobInvoice,
 	);
@@ -187,6 +197,7 @@ router
 	.route('/place-bid')
 	.post(
 		verifyToken,
+		normalizeApplicatorUser,
 		validateSchema(jobValidation.placeBidJobSchema),
 		jobController.placeBidForJob,
 	);
