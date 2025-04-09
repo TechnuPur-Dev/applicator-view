@@ -311,6 +311,14 @@ const updateBidJobStatus = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.updateBidJobStatus(data, id, userData);
 	res.status(httpStatus.OK).json(result);
 });
+
+const getJobByIdThroughEmail = catchAsync(
+	async (req: Request, res: Response) => {
+		const id = +req.params.jobId;
+		const result = await jobService.getJobByIdThroughEmail(id);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -348,4 +356,5 @@ export default {
 	placeBidForJob,
 	getAllBidsByJobId,
 	updateBidJobStatus,
+	getJobByIdThroughEmail,
 };

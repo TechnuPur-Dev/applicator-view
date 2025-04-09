@@ -470,6 +470,9 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 				workerId: user?.id,
 			},
 		},
+		omit: {
+			id: true,
+		},
 	});
 
 	const { state } = user;

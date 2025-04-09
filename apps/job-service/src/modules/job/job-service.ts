@@ -4152,6 +4152,114 @@ const updateBidJobStatus = async (
 	};
 };
 
+// service for Job
+const getJobByIdThroughEmail = async (jobId: number) => {
+	const job = await prisma.job.findUnique({
+		where: {
+			id: jobId,
+			// source: 'APPLICATOR',
+			// status: 'PENDING',
+		},
+		include: {
+			applicator: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+					businessName: true,
+				},
+			},
+			farm: {
+				select: {
+					id: true,
+					farmImageUrl: true,
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							id: true,
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+			products: {
+				select: {
+					id: true,
+					totalAcres: true,
+					price: true,
+					name: true,
+					perAcreRate: true,
+					product: {
+						select: {
+							id: true,
+							productName: true,
+							perAcreRate: true,
+						},
+					},
+				},
+			},
+			applicationFees: true,
+		},
+		omit: {
+			applicatorId: true,
+			fieldWorkerId: true,
+			farmId: true,
+		},
+	});
+	// Check if user is null
+	if (!job) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'No job found for the given job Id.',
+		);
+	}
+
+	const fields = await prisma.field.findMany({
+		where: {
+			farmId: job.farm.id,
+		},
+		select: {
+			acres: true,
+		},
+	});
+	// Format the job object with conditional removal of applicator or grower
+	const formattedJob = (({ applicator, products, ...job }) => ({
+		...job,
+		applicator,
+		totalAcres: job.fields.reduce(
+			(sum, f) => sum + (f.actualAcres || 0),
+			0,
+		),
+		farm: {
+			...job.farm,
+			totalAcres: fields.reduce(
+				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
+				0,
+			),
+		},
+		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
+			...rest,
+			name: product ? product?.productName : name, // Move productName to name
+			perAcreRate: product ? product?.perAcreRate : perAcreRate, // Move perAcreRate from product
+		})),
+	}))(job);
+
+	return formattedJob;
+};
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -4189,4 +4297,5 @@ export default {
 	placeBidForJob,
 	getAllBidsByJobId,
 	updateBidJobStatus,
+	getJobByIdThroughEmail,
 };
