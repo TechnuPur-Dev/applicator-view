@@ -44,9 +44,15 @@ const deletePermission = async (permissionId: number) => {
 	return { result: 'Deleted successfully' };
 };
 const getAllPermissionTypes = async () => {
-	const permission = Object.values(PermissionType);
+	const permissionList = Object.values(PermissionType).map(
+		(permission, index) => ({
+			id: index + 1,
+			name: permission,
+		}),
+	);
+	
 
-	return permission;
+	return permissionList;
 };
 export default {
 	createPermission,

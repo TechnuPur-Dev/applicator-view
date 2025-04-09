@@ -490,13 +490,15 @@ const getAllGrowersByApplicator = async (
 			(totalGrowerAcres, farm) => {
 				const totalAcresByFarm = farm.fields.reduce(
 					(totalFarmAcres, field) => {
-							return totalFarmAcres.plus(new Decimal(field.acres || 0));
+						return totalFarmAcres.plus(
+							new Decimal(field.acres || 0),
+						);
 					},
-				new Decimal(0)
+					new Decimal(0),
 				);
-				return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
+				return totalGrowerAcres.plus(totalAcresByFarm); // keep as decimal
 			},
-			new Decimal(0)
+			new Decimal(0),
 		);
 
 		// Return the grower object without farms
@@ -912,13 +914,15 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-								return totalFarmAcres.plus(new Decimal(field.acres || 0));
+							return totalFarmAcres.plus(
+								new Decimal(field.acres || 0),
+							);
 						},
-					new Decimal(0)
+						new Decimal(0),
 					);
-					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
+					return totalGrowerAcres.plus(totalAcresByFarm); // keep as decimal
 				},
-				new Decimal(0)
+				new Decimal(0),
 			);
 
 			// Return the grower object without farms
@@ -1002,13 +1006,15 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-								return totalFarmAcres.plus(new Decimal(field.acres || 0));
+							return totalFarmAcres.plus(
+								new Decimal(field.acres || 0),
+							);
 						},
-					new Decimal(0)
+						new Decimal(0),
 					);
-					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
+					return totalGrowerAcres.plus(totalAcresByFarm); // keep as decimal
 				},
-				new Decimal(0)
+				new Decimal(0),
 			);
 
 			// Return the grower object without farms
@@ -1665,19 +1671,21 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			// Calculate total acres for this farm
 			const totalAcresByFarm = farm.fields.reduce(
 				(totalFarmAcres, field) => {
-						return totalFarmAcres.plus(new Decimal(field.acres || 0));
+					return totalFarmAcres.plus(new Decimal(field.acres || 0));
 				},
-			new Decimal(0)
+				new Decimal(0),
 			);
 
 			// Type assertion to inform TypeScript about `totalAcres`
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(farm as any).totalAcres = totalAcresByFarm?.toDecimalPlaces(2).toNumber();
+			(farm as any).totalAcres = totalAcresByFarm
+				?.toDecimalPlaces(2)
+				.toNumber();
 
 			// Accumulate total grower acres
-			return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
+			return totalGrowerAcres.plus(totalAcresByFarm); // keep as decimal
 		},
-		new Decimal(0)
+		new Decimal(0),
 	);
 	const responseData: ResponseData = { ...grower };
 	if (grower) {
@@ -1775,13 +1783,15 @@ const getPendingInvitesFromOthers = async (
 				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-								return totalFarmAcres.plus(new Decimal(field.acres || 0));
+							return totalFarmAcres.plus(
+								new Decimal(field.acres || 0),
+							);
 						},
-					new Decimal(0)
+						new Decimal(0),
 					);
-					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
+					return totalGrowerAcres.plus(totalAcresByFarm); // keep as decimal
 				},
-				new Decimal(0)
+				new Decimal(0),
 			);
 
 			// Return the grower object without farms
@@ -1869,13 +1879,15 @@ const getPendingInvitesFromOthers = async (
 				(totalGrowerAcres, farm) => {
 					const totalAcresByFarm = farm.fields.reduce(
 						(totalFarmAcres, field) => {
-								return totalFarmAcres.plus(new Decimal(field.acres || 0));
+							return totalFarmAcres.plus(
+								new Decimal(field.acres || 0),
+							);
 						},
-					new Decimal(0)
+						new Decimal(0),
 					);
-					return totalGrowerAcres.plus(totalAcresByFarm);// keep as decimal
+					return totalGrowerAcres.plus(totalAcresByFarm); // keep as decimal
 				},
-				new Decimal(0)
+				new Decimal(0),
 			);
 
 			// Return the grower object without farms
@@ -2163,6 +2175,65 @@ const verifyInviteToken = async (token: string) => {
 			applicator,
 			isAlreadyExist:
 				invite?.worker.profileStatus === 'COMPLETE' ? true : false,
+		};
+	} else if (role === 'APPLICATOR_USER') {
+		const invite = await prisma.applicatorUser.findUnique({
+			where: {
+				inviteToken: token,
+				// expiresAt: {
+				// 	gte: new Date(), // Ensures the invite is still valid
+				// },
+				user: {
+					is: {
+						profileStatus: 'INCOMPLETE',
+					},
+				},
+			},
+			select: {
+				applicator: {
+					select: {
+						profileImage: true,
+						thumbnailProfileImage: true,
+						firstName: true,
+						lastName: true,
+						fullName: true,
+						email: true,
+					},
+				},
+				user: {
+					omit: {
+						password: true,
+						businessName: true,
+						experience: true,
+						createdAt: true,
+						updatedAt: true,
+					},
+					include: {
+						state: {
+							select: {
+								name: true,
+							},
+						},
+					},
+				},
+			},
+		});
+		if (!invite) {
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'User not found or invite expired.',
+			);
+		}
+		const { user, ...userData } = invite;
+		const { state } = user;
+		const applicator = invite?.applicator;
+		return {
+			...user,
+			...userData,
+			state: state?.name,
+			applicator,
+			isAlreadyExist:
+				invite?.user.profileStatus === 'COMPLETE' ? true : false,
 		};
 	} else {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
