@@ -183,25 +183,32 @@ router
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobActivitiesByJobId,
 	);
-	router
+router
 	.route('/place-bid')
 	.post(
 		verifyToken,
 		validateSchema(jobValidation.placeBidJobSchema),
 		jobController.placeBidForJob,
 	);
-	router
+router
 	.route('/all-bids/:jobId')
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getAllBidsByJobId,
 	);
-	router
+router
 	.route('/update/bid-status/:bidId')
 	.put(
 		verifyToken,
 		validateSchema(jobValidation.updateBidStatusSchema),
-		jobController.updateBidJobStatus
+		jobController.updateBidJobStatus,
+	);
+// get Job by Id
+router
+	.route('/get-job/by-email/:jobId')
+	.get(
+		validateSchema(jobValidation.paramsSchema),
+		jobController.getJobByIdThroughEmail,
 	);
 export default router;
