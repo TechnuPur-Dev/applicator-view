@@ -24,9 +24,14 @@ const getAllTicketPriorities = catchAsync(
 );
 
 const createSupportTicket = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
 	const Id = req.payload.id;
 	const data = req.body;
-	const ticketData = await supportTicketService.createSupportTicket(Id, data);
+	const ticketData = await supportTicketService.createSupportTicket(
+		user,
+		Id,
+		data,
+	);
 	res.status(httpStatus.OK).json({
 		result: ticketData,
 		message: 'support ticket created successfully',
@@ -47,9 +52,14 @@ const getSupportTicketById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateSupportTicket = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
 	const Id = +req.params.ticketId;
 	const data = req.body;
-	const ticketData = await supportTicketService.updateSupportTicket(Id, data);
+	const ticketData = await supportTicketService.updateSupportTicket(
+		user,
+		Id,
+		data,
+	);
 	res.status(httpStatus.OK).json({
 		message: 'support ticket updated successfully',
 		result: ticketData,
@@ -89,6 +99,34 @@ const deleteTicket = catchAsync(async (req: Request, res: Response) => {
 	const result = await supportTicketService.deleteTicket(ticketId);
 	res.status(httpStatus.OK).json(result);
 });
+const resolveSupportTicket = catchAsync(async (req: Request, res: Response) => {
+	const Id = +req.params.ticketId;
+	const user = req.user;
+	const data = req.body;
+	const ticketData = await supportTicketService.resolveSupportTicket(
+		user,
+		Id,
+		data,
+	);
+	res.status(httpStatus.OK).json({
+		result: ticketData,
+		message: 'Support ticket resolved successfully',
+	});
+});
+const assignSupportTicket = catchAsync(async (req: Request, res: Response) => {
+	const Id = +req.params.ticketId;
+	const user = req.user;
+	const data = req.body;
+	const ticketData = await supportTicketService.assignSupportTicket(
+		user,
+		Id,
+		data,
+	);
+	res.status(httpStatus.OK).json({
+		result: ticketData,
+		message: 'Support ticket assigned successfully',
+	});
+});
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -100,5 +138,7 @@ export default {
 	getMySupportTicket,
 	getPilotSupportTicket,
 	getAllJobsByApplicator,
-	deleteTicket
+	deleteTicket,
+	resolveSupportTicket,
+	assignSupportTicket,
 };
