@@ -47,17 +47,28 @@ router
 router
 	.route('/pilot-ticktes')
 	.get(verifyToken, supportTicketController.getPilotSupportTicket);
-	router
+router
 	.route('/my-jobs')
-	.get(
+	.get(verifyToken, supportTicketController.getAllJobsByApplicator);
+router
+	.route('/delete/:ticketId')
+	.delete(
 		verifyToken,
-		supportTicketController.getAllJobsByApplicator,
+		validateSchema(supportTicketValidation.paramsSchema),
+		supportTicketController.deleteTicket,
 	);
-	router
-		.route('/delete/:ticketId')
-		.delete(
-			verifyToken,
-			validateSchema(supportTicketValidation.paramsSchema),
-			supportTicketController.deleteTicket,
-		);
+router
+	.route('/resolve/:ticketId')
+	.put(
+		verifyToken,
+		validateSchema(supportTicketValidation.resolveSupportTicketSchema),
+		supportTicketController.resolveSupportTicket,
+	);
+router
+	.route('/assign/:ticketId')
+	.put(
+		verifyToken,
+		validateSchema(supportTicketValidation.assignSupportTicketSchema),
+		supportTicketController.assignSupportTicket,
+	);
 export default router;
