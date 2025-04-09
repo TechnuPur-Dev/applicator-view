@@ -34,6 +34,16 @@ const searchApplicatorUserByEmail = async (
 		},
 	});
 
+	// Find all users matching the email pattern (debounced search)
+	const applicatorUser = await prisma.applicatorUser.findFirst({
+		where: {
+			userId: user?.id,
+		},
+		select: {
+			id: true,
+		},
+	});
+
 	if (!user) {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
@@ -49,6 +59,7 @@ const searchApplicatorUserByEmail = async (
 	}
 	return {
 		user,
+		isAlreadyConnected: applicatorUser ? true : false,
 	};
 };
 const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
