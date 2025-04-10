@@ -4,7 +4,7 @@
 // import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
-// import ApiError from '../../../../../shared/utils/api-error';
+import ApiError from '../../../../../shared/utils/api-error';
 import { CreateSupportTicket } from './support-ticket-types';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 
@@ -401,6 +401,9 @@ const resolveSupportTicket = async (
 		where: { id: ticketId },
 		include: { createdByUser: true },
 	});
+	if (!ticket) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'Ticket not found.');
+	}
 
 	const userRole = user?.role;
 	const targetRole = ticket?.createdByUser?.role;
@@ -413,13 +416,33 @@ const resolveSupportTicket = async (
 	if (!isValid) {
 		throw new Error('You are not authorized to resolve this ticket.');
 	}
+	const result = await prisma.$transaction(async (tx) => {
+		const updatedTicket = await tx.supportTicket.update({
+			where: { id: ticketId },
+			data: {
+				status: data.status,
+			},
+		});
+		await tx.supportTicketActivity.create({
+			data: {
+				ticketId: ticket.id,
+				updatedById: user.id,// User who changed the status (Applicator, Pilot, or Grower) logged in user
+				oldStatus: ticket?.status,
+				newStatus: data.status,
+				reason: null,
+			},
+		});
 
-	return prisma.supportTicket.update({
-		where: { id: ticketId },
-		data: {
-			status: data.status,
-		},
+		return updatedTicket;
 	});
+
+	return result;
+	// return prisma.supportTicket.update({
+	// 	where: { id: ticketId },
+	// 	data: {
+	// 		status: data.status,
+	// 	},
+	// });
 };
 const assignSupportTicket = async (
 	user: User,
