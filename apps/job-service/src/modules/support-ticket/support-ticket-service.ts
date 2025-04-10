@@ -3,7 +3,12 @@
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
+import {
+	Prisma,
+	TicketCategory,
+	TicketPriority,
+	TicketStatus,
+} from '@prisma/client';
 // import ApiError from '../../../../../shared/utils/api-error';
 import { CreateSupportTicket } from './support-ticket-types';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
@@ -84,7 +89,13 @@ const createSupportTicket = async (
 	return ticket;
 };
 
-const getAllSupportTicket = async (user: User, options: PaginateOptions) => {
+const getAllSupportTicket = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -96,11 +107,102 @@ const getAllSupportTicket = async (user: User, options: PaginateOptions) => {
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
+	const filters: Prisma.SupportTicketWhereInput = {
+		OR: [{ createdById: user.id }, { assigneeId: user.id }],
+	};
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.SupportTicketWhereInput = {};
+		const searchValue = options.searchValue;
 
+		switch (options.label) {
+			case 'subject':
+				searchFilter.subject = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+
+			case 'status':
+				searchFilter.status = {
+					equals: searchValue as TicketStatus, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'assigneeId':
+				searchFilter.assigneeId = parseInt(searchValue, 10);
+
+				break;
+
+			case 'jobId':
+				searchFilter.jobId = parseInt(searchValue, 10);
+
+				break;
+			case 'category':
+				searchFilter.category = {
+					equals: searchValue as TicketCategory, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'priority':
+				searchFilter.priority = {
+					equals: searchValue as TicketPriority, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'assigneeUser':
+				searchFilter.assigneeUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'createdByUser':
+				searchFilter.createdByUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	const tickets = await prisma.supportTicket.findMany({
-		where: {
-			OR: [{ createdById: user.id }, { assigneeId: user.id }],
-		},
+		where: filters,
 		include: {
 			createdByUser: {
 				select: {
@@ -129,9 +231,7 @@ const getAllSupportTicket = async (user: User, options: PaginateOptions) => {
 	});
 	// Calculate the total number of pages based on the total results and limit
 	const totalResults = await prisma.supportTicket.count({
-		where: {
-			OR: [{ createdById: user.id }, { assigneeId: user.id }],
-		},
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -220,7 +320,13 @@ const updateSupportTicket = async (
 	return ticket;
 };
 
-const getMySupportTicket = async (userId: number, options: PaginateOptions) => {
+const getMySupportTicket = async (
+	userId: number,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -232,11 +338,102 @@ const getMySupportTicket = async (userId: number, options: PaginateOptions) => {
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
+	const filters: Prisma.SupportTicketWhereInput = {
+		createdById: userId,
+	};
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.SupportTicketWhereInput = {};
+		const searchValue = options.searchValue;
 
+		switch (options.label) {
+			case 'subject':
+				searchFilter.subject = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+
+			case 'status':
+				searchFilter.status = {
+					equals: searchValue as TicketStatus, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'assigneeId':
+				searchFilter.assigneeId = parseInt(searchValue, 10);
+
+				break;
+
+			case 'jobId':
+				searchFilter.jobId = parseInt(searchValue, 10);
+
+				break;
+			case 'category':
+				searchFilter.category = {
+					equals: searchValue as TicketCategory, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'priority':
+				searchFilter.priority = {
+					equals: searchValue as TicketPriority, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'assigneeUser':
+				searchFilter.assigneeUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'createdByUser':
+				searchFilter.createdByUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	const tickets = await prisma.supportTicket.findMany({
-		where: {
-			createdById: userId,
-		},
+		where: filters,
 		include: {
 			createdByUser: {
 				select: {
@@ -264,9 +461,7 @@ const getMySupportTicket = async (userId: number, options: PaginateOptions) => {
 		},
 	});
 	const totalResults = await prisma.supportTicket.count({
-		where: {
-			createdById: userId,
-		},
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -281,7 +476,10 @@ const getMySupportTicket = async (userId: number, options: PaginateOptions) => {
 };
 const getPilotSupportTicket = async (
 	applicatorId: number,
-	options: PaginateOptions,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
 ) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
@@ -306,13 +504,108 @@ const getPilotSupportTicket = async (
 	// const workerIds = workers.map((item) => item.worker.id);
 
 	// Fetch tickets where createdById matches any of the worker IDs
+	const filters: Prisma.SupportTicketWhereInput = {
+		assigneeId: applicatorId,
+	};
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.SupportTicketWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'subject':
+				searchFilter.subject = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+
+			case 'status':
+				searchFilter.status = {
+					equals: searchValue as TicketStatus, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'assigneeId':
+				searchFilter.assigneeId = parseInt(searchValue, 10);
+
+				break;
+
+			case 'jobId':
+				searchFilter.jobId = parseInt(searchValue, 10);
+
+				break;
+			case 'category':
+				searchFilter.category = {
+					equals: searchValue as TicketCategory, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'priority':
+				searchFilter.priority = {
+					equals: searchValue as TicketPriority, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'assigneeUser':
+				searchFilter.assigneeUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'createdByUser':
+				searchFilter.createdByUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	const tickets = await prisma.supportTicket.findMany({
-		where: {
-			assigneeId: applicatorId,
-			// createdById: {
-			// 	in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
-			// },
-		},
+		where: filters,
+		//  {
+		// assigneeId: applicatorId,
+		// createdById: {
+		// 	in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
+		// },
+		// },
 		include: {
 			createdByUser: {
 				select: {
@@ -340,12 +633,13 @@ const getPilotSupportTicket = async (
 		},
 	});
 	const totalResults = await prisma.supportTicket.count({
-		where: {
-			assigneeId: applicatorId,
-			// createdById: {
-			// 	in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
-			// },
-		},
+		where: filters,
+		// {
+		// 	assigneeId: applicatorId,
+		// createdById: {
+		// 	in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
+		// },
+		// },
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
