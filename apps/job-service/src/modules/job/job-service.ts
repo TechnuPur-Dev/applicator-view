@@ -714,7 +714,7 @@ const getJobById = async (user: User, jobId: number) => {
 	}) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
-		...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
+		...(role === 'GROWER' ? { applicator, createdBy:grower?.fullName } : {}), // Include applicator only if role is GROWER
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
@@ -3060,9 +3060,9 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 		growerId?: number;
 		source: JobSource;
 	} = { id: jobId, source: 'BIDDING' };
-// check if applicator already placed bid then get detail of bidProduct and bidApplicatonFee
-//  related to applicatorbid Id for MyBid section 
-	const applicatorBid = await prisma.bid.findFirst({ 
+	// check if applicator already placed bid then get detail of bidProduct and bidApplicatonFee
+	//  related to applicatorbid Id for MyBid section 
+	const applicatorBid = await prisma.bid.findFirst({
 		where: {
 			applicatorId: id,
 			jobId: jobId
@@ -3157,15 +3157,15 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 			applicationFees: {
 				include: {
 					BidApplicationFee: applicatorBid
-					? {
-						where: {
-							bidId: applicatorBid.id,
-						},
-						select: {
-							bidAmount: true,
-						},
-					}
-					: false,
+						? {
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidAmount: true,
+							},
+						}
+						: false,
 				},
 			},
 			Bid: {
@@ -4092,12 +4092,13 @@ const updateBidJobStatus = async (
 		where: {
 			id: bidId,
 		},
+		
 	});
 	if (!bidExist) {
 		throw new Error('bid id is not found');
 	}
 	// Check if requested  is valid
-	if (data.status) {
+	if (data.status === 'ACCEPTED') {
 		await prisma.$transaction(async (tx) => {
 			// update bid status first
 			const updatedBid = await tx.bid.update({
@@ -4112,62 +4113,64 @@ const updateBidJobStatus = async (
 					applicatorId: true,
 				},
 			});
-			// Update the job status
-			if (data.status === 'ACCEPTED') {
-				const updatedJob = await tx.job.update({
-					where: {
-						id: updatedBid.jobId,
-						status: 'OPEN_FOR_BIDDING',
-					},
-					data: {
-						applicatorId: updatedBid.applicatorId, //update applicatorId
-						status: 'READY_TO_SPRAY',
-					},
-					select: {
-						id: true,
-						status: true,
-						applicatorId: true,
-						growerId: true,
-						fieldWorkerId: true,
-					},
-				});
-				// Determine userId for the notification
-				const notificationUserId = updatedBid?.applicatorId;
-				// Create the notification separately
-				await tx.notification.create({
-					data: {
-						userId: notificationUserId, // Notify the appropriate user
-						jobId:
-							data.status === 'ACCEPTED'
-								? updatedBid.jobId
-								: null,
-						type: 'BID_ACCEPTED',
-					},
-				});
-				await tx.jobActivity.create({
-					data: {
-						jobId: updatedJob.id,
-						changedById: id, //Connect to an existing user
-						changedByRole: role as UserRole,
-						oldStatus: 'OPEN_FOR_BIDDING',
-						newStatus: 'READY_TO_SPRAY',
-					},
-				});
-			}
+			// Update the job status	
+			const updatedJob = await tx.job.update({
+				where: {
+					id: updatedBid.jobId,
+					status: 'OPEN_FOR_BIDDING',
+				},
+				data: {
+					applicatorId: updatedBid.applicatorId, //update applicatorId
+					status: 'READY_TO_SPRAY',
+				},
+				select: {
+					id: true,
+					status: true,
+					applicatorId: true,
+					growerId: true,
+					fieldWorkerId: true,
+				},
+			});
+			// Determine userId for the notification
+			const notificationUserId = updatedBid?.applicatorId;
+			// Create the notification separately
+			await tx.notification.create({
+				data: {
+					userId: notificationUserId, // Notify the appropriate user
+					jobId:
+						data.status === 'ACCEPTED'
+							? updatedBid.jobId
+							: null,
+					type: 'BID_ACCEPTED',
+				},
+			});
+			await tx.jobActivity.create({
+				data: {
+					jobId: updatedJob.id,
+					changedById: id, //Connect to an existing user
+					changedByRole: role as UserRole,
+					oldStatus: 'OPEN_FOR_BIDDING',
+					newStatus: 'READY_TO_SPRAY',
+				},
+			});
+			//  Reject all other bids on the same job
+			await tx.bid.updateMany({
+				where: {
+					jobId: updatedBid.jobId,
+					id: { not: updatedBid.id },
+					status: 'PENDING',
+				},
+				data: {
+					status: 'REJECTED',
+				},
+			});
+
 		});
 	}
-	// await sendPushNotifications({
-	// 	userIds: data?.userId,
-	// 	title: `Job ${data.status} === "READY_TO_SPRAY" ? Accepted : ${data.status}  `,
-	// 	message: `${user.firstName} ${user.lastName} ${data.status} === "READY_TO_SPRAY" ? ACCEPTED : ${data.status} the job `,
-	// 	notificationType: `${data.status} === "READY_TO_SPRAY" ? 'JOB_ASSIGNED : JOB_REJECTED '`,
-	// });
+
 
 	return {
-		message:
-			data.status === 'ACCEPTED'
-				? `Bid accepted successfully.`
-				: `Bid rejected successfully.`,
+		message: `Bid accepted successfully.`
 	};
 };
 
