@@ -245,6 +245,7 @@ model Job {
   Notification        Notification?
   Bid                 Bid[]
   jobActivities       JobActivity[]
+  Invoice             Invoice?
 }
 
 model Bid {
@@ -521,6 +522,16 @@ model SupportTicketActivity {
 
   supportTicket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   updatedBy     User?         @relation(fields: [updatedById], references: [id])
+}
+
+model Invoice {
+  id          Int       @id @default(autoincrement())
+  jobId       Int       @unique
+  totalAmount Decimal
+  issuedAt    DateTime  @default(now())
+  paidAt      DateTime?
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 enum PermissionType {

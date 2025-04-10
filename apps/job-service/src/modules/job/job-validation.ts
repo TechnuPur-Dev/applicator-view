@@ -25,7 +25,7 @@ const jobStatusSchema: Schema = Joi.string()
 	.required();
 
 const bidStatusSchema: Schema = Joi.string()
-	.valid('PENDING', 'ACCEPTED', 'REJECTED')
+	.valid('PENDING', 'ACCEPTED')
 	.required();
 const createJobSchema = Joi.object({
 	body: Joi.object({
