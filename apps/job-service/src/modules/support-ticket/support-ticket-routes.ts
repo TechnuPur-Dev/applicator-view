@@ -11,64 +11,50 @@ router.use(verifyToken);
 router.use(normalizeApplicatorUser);
 router
 	.route('/all-categories')
-	.get( supportTicketController.getAllTicketCategories);
-router
-	.route('/all-statuses')
-	.get( supportTicketController.getAllTicketStatuses);
+	.get(supportTicketController.getAllTicketCategories);
+router.route('/all-statuses').get(supportTicketController.getAllTicketStatuses);
 router
 	.route('/all-priorities')
-	.get( supportTicketController.getAllTicketPriorities);
+	.get(supportTicketController.getAllTicketPriorities);
 router
 	.route('/create')
 	.post(
-		
 		validateSchema(supportTicketValidation.supportTicketSchema),
 		supportTicketController.createSupportTicket,
 	);
-router
-	.route('/all')
-	.get( supportTicketController.getAllSupportTicket);
+router.route('/all').get(supportTicketController.getAllSupportTicket);
 router
 	.route('/get-byId/:ticketId')
 	.get(
-		
 		validateSchema(supportTicketValidation.paramsSchema),
 		supportTicketController.getSupportTicketById,
 	);
 router
 	.route('/update/:ticketId')
 	.put(
-		
 		validateSchema(supportTicketValidation.updateSupportTicketSchema),
 		supportTicketController.updateSupportTicket,
 	);
-router
-	.route('/my-ticktes')
-	.get( supportTicketController.getMySupportTicket);
+router.route('/my-ticktes').get(supportTicketController.getMySupportTicket);
 router
 	.route('/pilot-ticktes')
-	.get( supportTicketController.getPilotSupportTicket);
-router
-	.route('/my-jobs')
-	.get( supportTicketController.getAllJobsByApplicator);
+	.get(supportTicketController.getPilotSupportTicket);
+router.route('/my-jobs').get(supportTicketController.getAllJobsByApplicator);
 router
 	.route('/delete/:ticketId')
 	.delete(
-		
 		validateSchema(supportTicketValidation.paramsSchema),
 		supportTicketController.deleteTicket,
 	);
 router
 	.route('/resolve/:ticketId')
 	.put(
-		
 		validateSchema(supportTicketValidation.resolveSupportTicketSchema),
 		supportTicketController.resolveSupportTicket,
 	);
 router
 	.route('/assign/:ticketId')
 	.put(
-		
 		validateSchema(supportTicketValidation.assignSupportTicketSchema),
 		supportTicketController.assignSupportTicket,
 	);

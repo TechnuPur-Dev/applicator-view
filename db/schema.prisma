@@ -511,15 +511,15 @@ model ApplicatorUserPermission {
 }
 
 model SupportTicketActivity {
-  id            Int       @id @default(autoincrement())
-  jobId         Int // Link to the Job
-  updatedById   Int? // User who changed the status (Applicator, Pilot, or Grower)
-  oldStatus     TicketStatus
-  newStatus     TicketStatus
-  reason        String? // Optional: Store rejection reasons if applicable
-  createdAt     DateTime  @default(now())
+  id          Int          @id @default(autoincrement())
+  ticketId    Int // Link to the support ticket
+  updatedById Int? // User who changed the status (Applicator, Pilot, or Grower)
+  oldStatus   TicketStatus
+  newStatus   TicketStatus
+  reason      String? // Optional: Store rejection reasons if applicable
+  createdAt   DateTime     @default(now())
 
-  supportTicket SupportTicket @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  supportTicket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   updatedBy     User?         @relation(fields: [updatedById], references: [id])
 }
 
