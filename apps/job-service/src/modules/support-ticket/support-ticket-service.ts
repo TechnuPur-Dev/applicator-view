@@ -84,7 +84,7 @@ const createSupportTicket = async (
 	return ticket;
 };
 
-const getAllSupportTicket = async (options: PaginateOptions) => {
+const getAllSupportTicket = async (user: User, options: PaginateOptions) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -98,6 +98,9 @@ const getAllSupportTicket = async (options: PaginateOptions) => {
 	const skip = (page - 1) * limit;
 
 	const tickets = await prisma.supportTicket.findMany({
+		where: {
+			OR: [{ createdById: user.id }, { assigneeId: user.id }],
+		},
 		include: {
 			createdByUser: {
 				select: {
@@ -125,7 +128,11 @@ const getAllSupportTicket = async (options: PaginateOptions) => {
 		},
 	});
 	// Calculate the total number of pages based on the total results and limit
-	const totalResults = await prisma.supportTicket.count();
+	const totalResults = await prisma.supportTicket.count({
+		where: {
+			OR: [{ createdById: user.id }, { assigneeId: user.id }],
+		},
+	});
 
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -213,7 +220,7 @@ const updateSupportTicket = async (
 	return ticket;
 };
 
-const getMySupportTicket = async (Id: number, options: PaginateOptions) => {
+const getMySupportTicket = async (userId: number, options: PaginateOptions) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -228,7 +235,7 @@ const getMySupportTicket = async (Id: number, options: PaginateOptions) => {
 
 	const tickets = await prisma.supportTicket.findMany({
 		where: {
-			OR: [{ createdById: Id }, { assigneeId: Id }],
+			createdById: userId,
 		},
 		include: {
 			createdByUser: {
@@ -258,7 +265,7 @@ const getMySupportTicket = async (Id: number, options: PaginateOptions) => {
 	});
 	const totalResults = await prisma.supportTicket.count({
 		where: {
-			createdById: Id,
+			createdById: userId,
 		},
 	});
 
@@ -288,22 +295,23 @@ const getPilotSupportTicket = async (
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 
-	const workers = await prisma.applicatorWorker.findMany({
-		where: {
-			applicatorId, //get the pilots/operator created by or associated by applicator
-		},
-		select: {
-			worker: true,
-		},
-	});
-	const workerIds = workers.map((item) => item.worker.id);
+	// const workers = await prisma.applicatorWorker.findMany({
+	// 	where: {
+	// 		applicatorId, //get the pilots/operator created by or associated by applicator
+	// 	},
+	// 	select: {
+	// 		worker: true,
+	// 	},
+	// });
+	// const workerIds = workers.map((item) => item.worker.id);
 
 	// Fetch tickets where createdById matches any of the worker IDs
 	const tickets = await prisma.supportTicket.findMany({
 		where: {
-			createdById: {
-				in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
-			},
+			assigneeId: applicatorId,
+			// createdById: {
+			// 	in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
+			// },
 		},
 		include: {
 			createdByUser: {
@@ -333,9 +341,10 @@ const getPilotSupportTicket = async (
 	});
 	const totalResults = await prisma.supportTicket.count({
 		where: {
-			createdById: {
-				in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
-			},
+			assigneeId: applicatorId,
+			// createdById: {
+			// 	in: workerIds, // use in operator of Prisma that is used to get multiple matching record of workerIds from list
+			// },
 		},
 	});
 
@@ -369,10 +378,11 @@ const getAllJobsByApplicator = async (applicatorId: number) => {
 
 	return jobs;
 };
-const deleteTicket = async (ticketId: number) => {
+const deleteTicket = async (userId: number, ticketId: number) => {
 	await prisma.supportTicket.delete({
 		where: {
 			id: ticketId,
+			createdById: userId,
 		},
 	});
 

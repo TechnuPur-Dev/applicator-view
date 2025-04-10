@@ -40,8 +40,11 @@ const createSupportTicket = catchAsync(async (req: Request, res: Response) => {
 
 const getAllSupportTicket = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
-
-	const ticketData = await supportTicketService.getAllSupportTicket(options);
+	const user = req.user;
+	const ticketData = await supportTicketService.getAllSupportTicket(
+		user,
+		options,
+	);
 	res.status(httpStatus.OK).json(ticketData);
 });
 
@@ -68,9 +71,9 @@ const updateSupportTicket = catchAsync(async (req: Request, res: Response) => {
 
 const getMySupportTicket = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
-	const Id = req.payload.id;
+	const userId = req.payload.id;
 	const ticketData = await supportTicketService.getMySupportTicket(
-		Id,
+		userId,
 		options,
 	);
 	res.status(httpStatus.OK).json(ticketData);
@@ -78,9 +81,9 @@ const getMySupportTicket = catchAsync(async (req: Request, res: Response) => {
 const getPilotSupportTicket = catchAsync(
 	async (req: Request, res: Response) => {
 		const options = pick(req.query, ['limit', 'page']);
-		const Id = req.payload.id;
+		const userId = req.payload.id;
 		const ticketData = await supportTicketService.getPilotSupportTicket(
-			Id,
+			userId,
 			options,
 		);
 		res.status(httpStatus.OK).json(ticketData);
@@ -95,8 +98,9 @@ const getAllJobsByApplicator = catchAsync(
 	},
 );
 const deleteTicket = catchAsync(async (req: Request, res: Response) => {
+	const userId = +req.payload.id;
 	const ticketId = +req.params.ticketId;
-	const result = await supportTicketService.deleteTicket(ticketId);
+	const result = await supportTicketService.deleteTicket(userId, ticketId);
 	res.status(httpStatus.OK).json(result);
 });
 const resolveSupportTicket = catchAsync(async (req: Request, res: Response) => {
