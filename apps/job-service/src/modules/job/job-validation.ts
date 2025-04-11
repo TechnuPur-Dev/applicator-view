@@ -211,6 +211,14 @@ const updateBidStatusSchema = Joi.object({
 		.try(Joi.object({ status: bidStatusSchema.required() }))
 		.required(),
 });
+const acceptJobSchema = Joi.object({
+	params: Joi.object({
+		jobId: Joi.number().integer().positive().required(),
+	}).required(),
+	body: Joi.object({
+		status: Joi.string().valid('ACCEPT', 'REJECT').required(),
+	}).required(),
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -222,4 +230,5 @@ export default {
 	headerStatsSchema,
 	placeBidJobSchema,
 	updateBidStatusSchema,
+	acceptJobSchema
 };

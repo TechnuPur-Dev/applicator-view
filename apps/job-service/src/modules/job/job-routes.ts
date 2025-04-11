@@ -163,9 +163,9 @@ router // TODO: Update service accroding to the business logic
 		jobController.getJobInvoice,
 	);
 router
-	.route('/accept/by-email/:jobId')
+	.route('/accept-reject/by-email/:jobId')
 	.put(
-		validateSchema(jobValidation.paramsSchema),
+		validateSchema(jobValidation.acceptJobSchema),
 		jobController.acceptJobThroughEmail,
 	);
 router
