@@ -247,6 +247,16 @@ const getJobInvoice = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getJobInvoice(currentUser, id);
 	res.status(httpStatus.OK).json(result);
 });
+const getAllJobInvoices = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const options = pick(req.query, [
+		'limit',
+		'page',
+		
+	]);
+	const result = await jobService.getAllJobInvoices(currentUser,options);
+	res.status(httpStatus.OK).json(result);
+});
 const acceptJobThroughEmail = catchAsync(
 	async (req: Request, res: Response) => {
 		const id = +req.params.jobId;
@@ -347,6 +357,7 @@ export default {
 	getRejectedJobs,
 	getBiddingJobById,
 	getJobInvoice,
+	getAllJobInvoices,
 	acceptJobThroughEmail,
 	getMyJobsByPilot,
 	getPilotPendingJobs,
