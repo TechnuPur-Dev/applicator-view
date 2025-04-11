@@ -162,6 +162,13 @@ router // TODO: Update service accroding to the business logic
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobInvoice,
 	);
+	router // TODO: Update service accroding to the business logic
+	.route('/get-all/job-invoices')
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		jobController.getAllJobInvoices,
+	);
 router
 	.route('/accept/by-email/:jobId')
 	.put(

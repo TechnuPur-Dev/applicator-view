@@ -714,7 +714,7 @@ const getJobById = async (user: User, jobId: number) => {
 	}) => ({
 		...job,
 		...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
-		...(role === 'GROWER' ? { applicator, createdBy:grower?.fullName } : {}), // Include applicator only if role is GROWER
+		...(role === 'GROWER' ? { applicator, createdBy: grower?.fullName } : {}), // Include applicator and grower name for createdby prop only if role is GROWER
 		totalAcres: job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
@@ -783,7 +783,6 @@ const updateJobByApplicator = async (
 
 	const { status: currentStatus } = job;
 	const { status: requestedStatus, fieldWorkerId } = data;
-	console.log(currentStatus, 'currentStatus');
 	// Valid job status transitions
 	const statusTransitions: Record<JobStatus, JobStatus[]> = {
 		READY_TO_SPRAY: ['ASSIGNED_TO_PILOT'], // A job in READY_TO_SPRAY can only move to ASSIGNED_TO_PILOT
@@ -858,12 +857,36 @@ const updateJobByApplicator = async (
 	if (requestedStatus) {
 		// Update job status
 		await prisma.$transaction(async (tx) => {
-			await tx.job.update({
+			const job = await tx.job.update({
 				where: { id: jobId },
 				data: {
 					...data,
 					status: requestedStatus,
 				},
+				include: {
+					products: {
+						select: {
+							name: true,
+							totalAcres: true,
+							price: true,
+							perAcreRate: true,
+							product: {
+								select: {
+									id: true,
+									productName: true,
+									perAcreRate: true,
+								},
+							},
+						},
+					},
+					applicationFees: {
+						select: {
+							description: true,
+							rateUoM: true,
+							perAcre: true,
+						},
+					},
+				}
 			});
 			await tx.jobActivity.create({
 				data: {
@@ -875,7 +898,40 @@ const updateJobByApplicator = async (
 					reason: null,
 				},
 			});
+			if (requestedStatus === 'INVOICED') {
+				// Calculate total amount (sum of all applicationFees.rateUoM + products.price)
+				const afAmountTotal = job.applicationFees.reduce(
+					(sum, fee) => sum + (fee.rateUoM ? fee.rateUoM.toNumber() : 0),
+					0,
+				);
+				const productAmountTotal = job.products.reduce(
+					(sum, p) => sum + (p.price ? p.price.toNumber() : 0),
+					0,
+				);
+				const totalAmount = afAmountTotal + productAmountTotal;
+				await tx.invoice.create({
+					data: {
+						jobId: job.id,
+						totalAmount: totalAmount,
+
+					},
+				});
+			}
+			if (requestedStatus === 'PAID') {
+			
+				await tx.invoice.update({
+					where:{
+						jobId: job.id,
+					},
+					data: {
+						paidAt:new Date().toISOString()
+
+					},
+				});
+			}
+	
 		});
+
 	}
 
 	return {
@@ -3352,6 +3408,14 @@ const getJobInvoice = async (user: User, jobId: number) => {
 					perAcre: true,
 				},
 			},
+			Invoice:{
+				select:{
+					id:true,
+					totalAmount:true,
+					issuedAt:true,
+					paidAt:true
+				}
+			}
 		},
 		omit: {
 			applicatorId: true,
@@ -3401,7 +3465,7 @@ const getJobInvoice = async (user: User, jobId: number) => {
 		grower: { ...grower, state: grower?.state?.name },
 		// ...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 		// ...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
-		invoiceId: job.id,
+		// invoiceId: job.Invoice?.id,
 		totalAmount: totalAmount,
 		farm: {
 			...job.farm,
@@ -3419,7 +3483,61 @@ const getJobInvoice = async (user: User, jobId: number) => {
 
 	return formattedJob;
 };
+const getAllJobInvoices = async (user: User,options: PaginateOptions ) => {
+	const { id, role } = user;
+		// Set pagination
+		const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	const skip = (page - 1) * limit;
 
+	const whereCondition: Prisma.JobWhereInput = {
+		status: { in: ['INVOICED'] as JobStatus[] },
+	};
+
+	if (role === 'APPLICATOR') {
+		whereCondition.applicatorId = id;
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = id;
+	}
+	const jobInvoice = await prisma.job.findMany({
+		where: whereCondition,
+		include: {
+			Invoice:{
+				select:{
+					id:true,
+					totalAmount:true,
+					issuedAt:true,
+					paidAt:true
+				}
+			}
+		},
+		omit: {
+			fieldWorkerId: true,
+			description: true,
+			sensitiveAreas: true,
+			specialInstructions: true,
+			adjacentCrops: true,
+			attachments: true,
+			// rejectionReason: true,
+			createdAt: true,
+			farmId: true,
+		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+
+	
+	return jobInvoice;
+};
 const acceptJobThroughEmail = async (jobId: number) => {
 	const whereCondition: {
 		id: number;
@@ -4092,7 +4210,7 @@ const updateBidJobStatus = async (
 		where: {
 			id: bidId,
 		},
-		
+
 	});
 	if (!bidExist) {
 		throw new Error('bid id is not found');
@@ -4310,6 +4428,7 @@ export default {
 	getRejectedJobs,
 	getBiddingJobById,
 	getJobInvoice,
+	getAllJobInvoices,
 	acceptJobThroughEmail,
 	getMyJobsByPilot,
 	getPilotPendingJobs,
