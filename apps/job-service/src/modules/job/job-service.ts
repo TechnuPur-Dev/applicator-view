@@ -3547,29 +3547,52 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 
 	return flattened;
 };
-const acceptJobThroughEmail = async (jobId: number) => {
+const acceptJobThroughEmail = async (
+	jobId: number,
+	status: 'ACCEPT' | 'REJECT',
+) => {
 	const whereCondition: {
 		id: number;
 		status: JobStatus;
 	} = { id: jobId, status: 'PENDING' };
+	if (status === 'ACCEPT') {
+		const job = await prisma.job.update({
+			where: whereCondition,
+			data: {
+				status: 'READY_TO_SPRAY',
+			},
+			select: { id: true },
+		});
+		if (!job) {
+			throw new ApiError(
+				httpStatus.BAD_REQUEST,
+				'Invalid data or request has already been accepted or rejected.',
+			);
+		}
 
-	const job = await prisma.job.update({
-		where: whereCondition,
-		data: {
-			status: 'READY_TO_SPRAY',
-		},
-		select: { id: true },
-	});
-	if (!job) {
-		throw new ApiError(
-			httpStatus.BAD_REQUEST,
-			'Invalid data or request has already been accepted.',
-		);
+		return {
+			message: 'Job accepted successfully.',
+		};
 	}
+	if (status === 'REJECT') {
+		const job = await prisma.job.update({
+			where: whereCondition,
+			data: {
+				status: 'REJECTED',
+			},
+			select: { id: true },
+		});
+		if (!job) {
+			throw new ApiError(
+				httpStatus.BAD_REQUEST,
+				'Invalid data or request has already been accepted or rejected.',
+			);
+		}
 
-	return {
-		message: 'Job accepted successfully.',
-	};
+		return {
+			message: 'Job rejected successfully.',
+		};
+	}
 };
 const getMyJobsByPilot = async (
 	// applicatorId: number,
