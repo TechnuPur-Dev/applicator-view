@@ -146,6 +146,14 @@ const assignSupportTicket = catchAsync(async (req: Request, res: Response) => {
 		message: 'Support ticket assigned successfully',
 	});
 });
+const getSupportTicketActivityById = catchAsync(
+	async (req: Request, res: Response) => {
+		const ticketId = +req.params.ticketId;
+		// const options = pick(req.query, ['limit', 'page']);
+		const result = await supportTicketService.getSupportTicketActivityById(ticketId);
+		res.status(httpStatus.OK).json({ result });
+	},
+);
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -160,4 +168,5 @@ export default {
 	deleteTicket,
 	resolveSupportTicket,
 	assignSupportTicket,
+	getSupportTicketActivityById
 };

@@ -58,4 +58,11 @@ router
 		validateSchema(supportTicketValidation.assignSupportTicketSchema),
 		supportTicketController.assignSupportTicket,
 	);
+	router
+		.route('/get-supportTicketActivity/:ticketId')
+		.get(
+			verifyToken,
+			validateSchema(supportTicketValidation.paramsSchema),
+			supportTicketController.getSupportTicketActivityById,
+		);
 export default router;
