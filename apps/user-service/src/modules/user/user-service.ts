@@ -2341,9 +2341,9 @@ const acceptOrRejectInviteThroughEmail = async (
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
-						grower: {
-							profileStatus: 'INCOMPLETE',
-						},
+						// grower: {
+						// 	profileStatus: 'INCOMPLETE',
+						// },
 					},
 					data: {
 						inviteStatus, // Only updating the inviteStatus field
@@ -2397,9 +2397,9 @@ const acceptOrRejectInviteThroughEmail = async (
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
-						grower: {
-							profileStatus: 'INCOMPLETE',
-						},
+						// grower: {
+						// 	profileStatus: 'INCOMPLETE',
+						// },
 					},
 					data: {
 						inviteStatus,
