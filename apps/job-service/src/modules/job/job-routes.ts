@@ -59,7 +59,11 @@ router
 //Required  Drop down for job creation
 router
 	.route('/all-pilots/dropdown')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getAllPilotsByApplicator);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		jobController.getAllPilotsByApplicator,
+	);
 
 //job type
 router.route('/all-types').get(verifyToken, jobController.getAllJobTypes);
@@ -70,13 +74,21 @@ router
 	.get(verifyToken, jobController.getAllJobStatus);
 router
 	.route('/growers-list/by-applicator')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getGrowerListForApplicator);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		jobController.getGrowerListForApplicator,
+	);
 router
 	.route('/applicators-list/by-grower')
 	.get(verifyToken, jobController.getApplicatorListForGrower);
 router
 	.route('/farms-list/:growerId')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getFarmListByGrowerId);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		jobController.getFarmListByGrowerId,
+	);
 
 //upload job attachments
 router
@@ -90,13 +102,23 @@ router
 		jobController.getJobs,
 	);
 router.route('/open-jobs').get(verifyToken, jobController.getOpenJobs);
-router.route('/my-bids').get(verifyToken,normalizeApplicatorUser, jobController.getMyBidJobs);
+router
+	.route('/my-bids')
+	.get(verifyToken, normalizeApplicatorUser, jobController.getMyBidJobs);
 router
 	.route('/pending/from-me')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getJobsPendingFromMe);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		jobController.getJobsPendingFromMe,
+	);
 router
 	.route('/pending/from-grower')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getJobsPendingFromGrower);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		jobController.getJobsPendingFromGrower,
+	);
 // router
 // 	.route('/pending/from-applicator')
 // 	.get(verifyToken, jobController.getJobsPendingFromApplicators);
@@ -111,15 +133,13 @@ router
 
 router
 	.route('/get-assignedjobs')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getAssignedJobs);
-router
-	.route('/get-jobsbypilot/:pilotId')
-	.get(
-		verifyToken,
-		normalizeApplicatorUser,// this end point for applicator to get pilote
-		validateSchema(jobValidation.pilotJobsParamSchema),
-		jobController.getJobByPilot,
-	);
+	.get(verifyToken, normalizeApplicatorUser, jobController.getAssignedJobs);
+router.route('/get-jobsbypilot/:pilotId').get(
+	verifyToken,
+	normalizeApplicatorUser, // this end point for applicator to get pilote
+	validateSchema(jobValidation.pilotJobsParamSchema),
+	jobController.getJobByPilot,
+);
 router
 	.route('/create/open-for-bidding')
 	.post(
@@ -145,7 +165,7 @@ router
 	);
 router
 	.route('/get-rejectedjobs')
-	.get(verifyToken,normalizeApplicatorUser, jobController.getRejectedJobs);
+	.get(verifyToken, normalizeApplicatorUser, jobController.getRejectedJobs);
 router
 	.route('/get/open-job/:jobId')
 	.get(
@@ -154,7 +174,7 @@ router
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getBiddingJobById,
 	);
-router // TODO: Update service accroding to the business logic
+router
 	.route('/get/job-invoice/:jobId')
 	.get(
 		verifyToken,
@@ -162,13 +182,9 @@ router // TODO: Update service accroding to the business logic
 		validateSchema(jobValidation.paramsSchema),
 		jobController.getJobInvoice,
 	);
-	router // TODO: Update service accroding to the business logic
+router // TODO: Update service accroding to the business logic
 	.route('/get-all/job-invoices')
-	.get(
-		verifyToken,
-		normalizeApplicatorUser,
-		jobController.getAllJobInvoices,
-	);
+	.get(verifyToken, normalizeApplicatorUser, jobController.getAllJobInvoices);
 router
 	.route('/accept/by-email/:jobId')
 	.put(

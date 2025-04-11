@@ -3498,7 +3498,7 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 	const skip = (page - 1) * limit;
 
 	const whereCondition: Prisma.JobWhereInput = {
-		status: { in: ['INVOICED'] as JobStatus[] },
+		status: { in: ['INVOICED', 'PAID'] as JobStatus[] },
 	};
 
 	if (role === 'APPLICATOR') {
@@ -3506,9 +3506,19 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 	} else if (role === 'GROWER') {
 		whereCondition.growerId = id;
 	}
-	const jobInvoice = await prisma.job.findMany({
+	const jobInvoices = await prisma.job.findMany({
 		where: whereCondition,
-		include: {
+		select: {
+			id: true,
+			source: true,
+			status: true,
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+				},
+			},
 			Invoice: {
 				select: {
 					id: true,
@@ -3518,17 +3528,6 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 				},
 			},
 		},
-		omit: {
-			fieldWorkerId: true,
-			description: true,
-			sensitiveAreas: true,
-			specialInstructions: true,
-			adjacentCrops: true,
-			attachments: true,
-			// rejectionReason: true,
-			createdAt: true,
-			farmId: true,
-		},
 		skip,
 		take: limit,
 		orderBy: {
@@ -3536,7 +3535,17 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 		},
 	});
 
-	return jobInvoice;
+	const flattened = jobInvoices.map((job) => {
+		const { Invoice, ...jobData } = job;
+		return {
+			invoiceId: Invoice ? Invoice.id : null,
+			invoiceDate: Invoice ? Invoice.issuedAt : null,
+			amount: Invoice ? Invoice.totalAmount : null,
+			...jobData,
+		};
+	});
+
+	return flattened;
 };
 const acceptJobThroughEmail = async (jobId: number) => {
 	const whereCondition: {
