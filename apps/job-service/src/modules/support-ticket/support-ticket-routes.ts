@@ -35,9 +35,9 @@ router
 		validateSchema(supportTicketValidation.updateSupportTicketSchema),
 		supportTicketController.updateSupportTicket,
 	);
-router.route('/my-ticktes').get(supportTicketController.getMySupportTicket);
+router.route('/my-tickets').get(supportTicketController.getMySupportTicket);
 router
-	.route('/pilot-ticktes')
+	.route('/pilot-tickets')
 	.get(supportTicketController.getPilotSupportTicket);
 router.route('/my-jobs').get(supportTicketController.getAllJobsByApplicator);
 router

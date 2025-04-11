@@ -39,7 +39,12 @@ const createSupportTicket = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllSupportTicket = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, [
+		'limit',
+		'page',
+		'label',
+		'searchValue',
+	]);
 	const user = req.user;
 	const ticketData = await supportTicketService.getAllSupportTicket(
 		user,
@@ -70,7 +75,12 @@ const updateSupportTicket = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMySupportTicket = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, [
+		'limit',
+		'page',
+		'label',
+		'searchValue',
+	]);
 	const userId = req.payload.id;
 	const ticketData = await supportTicketService.getMySupportTicket(
 		userId,
@@ -80,7 +90,12 @@ const getMySupportTicket = catchAsync(async (req: Request, res: Response) => {
 });
 const getPilotSupportTicket = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, [
+			'limit',
+			'page',
+			'label',
+			'searchValue',
+		]);
 		const userId = req.payload.id;
 		const ticketData = await supportTicketService.getPilotSupportTicket(
 			userId,
