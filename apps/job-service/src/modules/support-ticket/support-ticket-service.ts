@@ -762,6 +762,19 @@ const assignSupportTicket = async (
 		},
 	});
 };
+
+const getSupportTicketActivityById = async (
+	ticketId: number,
+	// options: PaginateOptions,
+) => {
+	const supportActivities = await prisma.supportTicketActivity.findMany({
+		where: {
+			ticketId:ticketId
+		},
+	});
+
+	return supportActivities;
+};
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -776,4 +789,5 @@ export default {
 	deleteTicket,
 	resolveSupportTicket,
 	assignSupportTicket,
+	getSupportTicketActivityById
 };
