@@ -249,12 +249,8 @@ const getJobInvoice = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllJobInvoices = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const options = pick(req.query, [
-		'limit',
-		'page',
-		
-	]);
-	const result = await jobService.getAllJobInvoices(currentUser,options);
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await jobService.getAllJobInvoices(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
 const acceptJobThroughEmail = catchAsync(
