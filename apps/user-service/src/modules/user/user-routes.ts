@@ -57,7 +57,11 @@ router
 	.get(verifyToken, userController.getAllApplicatorsByGrower);
 router
 	.route('/growers/by-applicator')
-	.get(verifyToken,normalizeApplicatorUser, userController.getAllGrowersByApplicator);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		userController.getAllGrowersByApplicator,
+	);
 router
 	.route('/delete-grower/by-applicator/:growerId')
 	.delete(
@@ -83,13 +87,21 @@ router
 	);
 router
 	.route('/pending-invites/from-me')
-	.get(verifyToken,normalizeApplicatorUser, userController.getPendingInvites);
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		userController.getPendingInvites,
+	);
 router
 	.route('/applicator/invite/:email')
 	.put(verifyToken, userController.sendInviteToApplicator);
 router
 	.route('/grower/invite/:growerId')
-	.put(verifyToken,normalizeApplicatorUser, userController.sendInviteToGrower);
+	.put(
+		verifyToken,
+		normalizeApplicatorUser,
+		userController.sendInviteToGrower,
+	);
 
 router
 	.route('/update/archived-status')

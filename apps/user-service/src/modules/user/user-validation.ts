@@ -90,8 +90,18 @@ const verifyInviteToken: Schema = Joi.object({
 });
 const respondInviteToken: Schema = Joi.object({
 	body: Joi.object({
-		token: Joi.string().required(), // Assuming this is a URL
-		status: Joi.string().valid('ACCEPTED', 'REJECTED').required(), // Assuming this is a URL
+		token: Joi.string().required(),
+		status: Joi.string().valid('ACCEPTED', 'REJECTED').required(),
+		canManageFarms: Joi.boolean().optional(), // Optional, only sent when grower responds
+		farmPermissions: Joi.array()
+			.items(
+				Joi.object({
+					farmId: Joi.number().required(),
+					canView: Joi.boolean().required(),
+					canEdit: Joi.boolean().required(),
+				}),
+			)
+			.min(0), // Allows empty array
 	}).required(),
 });
 export default {

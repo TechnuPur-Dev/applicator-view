@@ -2331,6 +2331,12 @@ const getWeather = async (user: User, options: city) => {
 const acceptOrRejectInviteThroughEmail = async (
 	token: string,
 	inviteStatus: InviteStatus,
+	canManageFarms: boolean,
+	farmPermissions: {
+		farmId: number;
+		canView: boolean;
+		canEdit: boolean;
+	}[],
 ) => {
 	// Verify token and extract role
 	const role = verifyInvite(token);
@@ -2355,7 +2361,10 @@ const acceptOrRejectInviteThroughEmail = async (
 					},
 					data: {
 						inviteStatus, // Only updating the inviteStatus field
-						canManageFarms: true,
+						canManageFarms:
+							canManageFarms !== undefined
+								? canManageFarms
+								: true,
 					},
 					select: {
 						id: true,
@@ -2380,12 +2389,14 @@ const acceptOrRejectInviteThroughEmail = async (
 					invite.pendingFarmPermission.length > 0
 				) {
 					await prisma.farmPermission.createMany({
-						data: invite.pendingFarmPermission.map((perm) => ({
-							farmId: perm.farmId,
-							applicatorId: invite.applicator?.id ?? 0, // ✅ Use safe optional chaining with a default value
-							canView: perm.canView,
-							canEdit: perm.canEdit,
-						})),
+						data: farmPermissions
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((perm) => ({
+								farmId: perm.farmId,
+								applicatorId: invite.applicator?.id ?? 0, // ✅ Use safe optional chaining with a default value
+								canView: perm.canView,
+								canEdit: perm.canEdit,
+							})),
 					});
 				}
 
