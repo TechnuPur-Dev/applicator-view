@@ -3545,7 +3545,20 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 		};
 	});
 
-	return flattened;
+	// Calculate total acres for each job
+	const totalResults = await prisma.job.count({
+		where: whereCondition,
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: flattened,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 const acceptJobThroughEmail = async (
 	jobId: number,
