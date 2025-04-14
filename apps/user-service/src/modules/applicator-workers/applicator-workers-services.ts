@@ -678,7 +678,68 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 		totalResults,
 	};
 };
+const getAllApplicatorsByPilot = async (
+	workerId: number,
+	options: PaginateOptions,
+) => {
+	// Set pagination parameters
+	const limit =
+		options.limit && parseInt(options.limit.toString(), 10) > 0
+			? parseInt(options.limit.toString(), 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page.toString(), 10) > 0
+			? parseInt(options.page.toString(), 10)
+			: 1;
+	const skip = (page - 1) * limit;
+	const applicators = await prisma.applicatorWorker.findMany({
+		where: {
+			workerId,
+			workerType: 'PILOT',
+			isActive: true,
+		},
+		include: {
+			applicator: {
+				select: {
+					id: true,
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+		},
+		omit: {
+			inviteToken: true,
+		},
+		skip,
+		take: limit,
+		orderBy: { id: 'desc' },
+	});
+	const formattedApplicators = applicators.map((entry) => ({
+		...entry.applicator,
+	}));
 
+	// Total workers count
+	const totalResults = await prisma.applicatorWorker.count({
+		where: {
+			workerId,
+			workerType: 'PILOT',
+			isActive: true,
+		},
+	});
+	const totalPages = Math.ceil(totalResults / limit);
+
+	// Return paginated results
+	return {
+		result: formattedApplicators,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+};
 export default {
 	createWorker,
 	getAllWorkers,
@@ -690,4 +751,5 @@ export default {
 	sendInviteToWorker,
 	getAllApplicators,
 	getPendingInvites,
+	getAllApplicatorsByPilot,
 };
