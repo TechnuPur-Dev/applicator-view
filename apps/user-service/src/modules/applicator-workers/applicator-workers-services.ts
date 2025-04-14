@@ -393,6 +393,14 @@ const sendInviteToWorker = async (
 			text: 'Request Invitation',
 			html,
 		});
+		await prisma.notification.create({
+			data: {
+				userId: workerId, // Notify the appropriate user
+				type:'ACCEPT_INVITE'
+				
+					
+			},
+		});
 		return {
 			message: 'Invite sent successfully.',
 		};
@@ -400,7 +408,7 @@ const sendInviteToWorker = async (
 };
 const updateInviteStatus = async (workerId: number, data: UpdateStatus) => {
 	const { applicatorId, status } = data;
-
+	await prisma.$transaction(async (prisma) => {
 	if (status === 'ACCEPTED') {
 		await prisma.applicatorWorker.update({
 			where: {
@@ -425,10 +433,19 @@ const updateInviteStatus = async (workerId: number, data: UpdateStatus) => {
 				inviteStatus: 'REJECTED',
 			},
 		});
+		
 		return {
 			message: 'Invite rejected successfully.',
 		};
 	}
+	await prisma.notification.create({
+		data: {
+			userId: applicatorId, // Notify the appropriate user
+			type:data.status === 'ACCEPTED' ? 'ACCEPT_INVITE':'REJECT_INVITE'
+				
+		},
+	});
+	});
 };
 const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
