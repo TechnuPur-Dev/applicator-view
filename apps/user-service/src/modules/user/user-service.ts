@@ -1407,6 +1407,13 @@ const sendInviteToApplicator = async (
 				});
 			}
 		}
+		await tx.notification.create({
+			data: {
+				userId: applicator.id,
+				type: 'ACCOUNT_INVITATION',
+				inviteId:existingInvite?.id
+			},
+		});
 	});
 
 	// Send email invitation
@@ -2437,6 +2444,8 @@ const acceptOrRejectInviteThroughEmail = async (
 	} else if (role === 'APPLICATOR') {
 		if (inviteStatus === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
+				
+				
 				const invite = await prisma.applicatorGrower.update({
 					where: {
 						inviteToken: token,
@@ -2453,7 +2462,17 @@ const acceptOrRejectInviteThroughEmail = async (
 								state: { select: { name: true } },
 							},
 						},
+						grower: {
+							select: { id: true },
+						},
 						pendingFarmPermission: true,
+					},
+				});
+				await prisma.notification.create({
+					data: {
+						userId: invite?.grower?.id, // Notify the appropriate user
+						type: 'ACCEPT_INVITE',
+						
 					},
 				});
 				// Delete pending permissions only if `invite.id` is valid
@@ -2497,10 +2516,24 @@ const acceptOrRejectInviteThroughEmail = async (
 					data: {
 						inviteStatus,
 					},
+					select: {
+						id: true,
+						grower: {
+							select: { id: true },
+						},
+						
+					},
 				});
 				// Delete pending permissions only if `invite.id` is valid
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
+				});
+				await prisma.notification.create({
+					data: {
+						userId: invite?.grower?.id, // Notify the appropriate user
+						type: 'REJECT_INVITE',
+						
+					},
 				});
 				await prisma.applicatorGrower.update({
 					where: { id: invite.id },

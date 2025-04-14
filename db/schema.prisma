@@ -32,41 +32,41 @@ model User {
   experience             Decimal?
   address1               String?
   address2               String?
-  stateId                Int?
   county                 String?
   township               String?
   zipCode                String?
   bio                    String?
   additionalInfo         String?
   profileStatus          ProfileStatus           @default(INCOMPLETE)
-  state                  State?                  @relation(fields: [stateId], references: [id])
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
+  stateId                Int?
   joiningDate            DateTime?
   applicators            ApplicatorGrower[]      @relation("Applicators")
   growers                ApplicatorGrower[]      @relation("Growers")
+  applicatorUser         ApplicatorUser[]        @relation("ApplicatorToUsers")
+  assignedUsers          ApplicatorUser[]        @relation("UserToApplicators")
   applicatorWorkers      ApplicatorWorker[]      @relation("ApplicatorToWorkers")
   assignedWorkers        ApplicatorWorker[]      @relation("WorkerAssignments")
+  Bid                    Bid[]
+  DeviceToken            DeviceToken[]
   farmsCreated           Farm[]                  @relation("FarmCreator")
   farms                  Farm[]                  @relation("FarmGrower")
   farmPermissions        FarmPermission[]
   fieldsCreated          Field[]                 @relation("FieldCreator")
+  ForecastCity           ForecastCity[]
   applicatorJobs         Job[]                   @relation("ApplicatorJob")
   fieldWorkerJobs        Job[]                   @relation("FieldWorkerJob")
   growerJobs             Job[]                   @relation("GrowerJob")
-  supportTicketsAssigned SupportTicket[]         @relation("SupportTicketAssigned")
-  supportTicketsCreated  SupportTicket[]         @relation("SupportTicketCreated")
-  tableViews             TableView[]
-  warrantyRegistrations  WarrantyRegistration[]
+  JobActivity            JobActivity[]
   Notification           Notification[]
   Product                Product[]
-  DeviceToken            DeviceToken[]
-  Bid                    Bid[]
-  ForecastCity           ForecastCity[]
-  JobActivity            JobActivity[]
-  applicatorUser         ApplicatorUser[]        @relation("ApplicatorToUsers")
-  assignedUsers          ApplicatorUser[]        @relation("UserToApplicators")
+  supportTicketsAssigned SupportTicket[]         @relation("SupportTicketAssigned")
+  supportTicketsCreated  SupportTicket[]         @relation("SupportTicketCreated")
   SupportTicketActivity  SupportTicketActivity[]
+  tableViews             TableView[]
+  state                  State?                  @relation(fields: [stateId], references: [id])
+  warrantyRegistrations  WarrantyRegistration[]
 }
 
 model ApplicatorWorker {
@@ -74,57 +74,54 @@ model ApplicatorWorker {
   applicatorId           Int
   workerId               Int
   workerType             WorkerType
-  pilotPestLicenseNumber String?
   pilotLicenseNumber     String?
   businessLicenseNumber  String?
   planeOrUnitNumber      String?
-  // perAcrePricing         Decimal?
   percentageFee          Decimal?
   dollarPerAcre          Decimal?
   autoAcceptJobs         Boolean      @default(false)
   canViewPricingDetails  Boolean      @default(false)
   code                   String?
   lastLogin              DateTime?
-  isActive               Boolean      @default(true)
-  inviteStatus           InviteStatus @default(PENDING)
-  inviteToken            String?      @unique
-  expiresAt              DateTime? // Optional: Invite expiration time
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
+  inviteStatus           InviteStatus @default(PENDING)
+  isActive               Boolean      @default(true)
+  pilotPestLicenseNumber String?
+  inviteToken            String?      @unique
+  expiresAt              DateTime?
   applicator             User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
   worker                 User         @relation("WorkerAssignments", fields: [workerId], references: [id])
 
   @@unique([applicatorId, workerId])
 }
 
-// TODO: remove email because the flow is updated now 
 model ApplicatorGrower {
-  id                     Int              @id @default(autoincrement())
+  id                     Int                     @id @default(autoincrement())
   applicatorId           Int?
   growerId               Int
   applicatorFirstName    String?
   applicatorLastName     String?
   growerFirstName        String?
   growerLastName         String?
-  inviteStatus           InviteStatus     @default(PENDING)
-  inviteToken            String?          @unique
-  expiresAt              DateTime? // Optional: Invite expiration time
-  inviteInitiator        InviteInitiator? // NEW FIELD: Who sent the invite?
-  isArchivedByApplicator Boolean          @default(false)
-  isArchivedByGrower     Boolean          @default(false)
-  canManageFarms         Boolean          @default(false)
-  isDeletedByApplicator  Boolean          @default(false)
-  isDeletedByGrower      Boolean          @default(false)
-  applicatorDeletedTill  DateTime? // Timestamp for when the applicator deleted till
-  growerDeletedTill      DateTime? // Timestamp for when the grower deleted till
-  email                  String? // Store invited email to handle the case when applicator does notexists in the system
-
-  applicator User? @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  grower     User  @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  pendingFarmPermission PendingFarmPermission[]
+  inviteStatus           InviteStatus            @default(PENDING)
+  isArchivedByApplicator Boolean                 @default(false)
+  isArchivedByGrower     Boolean                 @default(false)
+  canManageFarms         Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  inviteInitiator        InviteInitiator?
+  inviteToken            String?                 @unique
+  email                  String?
+  expiresAt              DateTime?
+  applicatorDeletedTill  DateTime?
+  growerDeletedTill      DateTime?
+  isDeletedByApplicator  Boolean                 @default(false)
+  isDeletedByGrower      Boolean                 @default(false)
+  applicator             User?                   @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade)
+  grower                 User                    @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade)
+  Notification           Notification[]
+  pendingFarmPermission  PendingFarmPermission[]
 
   @@unique([applicatorId, growerId])
 }
@@ -132,20 +129,20 @@ model ApplicatorGrower {
 model Farm {
   id                    Int                     @id @default(autoincrement())
   name                  String?
-  farmImageUrl          String?
   createdById           Int
   growerId              Int
-  stateId               Int
   county                String?
   township              String?
   zipCode               String?
   isActive              Boolean
-  config                Json?
-  state                 State                   @relation(fields: [stateId], references: [id])
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
+  config                Json?
+  farmImageUrl          String?
+  stateId               Int
   createdBy             User                    @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
   grower                User                    @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
+  state                 State                   @relation(fields: [stateId], references: [id])
   permissions           FarmPermission[]
   fields                Field[]
   jobs                  Job[]
@@ -160,24 +157,22 @@ model FarmPermission {
   canEdit      Boolean
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  applicator   User     @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
+  farm         Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
 
-  applicator User @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
-  farm       Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
-
-  @@unique([farmId, applicatorId]) // Ensures only one permission per user per farm
+  @@unique([farmId, applicatorId])
 }
 
 model PendingFarmPermission {
-  id        Int      @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   farmId    Int
   inviteId  Int
-  canView   Boolean  @default(true)
-  canEdit   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  farm   Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
-  invite ApplicatorGrower @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  canView   Boolean          @default(true)
+  canEdit   Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  farm      Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  invite    ApplicatorGrower @relation(fields: [inviteId], references: [id], onDelete: Cascade)
 
   @@unique([farmId, inviteId])
 }
@@ -185,7 +180,6 @@ model PendingFarmPermission {
 model Field {
   id            Int        @id @default(autoincrement())
   name          String?
-  fieldImageUrl String?
   crop          String?
   acres         Decimal?
   legal         String?
@@ -193,9 +187,10 @@ model Field {
   longitude     String?
   createdById   Int
   farmId        Int
-  config        Json?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+  config        Json?
+  fieldImageUrl String?
   createdBy     User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)
   farm          Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
   jobs          FieldJob[]
@@ -205,10 +200,10 @@ model TableView {
   id          Int       @id @default(autoincrement())
   createdById Int
   tableName   ViewTable
-  viewName    String?
   config      Json
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  viewName    String?
   user        User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
 }
 
@@ -220,7 +215,7 @@ model Job {
   status              JobStatus           @default(PENDING)
   growerId            Int?
   applicatorId        Int?
-  fieldWorkerId       Int? // Pilot assigned to this job
+  fieldWorkerId       Int?
   startDate           DateTime?
   endDate             DateTime?
   description         String?
@@ -229,67 +224,55 @@ model Job {
   adjacentCrops       String?
   specialInstructions String?
   attachments         Json?
-  // rejectionReason     String? // General job rejection reason by grower/applicator
-  // pilotRejectionReason String? // Pilot's rejection reason
-  // pilotJobStatus       PilotJobStatus? // Pilot's rejection reason
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
+  Bid                 Bid[]
   fields              FieldJob[]
+  Invoice             Invoice?
   applicator          User?               @relation("ApplicatorJob", fields: [applicatorId], references: [id])
   farm                Farm                @relation(fields: [farmId], references: [id], onDelete: Cascade)
   fieldWorker         User?               @relation("FieldWorkerJob", fields: [fieldWorkerId], references: [id])
   grower              User?               @relation("GrowerJob", fields: [growerId], references: [id])
+  jobActivities       JobActivity[]
   applicationFees     JobApplicationFee[]
   products            JobProduct[]
-  supportTickets      SupportTicket[]
   Notification        Notification?
-  Bid                 Bid[]
-  jobActivities       JobActivity[]
-  Invoice             Invoice?
+  supportTickets      SupportTicket[]
 }
 
 model Bid {
-  id           Int       @id @default(autoincrement())
+  id           Int                 @id @default(autoincrement())
   jobId        Int
   applicatorId Int
-  status       BidStatus @default(PENDING) // PENDING, ACCEPTED, REJECTED
+  status       BidStatus           @default(PENDING)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   description  String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  applicator   User                @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
+  job          Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  bidFees      BidApplicationFee[]
+  bidProducts  BidProduct[]
 
-  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  applicator  User                @relation(fields: [applicatorId], references: [id], onDelete: Cascade)
-  bidProducts BidProduct[]
-  bidFees     BidApplicationFee[]
-
-  @@unique([jobId, applicatorId]) // Ensures an applicator bids once per job
-}
-
-enum BidStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
+  @@unique([jobId, applicatorId])
 }
 
 model BidProduct {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   bidId       Int
   productId   Int
   bidRateAcre Decimal?
   bidPrice    Decimal?
-
-  bid     Bid        @relation(fields: [bidId], references: [id], onDelete: Cascade)
-  product JobProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bid         Bid        @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  product     JobProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([bidId])
 }
 
 model BidApplicationFee {
-  id        Int     @id @default(autoincrement())
-  bidId     Int
-  feeId     Int
-  bidAmount Decimal
-
+  id             Int               @id @default(autoincrement())
+  bidId          Int
+  feeId          Int
+  bidAmount      Decimal
   bid            Bid               @relation(fields: [bidId], references: [id], onDelete: Cascade)
   applicationFee JobApplicationFee @relation(fields: [feeId], references: [id], onDelete: Cascade)
 
@@ -312,14 +295,14 @@ model FieldJob {
 model JobProduct {
   id          Int          @id @default(autoincrement())
   jobId       Int
-  name        String?
-  productId   Int?
-  perAcreRate Decimal?
   totalAcres  Decimal
   price       Decimal
+  productId   Int?
+  name        String?
+  perAcreRate Decimal?
+  BidProduct  BidProduct[]
   job         Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   product     Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  BidProduct  BidProduct[]
 
   @@index([jobId])
 }
@@ -330,8 +313,8 @@ model JobApplicationFee {
   description       String
   rateUoM           Decimal
   perAcre           Boolean
-  job               Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
   BidApplicationFee BidApplicationFee[]
+  job               Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
 }
@@ -398,16 +381,16 @@ model Product {
   createdAt                   DateTime        @default(now())
   updatedAt                   DateTime        @updatedAt
   createdById                 Int
-  craetedBy                   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
   JobProduct                  JobProduct[]
+  craetedBy                   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
 }
 
 model State {
   id       Int      @id @default(autoincrement())
   name     String   @unique
   counties County[]
-  User     User[]
   Farm     Farm[]
+  User     User[]
 }
 
 model County {
@@ -430,19 +413,17 @@ model Township {
 }
 
 model Notification {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  type   NotificationType
-  isRead Boolean          @default(false)
-
-  // Nullable foreign keys for referencing related entities
-  jobId Int? @unique // Only set if related to a job
-  job   Job? @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
+  id               Int               @id @default(autoincrement())
+  userId           Int
+  type             NotificationType
+  isRead           Boolean           @default(false)
+  jobId            Int?              @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  inviteId         Int?
+  ApplicatorGrower ApplicatorGrower? @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  job              Job?              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DeviceToken {
@@ -458,68 +439,63 @@ model ForecastCity {
   id        Int      @id @default(autoincrement())
   name      String
   userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model JobActivity {
   id            Int       @id @default(autoincrement())
-  jobId         Int // Link to the Job
-  changedById   Int // User who changed the status (Applicator, Pilot, or Grower)
-  changedByRole UserRole // Enum: APPLICATOR, GROWER, PILOT
+  jobId         Int
+  changedById   Int
+  changedByRole UserRole
   oldStatus     JobStatus
   newStatus     JobStatus
-  reason        String? // Optional: Store rejection reasons if applicable
+  reason        String?
   createdAt     DateTime  @default(now())
-
-  job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  changedBy User @relation(fields: [changedById], references: [id])
+  changedBy     User      @relation(fields: [changedById], references: [id])
+  job           Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model ApplicatorUser {
-  id           Int      @id @default(autoincrement())
+  id           Int                        @id @default(autoincrement())
   applicatorId Int
   userId       Int
-  createdAt    DateTime @default(now())
-  inviteToken  String?  @unique
+  createdAt    DateTime                   @default(now())
+  inviteToken  String?                    @unique
+  applicator   User                       @relation("ApplicatorToUsers", fields: [applicatorId], references: [id], onDelete: Cascade)
+  user         User                       @relation("UserToApplicators", fields: [userId], references: [id], onDelete: Cascade)
+  permissions  ApplicatorUserPermission[]
 
-  applicator  User                       @relation("ApplicatorToUsers", fields: [applicatorId], references: [id], onDelete: Cascade)
-  user        User                       @relation("UserToApplicators", fields: [userId], references: [id], onDelete: Cascade)
-  permissions ApplicatorUserPermission[]
-
-  @@unique([applicatorId, userId]) // Prevent duplicate entries
+  @@unique([applicatorId, userId])
 }
 
 model Permission {
-  id   Int            @id @default(autoincrement())
-  name PermissionType
-
+  id                        Int                        @id @default(autoincrement())
+  name                      PermissionType
   applicatorUserPermissions ApplicatorUserPermission[]
 }
 
 model ApplicatorUserPermission {
-  id           Int     @id @default(autoincrement())
+  id           Int            @id @default(autoincrement())
   userId       Int
   permissionId Int
-  canView      Boolean @default(true)
-  canEdit      Boolean @default(false)
+  canView      Boolean        @default(true)
+  canEdit      Boolean        @default(false)
+  permission   Permission     @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user         ApplicatorUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user       ApplicatorUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission Permission     @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, permissionId]) // Ensure a user has unique permissions per applicator
+  @@unique([userId, permissionId])
 }
 
 model SupportTicketActivity {
-  id          Int          @id @default(autoincrement())
-  ticketId    Int // Link to the support ticket
-  updatedById Int? // User who changed the status (Applicator, Pilot, or Grower)
-  oldStatus   TicketStatus
-  newStatus   TicketStatus
-  reason      String? // Optional: Store rejection reasons if applicable
-  createdAt   DateTime     @default(now())
-
+  id            Int           @id @default(autoincrement())
+  updatedById   Int?
+  oldStatus     TicketStatus
+  newStatus     TicketStatus
+  reason        String?
+  createdAt     DateTime      @default(now())
+  ticketId      Int
   supportTicket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   updatedBy     User?         @relation(fields: [updatedById], references: [id])
 }
@@ -530,41 +506,33 @@ model Invoice {
   totalAmount Decimal
   issuedAt    DateTime  @default(now())
   paidAt      DateTime?
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
 
-  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 enum PermissionType {
-  // Dashboard
   DASHBOARD
-
-  // Jobs
   JOBS
   MY_JOBS
   BIDDING_JOBS
   PENDING_APPROVALS
   REJECTED_JOBS
-
-  // Growers
   GROWERS
   MY_GROWERS
   PENDING_INVITES
-
-  // Equipment
   EQUIPMENT
   WARRANTY_REGISTRATION
   SUPPORT_TICKETS
   FORUM
-
-  // Reports
   REPORTS
-
-  // Pilots/Operators
   PILOTS_OPERATORS
   MY_PILOTS_OPERATORS
   PILOT_PENDING_INVITES
-
-  // Settings
   SETTINGS
   PRODUCTS
   INTEGRATIONS
@@ -572,7 +540,6 @@ enum PermissionType {
 }
 
 enum NotificationType {
-  JOB_REQUEST
   JOB_ASSIGNED
   JOB_COMPLETED
   JOB_REJECTED
@@ -584,6 +551,8 @@ enum NotificationType {
   FIELD_UPDATED
   SYSTEM_ALERT
   ACCEPT_INVITE
+  JOB_REQUEST
+  REJECT_INVITE
 }
 
 enum ProfileStatus {
@@ -673,14 +642,14 @@ enum InviteStatus {
 }
 
 enum ViewTable {
-  APPLICATOR
   GROWER
   JOB
-  PENDING_JOB
-  REJECTED_JOB
+  APPLICATOR
   PRODUCT
   WORKER
   USER_ADMIN
+  PENDING_JOB
+  REJECTED_JOB
 }
 
 enum JobType {
