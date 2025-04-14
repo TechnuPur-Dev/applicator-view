@@ -230,5 +230,5 @@ export default {
 	headerStatsSchema,
 	placeBidJobSchema,
 	updateBidStatusSchema,
-	acceptJobSchema
+	acceptJobSchema,
 };

@@ -183,10 +183,12 @@ const getWeather = catchAsync(async (req: Request, res: Response) => {
 });
 const acceptOrRejectInviteThroughEmail = catchAsync(
 	async (req: Request, res: Response) => {
-		const { token, status } = req.body;
+		const { token, status, canManageFarms, farmPermissions } = req.body;
 		const result = await userService.acceptOrRejectInviteThroughEmail(
 			token,
 			status,
+			canManageFarms,
+			farmPermissions,
 		);
 		res.status(httpStatus.OK).json(result);
 	},
