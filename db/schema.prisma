@@ -125,6 +125,7 @@ model ApplicatorGrower {
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   pendingFarmPermission PendingFarmPermission[]
+  Notification          Notification[]
 
   @@unique([applicatorId, growerId])
 }
@@ -430,9 +431,11 @@ model Township {
 }
 
 model Notification {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       Int               @id @default(autoincrement())
+  userId   Int
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviteId Int?
+  invite   ApplicatorGrower? @relation(fields: [inviteId], references: [id], onDelete: Cascade)
 
   type   NotificationType
   isRead Boolean          @default(false)
@@ -580,10 +583,11 @@ enum NotificationType {
   BID_ACCEPTED
   PAYMENT_RECEIVED
   INVOICE_GENERATED
-  ACCOUNT_INVITATION
   FIELD_UPDATED
   SYSTEM_ALERT
+  ACCOUNT_INVITATION
   ACCEPT_INVITE
+  REJECT_INVITE
 }
 
 enum ProfileStatus {

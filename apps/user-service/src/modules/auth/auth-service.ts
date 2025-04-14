@@ -343,7 +343,15 @@ const resendOTP = async (email: string) => {
 };
 
 // to update user profile
-const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
+const acceptInviteAndSignUp = async (
+	data: signUpUserSchema,
+	canManageFarms: boolean,
+	farmPermissions: {
+		farmId: number;
+		canView: boolean;
+		canEdit: boolean;
+	}[],
+) => {
 	let { password } = data;
 	const { token, firstName, lastName } = data;
 
@@ -378,7 +386,8 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			},
 			data: {
 				inviteStatus: 'ACCEPTED',
-				canManageFarms: true,
+				canManageFarms:
+					canManageFarms !== undefined ? canManageFarms : true,
 				grower: {
 					update: {
 						...(() => {
@@ -396,7 +405,34 @@ const acceptInviteAndSignUp = async (data: signUpUserSchema) => {
 			select: {
 				id: true,
 				grower: { include: { state: { select: { name: true } } } },
+				applicator: {
+					select: {
+						id: true,
+					},
+				},
+				pendingFarmPermission: true,
 			},
+		});
+		// Ensure `pendingFarmPermission` is an array before mapping over it
+		if (
+			Array.isArray(invite.pendingFarmPermission) &&
+			invite.pendingFarmPermission.length > 0
+		) {
+			await prisma.farmPermission.createMany({
+				data: farmPermissions
+					.filter((farm) => farm.canView) // filter where canView is true
+					.map((perm) => ({
+						farmId: perm.farmId,
+						applicatorId: invite.applicator?.id ?? 0, // ✅ Use safe optional chaining with a default value
+						canView: perm.canView,
+						canEdit: perm.canEdit,
+					})),
+			});
+		}
+
+		// Delete pending permissions only if `invite.id` is valid
+		await prisma.pendingFarmPermission.deleteMany({
+			where: { inviteId: invite.id },
 		});
 		email = invite.grower.email;
 		await prisma.applicatorGrower.update({

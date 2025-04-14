@@ -31,18 +31,21 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 	});
 	res.status(httpStatus.OK).json(result);
 });
-const resendOTP = catchAsync(
-	async (req: Request, res: Response) => {
-		const { email } = req.body; // Destructure body
-		const result = await authService.resendOTP(email);
-		res.status(httpStatus.OK).json(result);
-	},
-);
+const resendOTP = catchAsync(async (req: Request, res: Response) => {
+	const { email } = req.body; // Destructure body
+	const result = await authService.resendOTP(email);
+	res.status(httpStatus.OK).json(result);
+});
 // Controller to update user profile
 const acceptInviteAndSignUp = catchAsync(
 	async (req: Request, res: Response) => {
 		const data = req.body;
-		const result = await authService.acceptInviteAndSignUp(data);
+		const { canManageFarms, farmPermissions } = data;
+		const result = await authService.acceptInviteAndSignUp(
+			data,
+			canManageFarms,
+			farmPermissions,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );

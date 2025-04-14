@@ -87,6 +87,17 @@ const acceptInviteAndSignUp: Schema = Joi.object({
 		// autoAcceptJobs: Joi.boolean().default(false).optional(),
 		// canViewPricingDetails: Joi.boolean().default(false).optional(),
 		// code: Joi.string().optional(),
+		// To Mange Farm Permissions
+		canManageFarms: Joi.boolean().optional(), // Optional, only sent when grower responds
+		farmPermissions: Joi.array()
+			.items(
+				Joi.object({
+					farmId: Joi.number().required(),
+					canView: Joi.boolean().required(),
+					canEdit: Joi.boolean().required(),
+				}),
+			)
+			.min(0), // Allows empty array
 	}).required(),
 });
 
