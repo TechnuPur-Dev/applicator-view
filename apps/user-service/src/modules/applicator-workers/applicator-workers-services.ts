@@ -396,7 +396,7 @@ const sendInviteToWorker = async (
 		await prisma.notification.create({
 			data: {
 				userId: workerId, // Notify the appropriate user
-				type:'ACCEPT_INVITE'
+				type:'ACCOUNT_INVITATION'
 				
 					
 			},
@@ -408,44 +408,57 @@ const sendInviteToWorker = async (
 };
 const updateInviteStatus = async (workerId: number, data: UpdateStatus) => {
 	const { applicatorId, status } = data;
-	await prisma.$transaction(async (prisma) => {
+	
 	if (status === 'ACCEPTED') {
+		await prisma.$transaction(async (prisma) => {
 		await prisma.applicatorWorker.update({
 			where: {
 				applicatorId_workerId: { applicatorId, workerId },
+				inviteStatus:'PENDING'
 			},
 
 			data: {
 				inviteStatus: 'ACCEPTED',
 			},
 		});
+		await prisma.notification.create({
+			data: {
+				userId: applicatorId, // Notify the appropriate user
+				type: 'ACCEPT_INVITE'
+					
+			},
+		});
+	});
 		return {
 			message: 'Invite accepted successfully.',
 		};
 	}
 	if (status === 'REJECTED') {
+		await prisma.$transaction(async (prisma) => {
 		await prisma.applicatorWorker.update({
 			where: {
 				applicatorId_workerId: { applicatorId, workerId },
+				inviteStatus:'PENDING'
 			},
 
 			data: {
 				inviteStatus: 'REJECTED',
 			},
 		});
-		
+		await prisma.notification.create({
+			data: {
+				userId: applicatorId, // Notify the appropriate user
+				type: 'REJECT_INVITE'
+					
+			},
+		});
+	});
 		return {
 			message: 'Invite rejected successfully.',
 		};
 	}
-	await prisma.notification.create({
-		data: {
-			userId: applicatorId, // Notify the appropriate user
-			type:data.status === 'ACCEPTED' ? 'ACCEPT_INVITE':'REJECT_INVITE'
-				
-		},
-	});
-	});
+
+
 };
 const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)

@@ -1,5 +1,5 @@
 // import httpStatus from 'http-status';
-import { Prisma } from '@prisma/client';
+// import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
