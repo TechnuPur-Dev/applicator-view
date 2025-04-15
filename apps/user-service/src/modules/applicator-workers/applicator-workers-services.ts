@@ -393,6 +393,14 @@ const sendInviteToWorker = async (
 			text: 'Request Invitation',
 			html,
 		});
+		await prisma.notification.create({
+			data: {
+				userId: workerId, // Notify the appropriate user
+				type:'ACCOUNT_INVITATION'
+				
+					
+			},
+		});
 		return {
 			message: 'Invite sent successfully.',
 		};
@@ -400,35 +408,57 @@ const sendInviteToWorker = async (
 };
 const updateInviteStatus = async (workerId: number, data: UpdateStatus) => {
 	const { applicatorId, status } = data;
-
+	
 	if (status === 'ACCEPTED') {
+		await prisma.$transaction(async (prisma) => {
 		await prisma.applicatorWorker.update({
 			where: {
 				applicatorId_workerId: { applicatorId, workerId },
+				inviteStatus:'PENDING'
 			},
 
 			data: {
 				inviteStatus: 'ACCEPTED',
 			},
 		});
+		await prisma.notification.create({
+			data: {
+				userId: applicatorId, // Notify the appropriate user
+				type: 'ACCEPT_INVITE'
+					
+			},
+		});
+	});
 		return {
 			message: 'Invite accepted successfully.',
 		};
 	}
 	if (status === 'REJECTED') {
+		await prisma.$transaction(async (prisma) => {
 		await prisma.applicatorWorker.update({
 			where: {
 				applicatorId_workerId: { applicatorId, workerId },
+				inviteStatus:'PENDING'
 			},
 
 			data: {
 				inviteStatus: 'REJECTED',
 			},
 		});
+		await prisma.notification.create({
+			data: {
+				userId: applicatorId, // Notify the appropriate user
+				type: 'REJECT_INVITE'
+					
+			},
+		});
+	});
 		return {
 			message: 'Invite rejected successfully.',
 		};
 	}
+
+
 };
 const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
@@ -661,7 +691,68 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 		totalResults,
 	};
 };
+const getAllApplicatorsByPilot = async (
+	workerId: number,
+	options: PaginateOptions,
+) => {
+	// Set pagination parameters
+	const limit =
+		options.limit && parseInt(options.limit.toString(), 10) > 0
+			? parseInt(options.limit.toString(), 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page.toString(), 10) > 0
+			? parseInt(options.page.toString(), 10)
+			: 1;
+	const skip = (page - 1) * limit;
+	const applicators = await prisma.applicatorWorker.findMany({
+		where: {
+			workerId,
+			workerType: 'PILOT',
+			isActive: true,
+		},
+		include: {
+			applicator: {
+				select: {
+					id: true,
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+				},
+			},
+		},
+		omit: {
+			inviteToken: true,
+		},
+		skip,
+		take: limit,
+		orderBy: { id: 'desc' },
+	});
+	const formattedApplicators = applicators.map((entry) => ({
+		...entry.applicator,
+	}));
 
+	// Total workers count
+	const totalResults = await prisma.applicatorWorker.count({
+		where: {
+			workerId,
+			workerType: 'PILOT',
+			isActive: true,
+		},
+	});
+	const totalPages = Math.ceil(totalResults / limit);
+
+	// Return paginated results
+	return {
+		result: formattedApplicators,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+};
 export default {
 	createWorker,
 	getAllWorkers,
@@ -673,4 +764,5 @@ export default {
 	sendInviteToWorker,
 	getAllApplicators,
 	getPendingInvites,
+	getAllApplicatorsByPilot,
 };

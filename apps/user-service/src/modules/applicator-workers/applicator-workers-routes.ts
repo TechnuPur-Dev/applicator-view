@@ -72,4 +72,9 @@ router
 	.get(
 		// verifyToken, 
 		applicatorWorker.getPendingInvites);
+		router
+	.route('/get/all-applicators/by-pilot')
+	.get(
+		// verifyToken, 
+		applicatorWorker.getAllApplicatorsByPilot);
 export default router;
