@@ -218,6 +218,14 @@ const acceptJobSchema = Joi.object({
 	}).required(),
 	body: Joi.object({
 		status: Joi.string().valid('ACCEPT', 'REJECT').required(),
+		rejectionReason: Joi.string()
+			.min(1)
+			.max(300)
+			.when('status', {
+				is: Joi.valid('REJECT'),
+				then: Joi.required(),
+				otherwise: Joi.forbidden(),
+			}),
 	}).required(),
 });
 

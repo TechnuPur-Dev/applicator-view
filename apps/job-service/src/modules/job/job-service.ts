@@ -3324,7 +3324,7 @@ const getJobInvoice = async (user: User, jobId: number) => {
 	const { id, role } = user;
 	const whereCondition: Prisma.JobWhereInput = {
 		id: jobId,
-		status: { in: ['INVOICED', 'PAID'] as JobStatus[] },
+		// status: { in: ['INVOICED', 'PAID'] as JobStatus[] },
 	};
 
 	if (role === 'APPLICATOR') {
@@ -3562,45 +3562,83 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 };
 const acceptJobThroughEmail = async (
 	jobId: number,
-	status: 'ACCEPT' | 'REJECT',
+	data: { status: 'ACCEPT' | 'REJECT'; rejectionReason: string },
 ) => {
+	const { status, rejectionReason } = data;
 	const whereCondition: {
 		id: number;
 		status: JobStatus;
 	} = { id: jobId, status: 'PENDING' };
 	if (status === 'ACCEPT') {
-		const job = await prisma.job.update({
-			where: whereCondition,
-			data: {
-				status: 'READY_TO_SPRAY',
-			},
-			select: { id: true },
+		await prisma.$transaction(async (tx) => {
+			const job = await tx.job.update({
+				where: whereCondition,
+				data: {
+					status: 'READY_TO_SPRAY',
+				},
+				select: {
+					id: true,
+					applicatorId: true,
+					growerId: true,
+					source: true,
+				},
+			});
+			if (!job) {
+				throw new ApiError(
+					httpStatus.BAD_REQUEST,
+					'Invalid data or request has already been accepted or rejected.',
+				);
+			}
+			if (job.growerId) {
+				await tx.jobActivity.create({
+					data: {
+						jobId: job.id,
+						changedById: job.growerId, //Connect to an existing user
+						changedByRole: 'GROWER',
+						oldStatus: whereCondition.status,
+						newStatus: 'READY_TO_SPRAY',
+					},
+				});
+			}
 		});
-		if (!job) {
-			throw new ApiError(
-				httpStatus.BAD_REQUEST,
-				'Invalid data or request has already been accepted or rejected.',
-			);
-		}
-
 		return {
 			message: 'Job accepted successfully.',
 		};
 	}
 	if (status === 'REJECT') {
-		const job = await prisma.job.update({
-			where: whereCondition,
-			data: {
-				status: 'REJECTED',
-			},
-			select: { id: true },
+		await prisma.$transaction(async (tx) => {
+			const job = await tx.job.update({
+				where: whereCondition,
+				data: {
+					status: 'REJECTED',
+				},
+				select: {
+					id: true,
+					applicatorId: true,
+					growerId: true,
+					source: true,
+				},
+			});
+			if (!job) {
+				throw new ApiError(
+					httpStatus.BAD_REQUEST,
+					'Invalid data or request has already been accepted or rejected.',
+				);
+			}
+
+			if (job.growerId) {
+				await tx.jobActivity.create({
+					data: {
+						jobId: job.id,
+						changedById: job.growerId, //Connect to an existing user
+						changedByRole: 'GROWER',
+						oldStatus: whereCondition.status,
+						newStatus: 'REJECTED',
+						reason: rejectionReason,
+					},
+				});
+			}
 		});
-		if (!job) {
-			throw new ApiError(
-				httpStatus.BAD_REQUEST,
-				'Invalid data or request has already been accepted or rejected.',
-			);
-		}
 
 		return {
 			message: 'Job rejected successfully.',
