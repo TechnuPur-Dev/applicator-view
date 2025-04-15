@@ -651,28 +651,39 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	const applicatorId = isGrower || isWorker ? targetUserId : userId;
 	const growerId = isGrower ? userId : targetUserId;
 
+
 	// Handle Worker Invitations
 	if (isWorker) {
-		await prisma.applicatorWorker.update({
+		await prisma.$transaction(async (prisma) => {
+	await prisma.applicatorWorker.update({
 			where: {
 				applicatorId_workerId: { applicatorId, workerId: userId },
+				inviteStatus:'PENDING'
 			},
 			data: { inviteStatus: status },
 		});
-
+		await prisma.notification.create({
+			data: {
+				userId: targetUserId, // Notify the appropriate user
+				type:status === 'ACCEPTED'? 'ACCEPT_INVITE': 'REJECT_INVITE',
+				
+			},
+		});
+		})
 		return {
 			message: `Worker invite ${status.toLowerCase()} successfully.`,
 		};
 	}
-
 	// Handle Applicator & Grower Invitations
 	if (isApplicator || isGrower) {
+		
 		if (status === 'ACCEPTED') {
+			// Update the inviteStatus and (for growers) `canManageFarms`
 			await prisma.$transaction(async (prisma) => {
-				// Update the inviteStatus and (for growers) `canManageFarms`
 				const invite = await prisma.applicatorGrower.update({
 					where: {
 						applicatorId_growerId: { applicatorId, growerId },
+						inviteStatus:'PENDING'
 					},
 					data: {
 						inviteStatus: status,
@@ -714,21 +725,40 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 						where: { inviteId: invite.id },
 					});
 				}
-			});
-
+				await prisma.notification.create({
+					data: {
+						userId: targetUserId, // Notify the appropriate user
+						type: 'ACCEPT_INVITE',
+						
+					},
+				});
+			});	
 			return { message: 'Invite accepted successfully.' };
+	
 		}
-
 		if (status === 'REJECTED') {
-			await prisma.applicatorGrower.update({
+			await prisma.$transaction(async (prisma) => {
+			 await prisma.applicatorGrower.update({
 				where: {
 					applicatorId_growerId: { applicatorId, growerId },
+					inviteStatus:'PENDING'
 				},
 				data: { inviteStatus: 'REJECTED' },
 			});
+			await prisma.notification.create({
+				data: {
+					userId: targetUserId, // Notify the appropriate user
+					type: 'REJECT_INVITE',
+					
+				},
+			});
+		});
 			return { message: 'Invite rejected successfully.' };
 		}
+
 	}
+	
+
 };
 
 const deleteGrower = async (growerId: number, applicatorId: number) => {
@@ -1407,6 +1437,13 @@ const sendInviteToApplicator = async (
 				});
 			}
 		}
+		await tx.notification.create({
+			data: {
+				userId: applicator.id,
+				type: 'ACCOUNT_INVITATION',
+				inviteId:invite?.id
+			},
+		});
 	});
 
 	// Send email invitation
@@ -1575,6 +1612,14 @@ const sendInviteToGrower = async (
 				});
 			}
 		}
+		await tx.notification.create({
+			data: {
+				userId: grower.id, // Notify the appropriate user
+				inviteId:invite.id,
+				type:'ACCOUNT_INVITATION'
+					
+			},
+		});
 	});
 
 	const inviteLink = `https://grower-ac.netlify.app/#/invitationView?token=${token}`;
@@ -2346,7 +2391,7 @@ const acceptOrRejectInviteThroughEmail = async (
 			'Invalid or expired token.',
 		);
 	}
-	console.log(role, 'role');
+
 	if (role === 'GROWER') {
 		if (inviteStatus === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2409,6 +2454,13 @@ const acceptOrRejectInviteThroughEmail = async (
 					where: { id: invite.id },
 					data: { inviteToken: null, expiresAt: null },
 				});
+				await prisma.notification.create({
+					data: {
+						userId: invite.applicator.id, // Notify the appropriate user
+						type: 'ACCEPT_INVITE'
+							
+					},
+				});
 			});
 		} else if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2423,20 +2475,41 @@ const acceptOrRejectInviteThroughEmail = async (
 					data: {
 						inviteStatus,
 					},
+					select: {
+						id: true,
+						applicator: {
+							select: { id: true },
+						},
+						
+					},
 				});
 				// Delete pending permissions only if `invite.id` is valid
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
 				});
+					// Ensure `applicator` exists
+					if (!invite.applicator?.id) {
+						throw new Error('Applicator ID is missing');
+					}
+				await prisma.notification.create({
+					data: {
+						userId: invite?.applicator?.id, // Notify the appropriate user
+						type: 'REJECT_INVITE',
+						
+					},
+				});
 				await prisma.applicatorGrower.update({
 					where: { id: invite.id },
 					data: { inviteToken: null, expiresAt: null },
 				});
+			
 			});
 		}
 	} else if (role === 'APPLICATOR') {
 		if (inviteStatus === 'ACCEPTED') {
 			await prisma.$transaction(async (prisma) => {
+				
+				
 				const invite = await prisma.applicatorGrower.update({
 					where: {
 						inviteToken: token,
@@ -2453,7 +2526,17 @@ const acceptOrRejectInviteThroughEmail = async (
 								state: { select: { name: true } },
 							},
 						},
+						grower: {
+							select: { id: true },
+						},
 						pendingFarmPermission: true,
+					},
+				});
+				await prisma.notification.create({
+					data: {
+						userId: invite?.grower?.id, // Notify the appropriate user
+						type: 'ACCEPT_INVITE',
+						
 					},
 				});
 				// Delete pending permissions only if `invite.id` is valid
@@ -2497,10 +2580,24 @@ const acceptOrRejectInviteThroughEmail = async (
 					data: {
 						inviteStatus,
 					},
+					select: {
+						id: true,
+						grower: {
+							select: { id: true },
+						},
+						
+					},
 				});
 				// Delete pending permissions only if `invite.id` is valid
 				await prisma.pendingFarmPermission.deleteMany({
 					where: { inviteId: invite.id },
+				});
+				await prisma.notification.create({
+					data: {
+						userId: invite?.grower?.id, // Notify the appropriate user
+						type: 'REJECT_INVITE',
+						
+					},
 				});
 				await prisma.applicatorGrower.update({
 					where: { id: invite.id },
@@ -2539,6 +2636,13 @@ const acceptOrRejectInviteThroughEmail = async (
 					where: { id: invite.id },
 					data: { inviteToken: null, expiresAt: null },
 				});
+				await prisma.notification.create({
+					data: {
+						userId: invite.applicator.id, // Notify the appropriate user
+						type: 'ACCEPT_INVITE'
+							
+					},
+				});
 			});
 		} else if (inviteStatus === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
@@ -2555,13 +2659,26 @@ const acceptOrRejectInviteThroughEmail = async (
 					},
 					select: {
 						id: true,
+						applicator:{
+							select:{
+								id:true
+							}
+						}
 					},
 				});
 				await prisma.applicatorWorker.update({
 					where: { id: invite.id },
 					data: { inviteToken: null, expiresAt: null },
 				});
+				await prisma.notification.create({
+					data: {
+						userId: invite?.applicator?.id, // Notify the appropriate user
+						type: 'REJECT_INVITE',
+						
+					},
+				});
 			});
+			
 		}
 	}
 

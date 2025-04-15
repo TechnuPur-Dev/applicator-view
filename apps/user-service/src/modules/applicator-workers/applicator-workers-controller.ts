@@ -102,6 +102,15 @@ const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(result);
 });
+const getAllApplicatorsByPilot = catchAsync(async (req: Request, res: Response) => {
+	const workerId = req.payload.id;
+	const options = pick(req.query, ['limit', 'page']);
+	const applicators = await applicatorWorkersServices.getAllApplicatorsByPilot(
+		workerId,
+		options,
+	);
+	res.status(httpStatus.OK).json(applicators.result);
+});
 export default {
 	createWorker,
 	getAllWorkers,
@@ -113,4 +122,5 @@ export default {
 	searchWorkerByEmail,
 	getAllApplicators,
 	getPendingInvites,
+	getAllApplicatorsByPilot
 };

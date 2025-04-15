@@ -90,7 +90,6 @@ const createJob = async (user: User, data: CreateJob) => {
 				'You do not have permission to access these fields.',
 			);
 		}
-
 		const job = await prisma.job.create({
 			data: {
 				title,
@@ -131,12 +130,12 @@ const createJob = async (user: User, data: CreateJob) => {
 						}),
 					),
 				},
-				Notification: {
-					create: {
-						userId: growerId,
-						type: 'JOB_REQUEST',
-					},
-				},
+				// Notification: {
+				// 	create: {
+				// 		userId: growerId,
+				// 		type: 'JOB_REQUEST',
+				// 	},
+				// },
 			},
 			include: {
 				grower: {
@@ -198,7 +197,15 @@ const createJob = async (user: User, data: CreateJob) => {
 			text: 'Job Confirmation',
 			html,
 		});
+		await prisma.notification.create({
+			data: {
+				userId: growerId, // Notify the appropriate user
+				jobId: job.id,
+				type: 'JOB_REQUEST'
 
+
+			},
+		});
 		await sendPushNotifications({
 			userIds: growerId,
 			title: `Job Confirmation`,
@@ -272,105 +279,115 @@ const createJob = async (user: User, data: CreateJob) => {
 				'You do not have permission to access these fields.',
 			);
 		}
+		await prisma.$transaction(async (prisma) => {
+			const job = await prisma.job.create({
+				data: {
+					title,
+					type,
+					source: 'GROWER',
+					status: 'PENDING',
+					growerId: user.id,
+					applicatorId,
+					startDate,
+					endDate,
+					description,
+					farmId,
+					sensitiveAreas,
+					adjacentCrops,
+					specialInstructions,
+					attachments,
+					fields: {
+						create: fields.map(({ fieldId, actualAcres }) => ({
+							fieldId,
+							actualAcres,
+						})),
+					},
+					products: {
+						create: products.map(
+							({ productName, perAcreRate, totalAcres }) => ({
+								name: productName,
+								perAcreRate,
+								totalAcres,
+								price: (totalAcres ?? 0) * (perAcreRate ?? 0), // Handle possible undefined values
+							}),
+						),
+					},
+					applicationFees: {
+						create: applicationFees.map(
+							({ description, rateUoM, perAcre }) => ({
+								description,
+								rateUoM,
+								perAcre,
+							}),
+						),
+					},
+					// Notification: {
+					// 	create: {
+					// 		userId: applicatorId,
+					// 		type: 'JOB_REQUEST',
+					// 	},
+					// },
+				},
+				include: {
+					grower: {
+						select: {
+							firstName: true,
+							lastName: true,
+							fullName: true,
+							email: true,
+							phoneNumber: true,
+						},
+					},
+					fieldWorker: { select: { fullName: true } },
+					farm: {
+						select: {
+							name: true,
+							state: { select: { id: true, name: true } },
+							county: true,
+							township: true,
+							zipCode: true,
+						},
+					},
+					fields: {
+						select: {
+							actualAcres: true,
+							field: {
+								select: { name: true, acres: true, crop: true },
+							},
+						},
+					},
+					products: {
+						select: {
+							product: {
+								select: { productName: true, perAcreRate: true },
+							},
+							totalAcres: true,
+							price: true,
+							name: true,
+							perAcreRate: true,
+						},
+					},
+					applicationFees: true,
+				},
+			});
+			await prisma.notification.create({
+				data: {
+					userId: applicatorId, // Notify the appropriate user
+					jobId: job.id,
+					type: 'JOB_REQUEST'
 
-		const job = await prisma.job.create({
-			data: {
-				title,
-				type,
-				source: 'GROWER',
-				status: 'PENDING',
-				growerId: user.id,
-				applicatorId,
-				startDate,
-				endDate,
-				description,
-				farmId,
-				sensitiveAreas,
-				adjacentCrops,
-				specialInstructions,
-				attachments,
-				fields: {
-					create: fields.map(({ fieldId, actualAcres }) => ({
-						fieldId,
-						actualAcres,
-					})),
+
 				},
-				products: {
-					create: products.map(
-						({ productName, perAcreRate, totalAcres }) => ({
-							name: productName,
-							perAcreRate,
-							totalAcres,
-							price: (totalAcres ?? 0) * (perAcreRate ?? 0), // Handle possible undefined values
-						}),
-					),
-				},
-				applicationFees: {
-					create: applicationFees.map(
-						({ description, rateUoM, perAcre }) => ({
-							description,
-							rateUoM,
-							perAcre,
-						}),
-					),
-				},
-				Notification: {
-					create: {
-						userId: applicatorId,
-						type: 'JOB_REQUEST',
-					},
-				},
-			},
-			include: {
-				grower: {
-					select: {
-						firstName: true,
-						lastName: true,
-						fullName: true,
-						email: true,
-						phoneNumber: true,
-					},
-				},
-				fieldWorker: { select: { fullName: true } },
-				farm: {
-					select: {
-						name: true,
-						state: { select: { id: true, name: true } },
-						county: true,
-						township: true,
-						zipCode: true,
-					},
-				},
-				fields: {
-					select: {
-						actualAcres: true,
-						field: {
-							select: { name: true, acres: true, crop: true },
-						},
-					},
-				},
-				products: {
-					select: {
-						product: {
-							select: { productName: true, perAcreRate: true },
-						},
-						totalAcres: true,
-						price: true,
-						name: true,
-						perAcreRate: true,
-					},
-				},
-				applicationFees: true,
-			},
+			});
+			return job;
 		});
-
 		await sendPushNotifications({
 			userIds: applicatorId,
 			title: `Job Confirmation`,
 			message: `${user.firstName} ${user.lastName} added a job that needs your confirmation.`,
 			notificationType: 'JOB_CREATED',
 		});
-		return job;
+
 	}
 };
 
@@ -764,8 +781,10 @@ const updateJobByApplicator = async (
 		applicatorId?: number;
 		fieldWorkerId?: number;
 	} = { id: jobId };
+
 	if (user.role === 'APPLICATOR') {
 		whereCondition.applicatorId = user.id;
+
 	}
 	if (user.role === 'WORKER') {
 		whereCondition.fieldWorkerId = user.id;
@@ -829,12 +848,12 @@ const updateJobByApplicator = async (
 					...data,
 					status: 'ASSIGNED_TO_PILOT',
 					fieldWorkerId: fieldWorkerId,
-					Notification: {
-						create: {
-							userId: fieldWorkerId,
-							type: 'JOB_ASSIGNED',
-						},
-					},
+					// Notification: {
+					// 	create: {
+					// 		userId: fieldWorkerId,
+					// 		type: 'JOB_ASSIGNED',
+					// 	},
+					// },
 				},
 			});
 			await tx.jobActivity.create({
@@ -848,12 +867,20 @@ const updateJobByApplicator = async (
 					reason: null,
 				},
 			});
-			await sendPushNotifications({
-				userIds: fieldWorkerId,
-				title: `Job Confirmation`,
-				message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
-				notificationType: 'JOB_ASSIGNED',
+			await prisma.notification.create({
+				data: {
+					userId: fieldWorkerId, // Notify the appropriate user
+					jobId: job.id,
+					type: 'JOB_ASSIGNED'
+
+				},
 			});
+			// await sendPushNotifications({
+			// 	userIds: fieldWorkerId,
+			// 	title: `Job Confirmation`,
+			// 	message: `${user.firstName} ${user.lastName} assigned a job that needs your confirmation.`,
+			// 	notificationType: 'JOB_ASSIGNED',
+			// });
 		});
 	}
 	if (requestedStatus) {
@@ -900,6 +927,7 @@ const updateJobByApplicator = async (
 					reason: null,
 				},
 			});
+
 			if (requestedStatus === 'INVOICED') {
 				// Calculate total amount (sum of all applicationFees.rateUoM + products.price)
 				const afAmountTotal = job.applicationFees.reduce(
@@ -929,12 +957,37 @@ const updateJobByApplicator = async (
 					},
 				});
 			}
-		});
-	}
+			const notificationUserId =
+			user.role === 'APPLICATOR'
+				? job.growerId
+				: user.role === 'WORKER'
+					? job.applicatorId
+					: job.growerId;
 
-	return {
-		message: `Job updated successfully.`,
-	};
+		if (!notificationUserId) {
+			throw new ApiError(
+				httpStatus.CONFLICT,
+				'Invalid data provided',
+			);
+		}
+
+			await tx.notification.create({
+				data: {
+					userId:notificationUserId,
+					type:
+					requestedStatus === 'SPRAYED'
+					? 'JOB_COMPLETED'
+					: requestedStatus === 'INVOICED'
+						? 'INVOICE_GENERATED'
+						: 'PAYMENT_RECEIVED',
+			},
+			});
+	});
+}
+
+return {
+	message: `Job updated successfully.`,
+};
 };
 
 // const updateJobByApplicator = async (
@@ -2226,9 +2279,9 @@ const updatePendingJobStatus = async (
 					userId: notificationUserId, // Notify the appropriate user
 					type:
 						data.status === 'READY_TO_SPRAY'
-							? 'JOB_ASSIGNED'
+							? 'JOB_ACCEPTED'
 							: data.status === 'IN_PROGRESS'
-								? 'JOB_ASSIGNED'
+								? 'JOB_ACCEPTED'
 								: 'JOB_REJECTED',
 				},
 			});
@@ -2578,26 +2631,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-								totalExpenditures:
-									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-										0) +
-									(dashboardtotalProPrice._sum.price?.toNumber() ||
-										0),
-							}
+							totalExpenditures:
+								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+									0) +
+								(dashboardtotalProPrice._sum.price?.toNumber() ||
+									0),
+						}
 						: {
-								totalRevenue:
-									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-										0) +
-									(dashboardtotalProPrice._sum.price?.toNumber() ||
-										0),
-							}),
+							totalRevenue:
+								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+									0) +
+								(dashboardtotalProPrice._sum.price?.toNumber() ||
+									0),
+						}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-								totalApplicators:
-									dashboardtotalGrowersorApplicators,
-							}),
+							totalApplicators:
+								dashboardtotalGrowersorApplicators,
+						}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -2685,17 +2738,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-								totalAcres:
-									myJobsTotalAcres._sum.actualAcres || 0,
-							}),
+							totalAcres:
+								myJobsTotalAcres._sum.actualAcres || 0,
+						}),
 					...(role === 'APPLICATOR'
 						? {
-								totalGrowers:
-									myJobsTotalGrowersorApplicators.length,
-							}
+							totalGrowers:
+								myJobsTotalGrowersorApplicators.length,
+						}
 						: {
-								totalApplicatorJobs,
-							}),
+							totalApplicatorJobs,
+						}),
 				};
 				break;
 			}
@@ -2730,13 +2783,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-								totalGrowers:
-									openJobTotalGrowersorApplicators.length,
-							}
+							totalGrowers:
+								openJobTotalGrowersorApplicators.length,
+						}
 						: {
-								totalApplicators:
-									openJobTotalGrowersorApplicators.length,
-							}),
+							totalApplicators:
+								openJobTotalGrowersorApplicators.length,
+						}),
 				};
 				break;
 			}
@@ -2771,11 +2824,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+									createdAt: {
+										gte: startDate,
+										lte: endDate,
+									},
+								}
 								: {}),
 						},
 						_count: true,
@@ -2787,11 +2840,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-											createdAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -2827,11 +2880,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+									createdAt: {
+										gte: startDate,
+										lte: endDate,
+									},
+								}
 								: {}),
 						},
 						_count: true,
@@ -2843,11 +2896,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-											createdAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -2860,13 +2913,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-									totalGrowers:
-										pendingJobForMetotalGrowersorApplicator.length,
-								}
+								totalGrowers:
+									pendingJobForMetotalGrowersorApplicator.length,
+							}
 							: {
-									totalApplicators:
-										pendingJobForMetotalGrowersorApplicator.length,
-								}),
+								totalApplicators:
+									pendingJobForMetotalGrowersorApplicator.length,
+							}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -2874,13 +2927,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-									totalGrowers:
-										pendingJobForGrowertotalGrowersorApplicator.length,
-								}
+								totalGrowers:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							}
 							: {
-									totalApplicators:
-										pendingJobForGrowertotalGrowersorApplicator.length,
-								}),
+								totalApplicators:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							}),
 					},
 				};
 				break;
@@ -3197,14 +3250,14 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 					BidProduct: applicatorBid
 						? {
-								where: {
-									bidId: applicatorBid.id,
-								},
-								select: {
-									bidRateAcre: true,
-									bidPrice: true,
-								},
-							}
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidRateAcre: true,
+								bidPrice: true,
+							},
+						}
 						: false,
 				},
 			},
@@ -3212,13 +3265,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 				include: {
 					BidApplicationFee: applicatorBid
 						? {
-								where: {
-									bidId: applicatorBid.id,
-								},
-								select: {
-									bidAmount: true,
-								},
-							}
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidAmount: true,
+							},
+						}
 						: false,
 				},
 			},
@@ -4173,17 +4226,29 @@ const placeBidForJob = async (
 				})),
 			});
 		}
-
+		if (!jobExists?.growerId) {
+			throw new Error('growerId is missing');
+		}
+		await prisma.notification.create({
+			data: {
+				userId: jobExists?.growerId, // Notify the appropriate user
+				jobId: jobId,
+				type:'BID_PLACED'
+				
+					
+			},
+		});
 		return { newBid };
 	});
-
-	// Send push notification outside transaction
-	await sendPushNotifications({
-		userIds: jobExists.growerId ?? [],
-		title: `Place a bid for job`,
-		message: `${user.firstName} ${user.lastName} placed a bid for a job that needs your confirmation.`,
-		notificationType: 'BID_PLACED',
-	});
+   
+	
+	// // Send push notification outside transaction
+	// await sendPushNotifications({
+	// 	userIds: jobExists.growerId ?? [],
+	// 	title: `Place a bid for job`,
+	// 	message: `${user.firstName} ${user.lastName} placed a bid for a job that needs your confirmation.`,
+	// 	notificationType: 'BID_PLACED',
+	// });
 
 	return result.newBid;
 };
