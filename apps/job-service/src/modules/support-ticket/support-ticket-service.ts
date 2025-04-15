@@ -3,7 +3,12 @@ import { Prisma } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { Prisma, TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
+import {
+	Prisma,
+	TicketCategory,
+	TicketPriority,
+	TicketStatus,
+} from '@prisma/client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateSupportTicket } from './support-ticket-types';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
@@ -715,7 +720,7 @@ const resolveSupportTicket = async (
 		await tx.supportTicketActivity.create({
 			data: {
 				ticketId: ticket.id,
-				updatedById: user.id,// User who changed the status (Applicator, Pilot, or Grower) logged in user
+				updatedById: user.id, // User who changed the status (Applicator, Pilot, or Grower) logged in user
 				oldStatus: ticket?.status,
 				newStatus: data.status,
 				reason: null,
@@ -769,11 +774,28 @@ const getSupportTicketActivityById = async (
 ) => {
 	const supportActivities = await prisma.supportTicketActivity.findMany({
 		where: {
-			ticketId:ticketId
+			ticketId,
+		},
+		select: {
+			createdAt: true,
+			oldStatus: true,
+			newStatus: true,
+			reason: true,
+			updatedBy: {
+				select: {
+					fullName: true,
+				},
+			},
+		},
+		orderBy: {
+			id: 'desc',
 		},
 	});
 
-	return supportActivities;
+	return supportActivities.map(({ updatedBy, ...activity }) => ({
+		...activity,
+		updatedBy: updatedBy?.fullName || null,
+	}));
 };
 export default {
 	getAllTicketCategories,
@@ -789,5 +811,5 @@ export default {
 	deleteTicket,
 	resolveSupportTicket,
 	assignSupportTicket,
-	getSupportTicketActivityById
+	getSupportTicketActivityById,
 };

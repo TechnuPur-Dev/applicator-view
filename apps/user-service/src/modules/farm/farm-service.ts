@@ -191,7 +191,11 @@ const getFarmById = async (user: User, id: number) => {
 	const farm = await prisma.farm.findUnique({
 		where: whereCondition,
 		include: {
-			fields: true, // Include related fields in the result
+			fields: {
+				orderBy: {
+					id: 'desc',
+				},
+			}, // Include related fields in the result
 			permissions: {
 				include: {
 					applicator: {
