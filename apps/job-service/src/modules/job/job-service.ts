@@ -2279,9 +2279,9 @@ const updatePendingJobStatus = async (
 					userId: notificationUserId, // Notify the appropriate user
 					type:
 						data.status === 'READY_TO_SPRAY'
-							? 'JOB_ASSIGNED'
+							? 'JOB_ACCEPTED'
 							: data.status === 'IN_PROGRESS'
-								? 'JOB_ASSIGNED'
+								? 'JOB_ACCEPTED'
 								: 'JOB_REJECTED',
 				},
 			});
