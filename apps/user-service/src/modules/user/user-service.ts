@@ -2163,11 +2163,11 @@ const verifyInviteToken = async (token: string) => {
 				expiresAt: {
 					gte: new Date(), // Ensures the invite is still valid
 				},
-				worker: {
-					is: {
-						profileStatus: 'INCOMPLETE',
-					},
-				},
+				// worker: {
+				// 	is: {
+				// 		profileStatus: 'INCOMPLETE',
+				// 	},
+				// },
 			},
 			select: {
 				pilotPestLicenseNumber: true,
