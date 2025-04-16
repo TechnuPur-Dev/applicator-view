@@ -106,9 +106,10 @@ const getPilotSupportTicket = catchAsync(
 );
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const userId = +req.payload.id;
+		const user = req.user;
+		const applicatorId =+req.params.applicatorId
 		const result =
-			await supportTicketService.getAllJobsByApplicator(userId);
+			await supportTicketService.getAllJobsByApplicator(user,applicatorId);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
@@ -154,6 +155,32 @@ const getSupportTicketActivityById = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
+const getAllSupportTeamTicket = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, [
+		'limit',
+		'page',
+		'label',
+		'searchValue',
+	]);
+	const ticketData = await supportTicketService.getAllSupportTeamTicket(
+		options,
+	);
+	res.status(httpStatus.OK).json(ticketData);
+});
+const updateBySupportTeam = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const Id = +req.params.ticketId;
+	const data = req.body;
+	const ticketData = await supportTicketService.updateBySupportTeam(
+		user,
+		Id,
+		data,
+	);
+	res.status(httpStatus.OK).json({
+		message: 'support ticket updated successfully',
+		result: ticketData,
+	});
+});
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -168,5 +195,7 @@ export default {
 	deleteTicket,
 	resolveSupportTicket,
 	// assignSupportTicket,
-	getSupportTicketActivityById
+	getSupportTicketActivityById,
+	getAllSupportTeamTicket,
+	updateBySupportTeam
 };

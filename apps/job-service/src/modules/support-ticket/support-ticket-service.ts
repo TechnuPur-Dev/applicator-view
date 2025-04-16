@@ -12,7 +12,6 @@ import {
 import ApiError from '../../../../../shared/utils/api-error';
 import { CreateSupportTicket } from './support-ticket-types';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
-
 const getAllTicketCategories = async () => {
 	const ticketCategoryList = Object.values(TicketCategory).map(
 		(category, index) => ({
@@ -57,7 +56,7 @@ const createSupportTicket = async (
 
 		const assigneeRole = assigneeUser?.role;
 		const isValid =
-			(userRole === 'GROWER' && assigneeRole === 'APPLICATOR') || 
+			(userRole === 'GROWER' && assigneeRole === 'APPLICATOR') ||
 			(userRole === 'WORKER' && assigneeRole === 'APPLICATOR'); // grower and worker can create ticket for applicator 
 
 		if (!isValid) {
@@ -67,7 +66,7 @@ const createSupportTicket = async (
 	if (!data.assigneeId) {
 		const isValid =
 			(!data.assigneeId && userRole === 'APPLICATOR') ||
-			userRole === 'GROWER' || userRole === 'WORKER'  ; // (appkicator , grower,pilot can create ticket for support team)
+			userRole === 'GROWER' || userRole === 'WORKER'; // (appkicator , grower,pilot can create ticket for support team)
 		if (!isValid) {
 			throw new Error('You are not authorized to create this ticket.');
 		}
@@ -282,68 +281,55 @@ const updateSupportTicket = async (
 		// assigneeId?: number;
 	},
 ) => {
-	// const userRole = user?.role;
 
-	// if (data.assigneeId) {
-	// 	const assigneeUser = await prisma.user.findUnique({
-	// 		where: { id: data.assigneeId },
-	// 		select: { role: true },
-	// 	});
-
-	// 	const assigneeRole = assigneeUser?.role;
-	// 	const isValid =
-	// 		(userRole === 'APPLICATOR' && assigneeRole === 'GROWER') ||
-	// 		(userRole === 'WORKER' && assigneeRole === 'APPLICATOR');
-
-	// 	if (!isValid) {
-	// 		throw new Error('You are not authorized to create this ticket.');
-	// 	}
-	// }
-	// if (!data.assigneeId) {
-	// 	const isValid =
-	// 		(!data.assigneeId && userRole === 'APPLICATOR') ||
-	// 		userRole === 'GROWER';
-	// 	if (!isValid) {
-	// 		throw new Error('You are not authorized to create this ticket.');
-	// 	}
-	// }
 	const ticket = await prisma.supportTicket.findUnique({
 		where: { id: ticketId },
-		select: { status: true, createdById:true,assigneeId:true },
-	  });
-	
-	  if (!ticket) {
+		select: { id: true, status: true, createdById: true, assigneeId: true },
+	});
+
+	if (!ticket) {
 		throw new Error("Ticket not found.");
-	  }
+	}
 	const currentStatus = ticket.status;
 
 	// Define allowed status transitions
 	const isValidTransition =
-	  (data.status === 'IN_PROGRESS' && currentStatus === 'OPEN') ||
-	  (data.status === 'CLOSED' && (currentStatus === 'OPEN' || currentStatus === 'RESOLVED')) 
-	
-  
+		(data.status === 'IN_PROGRESS' && currentStatus === 'OPEN') ||
+		(data.status === 'CLOSED' && (currentStatus === 'OPEN' || currentStatus === 'RESOLVED'))
+
+
 	if (!isValidTransition) {
-	  throw new Error(`You cannot change status from ${currentStatus} to ${data.status}.`);
+		throw new Error(`You cannot change status from ${currentStatus} to ${data.status}.`);
 	}
-	  // Role-based check
-	  if (data.status === 'IN_PROGRESS' && user.id !== ticket.assigneeId) {
+	// Role-based check
+	if (data.status === 'IN_PROGRESS' && user.id !== ticket.assigneeId) {
 		throw new Error('Only the assigned user can move the ticket to IN_PROGRESS.');
-	  }
-	
-	  if (data.status === 'CLOSED' && user.id !== ticket.createdById) {
+	}
+
+	if (data.status === 'CLOSED' && user.id !== ticket.createdById) {
 		throw new Error('Only the ticket creator can close the ticket.');
-	  }
-	const updateTicket = await prisma.supportTicket.update({
-		where: { id: ticketId },
-		data: {
-			...data,
+	}
+	const result = await prisma.$transaction(async (tx) => {
+		const updateTicket = await tx.supportTicket.update({
+			where: { id: ticketId },
+			data: {
+				...data,
 
-			// This ensures only the provided field is updated
-		},
+				// This ensures only the provided field is updated
+			},
+		});
+		await tx.supportTicketActivity.create({
+			data: {
+				ticketId: ticket.id,
+				updatedById: user.id, // User who changed the status (Applicator, Pilot, or Grower) logged in user
+				oldStatus: ticket?.status,
+				newStatus: data.status,
+				reason: null,
+			},
+		});
+		return updateTicket;
 	});
-
-	return updateTicket;
+	return result
 };
 
 const getMySupportTicket = async (
@@ -679,25 +665,42 @@ const getPilotSupportTicket = async (
 	};
 };
 // Get job list by applicator with filters
-const getAllJobsByApplicator = async (applicatorId: number) => {
-	// Fetch jobs
+const getAllJobsByApplicator = async (currentUser: User, applicatorId: number) => {
+	const whereCondition: Prisma.JobWhereInput = {};
+
+	if (currentUser.role === 'APPLICATOR') {
+		whereCondition.applicatorId = currentUser.id;
+		whereCondition.status = { in: ['READY_TO_SPRAY'] };
+
+	}
+
+	if (currentUser.role === 'GROWER') {
+		whereCondition.growerId = currentUser.id;
+		whereCondition.status = { in: ['READY_TO_SPRAY'] };
+		if (applicatorId) {
+			whereCondition.applicatorId = applicatorId;
+		}
+	} else if (currentUser.role === 'WORKER') {
+		whereCondition.fieldWorkerId = currentUser.id;
+		whereCondition.status = { in: ['ASSIGNED_TO_PILOT'] };
+		if (applicatorId) {
+			whereCondition.applicatorId = applicatorId;
+		}
+	}
+
+	console.log(whereCondition, 'where');
+
 	const jobs = await prisma.job.findMany({
-		where: {
-			applicatorId,
-			status: {
-				in: ['READY_TO_SPRAY'],
-			},
-		},
+		where: whereCondition,
 		select: {
 			id: true,
 			title: true,
 		},
 	});
 
-	// Calculate total acres for each job
-
 	return jobs;
 };
+
 const deleteTicket = async (userId: number, ticketId: number) => {
 	await prisma.supportTicket.delete({
 		where: {
@@ -738,7 +741,7 @@ const resolveSupportTicket = async (
 	}
 	if (data.status === 'RESOLVED' && user.id !== ticket.assigneeId) {
 		throw new Error('Only the assigned user can move the ticket to RESOLVED.');
-	  }
+	}
 	const result = await prisma.$transaction(async (tx) => {
 		const updatedTicket = await tx.supportTicket.update({
 			where: { id: ticketId },
@@ -826,6 +829,205 @@ const getSupportTicketActivityById = async (
 		updatedBy: updatedBy?.fullName || null,
 	}));
 };
+const getAllSupportTeamTicket = async (
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+	const filters: Prisma.SupportTicketWhereInput = {
+		assigneeId:null
+	};
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.SupportTicketWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'subject':
+				searchFilter.subject = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+
+			case 'status':
+				searchFilter.status = {
+					equals: searchValue as TicketStatus, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'assigneeId':
+				searchFilter.assigneeId = parseInt(searchValue, 10);
+
+				break;
+
+			case 'jobId':
+				searchFilter.jobId = parseInt(searchValue, 10);
+
+				break;
+			case 'category':
+				searchFilter.category = {
+					equals: searchValue as TicketCategory, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'priority':
+				searchFilter.priority = {
+					equals: searchValue as TicketPriority, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'assigneeUser':
+				searchFilter.assigneeUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'createdByUser':
+				searchFilter.createdByUser = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+	const tickets = await prisma.supportTicket.findMany({
+		where: filters,
+		include: {
+			createdByUser: {
+				select: {
+					id: true,
+					fullName: true,
+					role: true,
+				}, // Get only the fullname of the createdByUser/submiited by user
+			},
+			
+		},
+		omit: {
+			createdById: true,
+		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+	// Calculate the total number of pages based on the total results and limit
+	const totalResults = await prisma.supportTicket.count({
+		where: filters,
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: tickets,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+};
+const updateBySupportTeam = async (
+	user: User,
+	ticketId: number,
+	data: {
+		status: TicketStatus;
+		priority?: TicketPriority;
+		// assigneeId?: number;
+	},
+) => {
+
+	const ticket = await prisma.supportTicket.findUnique({
+		where: { id: ticketId },
+		select: { id: true, status: true, createdById: true, assigneeId: true },
+	});
+
+	if (!ticket) {
+		throw new Error("Ticket not found.");
+	}
+	const currentStatus = ticket.status;
+
+	// Define allowed status transitions
+	const isValidTransition =
+		(data.status === 'IN_PROGRESS' && currentStatus === 'OPEN') ||
+		(data.status === 'RESOLVED' && (currentStatus === 'OPEN' || currentStatus === 'IN_PROGRESS'))
+
+
+	if (!isValidTransition) {
+		throw new Error(`You cannot change status from ${currentStatus} to ${data.status}.`);
+	}
+
+	const result = await prisma.$transaction(async (tx) => {
+		const updateTicket = await tx.supportTicket.update({
+			where: { id: ticketId },
+			data: {
+				...data,
+
+				// This ensures only the provided field is updated
+			},
+		});
+		await tx.supportTicketActivity.create({
+			data: {
+				ticketId: ticket.id,
+				updatedById: user.id, // User who changed the status (Applicator, Pilot, or Grower) logged in user
+				oldStatus: ticket?.status,
+				newStatus: data.status,
+				reason: null,
+			},
+		});
+		return updateTicket;
+	});
+	return result
+};
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -841,4 +1043,6 @@ export default {
 	resolveSupportTicket,
 	// assignSupportTicket,
 	getSupportTicketActivityById,
+	getAllSupportTeamTicket,
+	updateBySupportTeam
 };
