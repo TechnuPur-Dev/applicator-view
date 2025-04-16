@@ -51,7 +51,7 @@ const createSupportTicket = async (
 	if (data.assigneeId) {
 		const assigneeUser = await prisma.user.findUnique({
 			where: { id: data.assigneeId },
-			select: { role: true },
+			select: {id:true, role: true },
 		});
 
 		const assigneeRole = assigneeUser?.role;
@@ -71,7 +71,7 @@ const createSupportTicket = async (
 			throw new Error('You are not authorized to create this ticket.');
 		}
 	}
-
+	const result = await prisma.$transaction(async (prisma) => {
 	const ticket = await prisma.supportTicket.create({
 		data: {
 			subject: data.subject,
@@ -84,8 +84,19 @@ const createSupportTicket = async (
 			createdById: userId, // Assign the user ID
 		},
 	});
+	if(data.assigneeId){
+		await prisma.notification.create({
+			data: {
+				userId: data.assigneeId, // Notify the appropriate user
+				ticketId:ticket?.id,
+				type: 'TICKET_ASSIGNED',
+			},
+		});
+	}
 
 	return ticket;
+});
+return result
 };
 
 const getAllSupportTicket = async (
@@ -749,6 +760,12 @@ const resolveSupportTicket = async (
 				status: data.status,
 			},
 		});
+		await prisma.notification.create({
+			data: {
+				userId:ticket.createdByUser.id, // Notify the appropriate user
+				type: 'TICKET_RESOLVED',
+			},
+		});
 		await tx.supportTicketActivity.create({
 			data: {
 				ticketId: ticket.id,
@@ -1015,6 +1032,15 @@ const updateBySupportTeam = async (
 				// This ensures only the provided field is updated
 			},
 		});
+		if(data.status === 'RESOLVED'){
+            await prisma.notification.create({
+				data: {
+					userId:ticket.createdById, // Notify the appropriate user
+					type: 'TICKET_RESOLVED',
+				},
+			});
+		}
+		
 		await tx.supportTicketActivity.create({
 			data: {
 				ticketId: ticket.id,
