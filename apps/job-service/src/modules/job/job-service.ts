@@ -875,7 +875,6 @@ const updateJobByApplicator = async (
 			await prisma.notification.create({
 				data: {
 					userId: fieldWorkerId, // Notify the appropriate user
-					jobId: job.id,
 					type: 'JOB_ASSIGNED',
 				},
 			});
