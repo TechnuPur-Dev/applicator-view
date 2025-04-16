@@ -132,20 +132,20 @@ const resolveSupportTicket = catchAsync(async (req: Request, res: Response) => {
 		message: 'Support ticket resolved successfully',
 	});
 });
-const assignSupportTicket = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.ticketId;
-	const user = req.user;
-	const data = req.body;
-	const ticketData = await supportTicketService.assignSupportTicket(
-		user,
-		Id,
-		data,
-	);
-	res.status(httpStatus.OK).json({
-		result: ticketData,
-		message: 'Support ticket assigned successfully',
-	});
-});
+// const assignSupportTicket = catchAsync(async (req: Request, res: Response) => {
+// 	const Id = +req.params.ticketId;
+// 	const user = req.user;
+// 	const data = req.body;
+// 	const ticketData = await supportTicketService.assignSupportTicket(
+// 		user,
+// 		Id,
+// 		data,
+// 	);
+// 	res.status(httpStatus.OK).json({
+// 		result: ticketData,
+// 		message: 'Support ticket assigned successfully',
+// 	});
+// });
 const getSupportTicketActivityById = catchAsync(
 	async (req: Request, res: Response) => {
 		const ticketId = +req.params.ticketId;
@@ -167,6 +167,6 @@ export default {
 	getAllJobsByApplicator,
 	deleteTicket,
 	resolveSupportTicket,
-	assignSupportTicket,
+	// assignSupportTicket,
 	getSupportTicketActivityById
 };

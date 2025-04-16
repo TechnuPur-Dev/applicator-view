@@ -23,6 +23,7 @@ import { User, PaginateOptions } from '../../../../../shared/types/global';
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
+import { result } from 'lodash';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -279,7 +280,7 @@ const createJob = async (user: User, data: CreateJob) => {
 				'You do not have permission to access these fields.',
 			);
 		}
-		await prisma.$transaction(async (prisma) => {
+	 const result = await prisma.$transaction(async (prisma) => {
 			const job = await prisma.job.create({
 				data: {
 					title,
@@ -379,7 +380,7 @@ const createJob = async (user: User, data: CreateJob) => {
 
 				},
 			});
-			return job;
+			return {job};
 		});
 		await sendPushNotifications({
 			userIds: applicatorId,
@@ -387,8 +388,10 @@ const createJob = async (user: User, data: CreateJob) => {
 			message: `${user.firstName} ${user.lastName} added a job that needs your confirmation.`,
 			notificationType: 'JOB_CREATED',
 		});
-
+		
+		return result.job
 	}
+	
 };
 
 // Get job list by applicator with filters

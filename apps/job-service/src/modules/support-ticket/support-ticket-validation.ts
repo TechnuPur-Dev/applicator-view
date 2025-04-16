@@ -41,7 +41,6 @@ const updateSupportTicketSchema: Schema = Joi.object({
 	}).required(),
 	body: Joi.object({
 		status: ticketStatusSchema.optional(),
-		assigneeId: Joi.number().integer().positive().optional(),
 		priority: ticketPrioritySchema.optional(), // Township name
 	}).required(),
 });

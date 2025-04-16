@@ -52,12 +52,12 @@ router
 		validateSchema(supportTicketValidation.resolveSupportTicketSchema),
 		supportTicketController.resolveSupportTicket,
 	);
-router
-	.route('/assign/:ticketId')
-	.put(
-		validateSchema(supportTicketValidation.assignSupportTicketSchema),
-		supportTicketController.assignSupportTicket,
-	);
+// router
+// 	.route('/assign/:ticketId')
+// 	.put(
+// 		validateSchema(supportTicketValidation.assignSupportTicketSchema),
+// 		supportTicketController.assignSupportTicket,
+// 	);
 	router
 		.route('/get-supportTicketActivity/:ticketId')
 		.get(

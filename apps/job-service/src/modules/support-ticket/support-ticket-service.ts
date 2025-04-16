@@ -57,8 +57,8 @@ const createSupportTicket = async (
 
 		const assigneeRole = assigneeUser?.role;
 		const isValid =
-			(userRole === 'APPLICATOR' && assigneeRole === 'GROWER') ||
-			(userRole === 'WORKER' && assigneeRole === 'APPLICATOR');
+			(userRole === 'GROWER' && assigneeRole === 'APPLICATOR') || 
+			(userRole === 'WORKER' && assigneeRole === 'APPLICATOR'); // grower and worker can create ticket for applicator 
 
 		if (!isValid) {
 			throw new Error('You are not authorized to create this ticket.');
@@ -67,7 +67,7 @@ const createSupportTicket = async (
 	if (!data.assigneeId) {
 		const isValid =
 			(!data.assigneeId && userRole === 'APPLICATOR') ||
-			userRole === 'GROWER';
+			userRole === 'GROWER' || userRole === 'WORKER'  ; // (appkicator , grower,pilot can create ticket for support team)
 		if (!isValid) {
 			throw new Error('You are not authorized to create this ticket.');
 		}
@@ -279,36 +279,62 @@ const updateSupportTicket = async (
 	data: {
 		status: TicketStatus;
 		priority?: TicketPriority;
-		assigneeId?: number;
+		// assigneeId?: number;
 	},
 ) => {
-	const userRole = user?.role;
+	// const userRole = user?.role;
 
-	if (data.assigneeId) {
-		const assigneeUser = await prisma.user.findUnique({
-			where: { id: data.assigneeId },
-			select: { role: true },
-		});
+	// if (data.assigneeId) {
+	// 	const assigneeUser = await prisma.user.findUnique({
+	// 		where: { id: data.assigneeId },
+	// 		select: { role: true },
+	// 	});
 
-		const assigneeRole = assigneeUser?.role;
-		const isValid =
-			(userRole === 'APPLICATOR' && assigneeRole === 'GROWER') ||
-			(userRole === 'WORKER' && assigneeRole === 'APPLICATOR');
+	// 	const assigneeRole = assigneeUser?.role;
+	// 	const isValid =
+	// 		(userRole === 'APPLICATOR' && assigneeRole === 'GROWER') ||
+	// 		(userRole === 'WORKER' && assigneeRole === 'APPLICATOR');
 
-		if (!isValid) {
-			throw new Error('You are not authorized to create this ticket.');
-		}
+	// 	if (!isValid) {
+	// 		throw new Error('You are not authorized to create this ticket.');
+	// 	}
+	// }
+	// if (!data.assigneeId) {
+	// 	const isValid =
+	// 		(!data.assigneeId && userRole === 'APPLICATOR') ||
+	// 		userRole === 'GROWER';
+	// 	if (!isValid) {
+	// 		throw new Error('You are not authorized to create this ticket.');
+	// 	}
+	// }
+	const ticket = await prisma.supportTicket.findUnique({
+		where: { id: ticketId },
+		select: { status: true, createdById:true,assigneeId:true },
+	  });
+	
+	  if (!ticket) {
+		throw new Error("Ticket not found.");
+	  }
+	const currentStatus = ticket.status;
+
+	// Define allowed status transitions
+	const isValidTransition =
+	  (data.status === 'IN_PROGRESS' && currentStatus === 'OPEN') ||
+	  (data.status === 'CLOSED' && (currentStatus === 'OPEN' || currentStatus === 'RESOLVED')) 
+	
+  
+	if (!isValidTransition) {
+	  throw new Error(`You cannot change status from ${currentStatus} to ${data.status}.`);
 	}
-	if (!data.assigneeId) {
-		const isValid =
-			(!data.assigneeId && userRole === 'APPLICATOR') ||
-			userRole === 'GROWER';
-		if (!isValid) {
-			throw new Error('You are not authorized to create this ticket.');
-		}
-	}
-
-	const ticket = await prisma.supportTicket.update({
+	  // Role-based check
+	  if (data.status === 'IN_PROGRESS' && user.id !== ticket.assigneeId) {
+		throw new Error('Only the assigned user can move the ticket to IN_PROGRESS.');
+	  }
+	
+	  if (data.status === 'CLOSED' && user.id !== ticket.createdById) {
+		throw new Error('Only the ticket creator can close the ticket.');
+	  }
+	const updateTicket = await prisma.supportTicket.update({
 		where: { id: ticketId },
 		data: {
 			...data,
@@ -317,7 +343,7 @@ const updateSupportTicket = async (
 		},
 	});
 
-	return ticket;
+	return updateTicket;
 };
 
 const getMySupportTicket = async (
@@ -693,7 +719,7 @@ const resolveSupportTicket = async (
 ) => {
 	const ticket = await prisma.supportTicket.findUnique({
 		where: { id: ticketId },
-		include: { createdByUser: true },
+		include: { createdByUser: true, },
 	});
 	if (!ticket) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Ticket not found.');
@@ -704,12 +730,15 @@ const resolveSupportTicket = async (
 	console.log(userRole, targetRole);
 
 	const isValid =
-		(userRole === 'GROWER' && targetRole === 'APPLICATOR') ||
+		(userRole === 'APPLICATOR' && targetRole === 'GROWER') ||
 		(userRole === 'APPLICATOR' && targetRole === 'WORKER');
 
 	if (!isValid) {
 		throw new Error('You are not authorized to resolve this ticket.');
 	}
+	if (data.status === 'RESOLVED' && user.id !== ticket.assigneeId) {
+		throw new Error('Only the assigned user can move the ticket to RESOLVED.');
+	  }
 	const result = await prisma.$transaction(async (tx) => {
 		const updatedTicket = await tx.supportTicket.update({
 			where: { id: ticketId },
@@ -738,35 +767,35 @@ const resolveSupportTicket = async (
 	// 	},
 	// });
 };
-const assignSupportTicket = async (
-	user: User,
-	ticketId: number,
-	data: {
-		assigneeId?: number;
-	},
-) => {
-	const ticket = await prisma.supportTicket.findUnique({
-		where: { id: ticketId },
-		include: { createdByUser: true },
-	});
+// const assignSupportTicket = async (
+// 	user: User,
+// 	ticketId: number,
+// 	data: {
+// 		assigneeId?: number;
+// 	},
+// ) => {
+// 	const ticket = await prisma.supportTicket.findUnique({
+// 		where: { id: ticketId },
+// 		include: { createdByUser: true },
+// 	});
 
-	const userRole = user?.role;
-	const targetRole = ticket?.createdByUser?.role;
+// 	const userRole = user?.role;
+// 	const targetRole = ticket?.createdByUser?.role;
 
-	const isValid = userRole === 'APPLICATOR' && targetRole === 'WORKER';
+// 	const isValid = userRole === 'APPLICATOR' && targetRole === 'WORKER';
 
-	if (!isValid) {
-		throw new Error('You are not authorized to assign this ticket.');
-	}
+// 	if (!isValid) {
+// 		throw new Error('You are not authorized to assign this ticket.');
+// 	}
 
-	return prisma.supportTicket.update({
-		where: { id: ticketId },
-		data: {
-			assigneeId: data.assigneeId,
-			status: 'IN_PROGRESS',
-		},
-	});
-};
+// 	return prisma.supportTicket.update({
+// 		where: { id: ticketId },
+// 		data: {
+// 			assigneeId: data.assigneeId,
+// 			status: 'IN_PROGRESS',
+// 		},
+// 	});
+// };
 
 const getSupportTicketActivityById = async (
 	ticketId: number,
@@ -810,6 +839,6 @@ export default {
 	getAllJobsByApplicator,
 	deleteTicket,
 	resolveSupportTicket,
-	assignSupportTicket,
+	// assignSupportTicket,
 	getSupportTicketActivityById,
 };
