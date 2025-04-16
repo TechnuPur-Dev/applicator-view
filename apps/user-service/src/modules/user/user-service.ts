@@ -2599,9 +2599,9 @@ const acceptOrRejectInviteThroughEmail = async (
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
-						worker: {
-							profileStatus: 'INCOMPLETE',
-						},
+						// worker: {
+						// 	profileStatus: 'INCOMPLETE',
+						// },
 					},
 					data: {
 						inviteStatus, // Only updating the inviteStatus field
