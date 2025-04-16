@@ -97,7 +97,7 @@ model ApplicatorWorker {
 }
 
 model ApplicatorGrower {
-  id                     Int                     @id @default(autoincrement())
+  id                     Int              @id @default(autoincrement())
   applicatorId           Int?
   growerId               Int
   applicatorFirstName    String?
@@ -337,6 +337,7 @@ model SupportTicket {
   createdByUser         User                    @relation("SupportTicketCreated", fields: [createdById], references: [id], onDelete: Cascade)
   job                   Job?                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
   SupportTicketActivity SupportTicketActivity[]
+  Notification          Notification[]
 
   @@index([jobId])
 }
@@ -420,6 +421,8 @@ model Notification {
   user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   inviteId Int?
   invite   ApplicatorGrower? @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  ticketId Int?
+  ticket   SupportTicket?    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   type   NotificationType
   isRead Boolean          @default(false)
@@ -560,6 +563,8 @@ enum NotificationType {
   ACCOUNT_INVITATION
   ACCEPT_INVITE
   REJECT_INVITE
+  TICKET_ASSIGNED
+  TICKET_RESOLVED
 }
 
 enum ProfileStatus {
