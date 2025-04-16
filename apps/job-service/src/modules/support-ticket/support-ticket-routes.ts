@@ -39,7 +39,7 @@ router.route('/my-tickets').get(supportTicketController.getMySupportTicket);
 router
 	.route('/pilot-tickets')
 	.get(supportTicketController.getPilotSupportTicket);
-router.route('/my-jobs').get(supportTicketController.getAllJobsByApplicator);
+router.route('/my-jobs/:applicatorId').get(supportTicketController.getAllJobsByApplicator);
 router
 	.route('/delete/:ticketId')
 	.delete(
@@ -52,12 +52,12 @@ router
 		validateSchema(supportTicketValidation.resolveSupportTicketSchema),
 		supportTicketController.resolveSupportTicket,
 	);
-router
-	.route('/assign/:ticketId')
-	.put(
-		validateSchema(supportTicketValidation.assignSupportTicketSchema),
-		supportTicketController.assignSupportTicket,
-	);
+// router
+// 	.route('/assign/:ticketId')
+// 	.put(
+// 		validateSchema(supportTicketValidation.assignSupportTicketSchema),
+// 		supportTicketController.assignSupportTicket,
+// 	);
 	router
 		.route('/get-supportTicketActivity/:ticketId')
 		.get(
@@ -65,4 +65,12 @@ router
 			validateSchema(supportTicketValidation.paramsSchema),
 			supportTicketController.getSupportTicketActivityById,
 		);
+
+		router.route('/supportTeam-tickets/all').get(supportTicketController.getAllSupportTeamTicket);
+		router
+	.route('/update-bySupportTeam/:ticketId')
+	.put(
+		validateSchema(supportTicketValidation.updateSupportTicketSchema),
+		supportTicketController.updateBySupportTeam,
+	);
 export default router;

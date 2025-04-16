@@ -106,9 +106,10 @@ const getPilotSupportTicket = catchAsync(
 );
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const userId = +req.payload.id;
+		const user = req.user;
+		const applicatorId =+req.params.applicatorId
 		const result =
-			await supportTicketService.getAllJobsByApplicator(userId);
+			await supportTicketService.getAllJobsByApplicator(user,applicatorId);
 		res.status(httpStatus.OK).json({ result });
 	},
 );
@@ -132,20 +133,20 @@ const resolveSupportTicket = catchAsync(async (req: Request, res: Response) => {
 		message: 'Support ticket resolved successfully',
 	});
 });
-const assignSupportTicket = catchAsync(async (req: Request, res: Response) => {
-	const Id = +req.params.ticketId;
-	const user = req.user;
-	const data = req.body;
-	const ticketData = await supportTicketService.assignSupportTicket(
-		user,
-		Id,
-		data,
-	);
-	res.status(httpStatus.OK).json({
-		result: ticketData,
-		message: 'Support ticket assigned successfully',
-	});
-});
+// const assignSupportTicket = catchAsync(async (req: Request, res: Response) => {
+// 	const Id = +req.params.ticketId;
+// 	const user = req.user;
+// 	const data = req.body;
+// 	const ticketData = await supportTicketService.assignSupportTicket(
+// 		user,
+// 		Id,
+// 		data,
+// 	);
+// 	res.status(httpStatus.OK).json({
+// 		result: ticketData,
+// 		message: 'Support ticket assigned successfully',
+// 	});
+// });
 const getSupportTicketActivityById = catchAsync(
 	async (req: Request, res: Response) => {
 		const ticketId = +req.params.ticketId;
@@ -154,6 +155,32 @@ const getSupportTicketActivityById = catchAsync(
 		res.status(httpStatus.OK).json({ result });
 	},
 );
+const getAllSupportTeamTicket = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, [
+		'limit',
+		'page',
+		'label',
+		'searchValue',
+	]);
+	const ticketData = await supportTicketService.getAllSupportTeamTicket(
+		options,
+	);
+	res.status(httpStatus.OK).json(ticketData);
+});
+const updateBySupportTeam = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const Id = +req.params.ticketId;
+	const data = req.body;
+	const ticketData = await supportTicketService.updateBySupportTeam(
+		user,
+		Id,
+		data,
+	);
+	res.status(httpStatus.OK).json({
+		message: 'support ticket updated successfully',
+		result: ticketData,
+	});
+});
 export default {
 	getAllTicketCategories,
 	getAllTicketStatuses,
@@ -167,6 +194,8 @@ export default {
 	getAllJobsByApplicator,
 	deleteTicket,
 	resolveSupportTicket,
-	assignSupportTicket,
-	getSupportTicketActivityById
+	// assignSupportTicket,
+	getSupportTicketActivityById,
+	getAllSupportTeamTicket,
+	updateBySupportTeam
 };
