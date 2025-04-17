@@ -642,6 +642,8 @@ enum UserRole {
   APPLICATOR
   WORKER
   APPLICATOR_USER
+  SUPER_ADMIN
+  SUPER_ADMIN_USER
 }
 
 enum InviteStatus {

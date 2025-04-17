@@ -109,6 +109,7 @@ const registerUser = async (data: RegisterUser) => {
 	});
 	return user;
 };
+
 const loginUser = async (data: LoginUser) => {
 	const { email, password, deviceToken, role } = data;
 
@@ -170,7 +171,6 @@ const loginUser = async (data: LoginUser) => {
 		}
 		const accessToken = await signAccessToken(user.id);
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password, state, ...userWithoutPassword } = user; // Exclude password
 		return {
 			user: { ...userWithoutPassword, state: state?.name },
