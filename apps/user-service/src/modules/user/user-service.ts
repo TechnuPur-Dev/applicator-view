@@ -2163,11 +2163,11 @@ const verifyInviteToken = async (token: string) => {
 				expiresAt: {
 					gte: new Date(), // Ensures the invite is still valid
 				},
-				worker: {
-					is: {
-						profileStatus: 'INCOMPLETE',
-					},
-				},
+				// worker: {
+				// 	is: {
+				// 		profileStatus: 'INCOMPLETE',
+				// 	},
+				// },
 			},
 			select: {
 				pilotPestLicenseNumber: true,
@@ -2599,9 +2599,9 @@ const acceptOrRejectInviteThroughEmail = async (
 					where: {
 						inviteToken: token,
 						inviteStatus: 'PENDING',
-						worker: {
-							profileStatus: 'INCOMPLETE',
-						},
+						// worker: {
+						// 	profileStatus: 'INCOMPLETE',
+						// },
 					},
 					data: {
 						inviteStatus, // Only updating the inviteStatus field
