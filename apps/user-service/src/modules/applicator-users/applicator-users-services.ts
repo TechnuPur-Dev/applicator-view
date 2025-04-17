@@ -124,15 +124,15 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 				applicatorId: true,
 			},
 		});
-		const inviteLink = `https://applicator-ac.netlify.app/#/userInvitationView?token=${token}`;
-		const subject = 'Invitation Email';
-		const message = `
-	  You are invited to join our platform!<br><br>
-	  Click the link below to join.<br><br>
+		// const inviteLink = `https://applicator-ac.netlify.app/#/userInvitationView?token=${token}`;
+		const inviteLink = `https://applicator-ac.netlify.app/#/login`;
+		const subject = 'Welcome to Acre Connect!';
+		const message = `<p>Hi ${data.firstName} ${data.lastName},</p><br><br>
+	  <p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
+	  Click the link below to Login.<br><br>
 	  <a href="${inviteLink}">${inviteLink}</a><br><br>
-	  If you did not expect this invitation, please ignore this email.
+	  If you did not expect this email, please ignore this.
 	`;
-		// Construct invite link
 
 		const html = await mailHtmlTemplate(subject, message);
 

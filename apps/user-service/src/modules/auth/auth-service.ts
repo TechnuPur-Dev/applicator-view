@@ -104,7 +104,7 @@ const registerUser = async (data: RegisterUser) => {
 	await sendEmail({
 		emailTo: email,
 		subject,
-		text: 'Request Invitation',
+		text: 'Welcome to Acre Connect!',
 		html,
 	});
 	return user;
