@@ -3,6 +3,7 @@ import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { ApplicatorUser } from './applicator-users-types';
 import ApiError from '../../../../../shared/utils/api-error';
+import { hashPassword } from '../../helper/bcrypt';
 
 import { User, PaginateOptions } from '../../../../../shared/types/global';
 
@@ -69,8 +70,14 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 			'You are not authorized to perform this action.',
 		);
 	}
+	let { password } = data;
 	const { userPermission = [] } = data;
 	const token = generateInviteToken('APPLICATOR_USER');
+	// hash the password only if it is provided
+	if (password) {
+		const hashedPassword = await hashPassword(data.password);
+		password = hashedPassword;
+	}
 	return prisma.$transaction(async (prisma) => {
 		const userData = await prisma.user.create({
 			data: {
@@ -79,7 +86,7 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 				fullName: `${data.firstName} ${data.lastName}`,
 				email: data.email.toLowerCase(),
 				phoneNumber: data.phoneNumber,
-				// businessName: data.businessName,
+				password,
 				address1: data.address1,
 				address2: data.address2,
 				stateId: data.stateId,
@@ -139,7 +146,7 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 		await sendEmail({
 			emailTo: data.email,
 			subject,
-			text: 'Request Invitation',
+			text: 'Welcome to Acre Connect!',
 			html,
 		});
 

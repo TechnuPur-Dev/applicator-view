@@ -128,6 +128,7 @@ const getAllWorkers = async (
 			dollarPerAcre: true,
 			percentageFee: true,
 			code: true,
+			inviteStatus: true,
 			worker: {
 				select: {
 					id: true,

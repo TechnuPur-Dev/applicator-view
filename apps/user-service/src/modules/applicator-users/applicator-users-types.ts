@@ -6,6 +6,7 @@ interface ApplicatorUser {
 	lastName: string;
 	email: string;
 	phoneNumber?: string;
+	password: string;
 	address1?: string;
 	address2?: string;
 	stateId: number;
