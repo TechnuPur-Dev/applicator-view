@@ -120,9 +120,6 @@ const getAllWorkers = async (
 	const workers = await prisma.applicatorWorker.findMany({
 		where: {
 			applicatorId,
-			NOT: {
-				inviteStatus: 'PENDING',
-			},
 		},
 		select: {
 			dollarPerAcre: true,
@@ -540,6 +537,9 @@ const getAllApplicators = async (
 	const applicators = await prisma.applicatorWorker.findMany({
 		where: {
 			workerId,
+			NOT: {
+				inviteStatus: 'PENDING',
+			},
 		},
 		include: {
 			// inviteStatus: true,
