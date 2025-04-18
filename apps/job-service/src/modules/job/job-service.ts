@@ -4442,7 +4442,7 @@ const updateBidJobStatus = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId, // Notify the appropriate user
-					jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
+					// jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
 					type: 'BID_ACCEPTED',
 				},
 			});
