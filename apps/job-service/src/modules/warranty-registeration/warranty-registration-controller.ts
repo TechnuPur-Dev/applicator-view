@@ -17,8 +17,6 @@ const uploadImage = catchAsync(async (req: Request, res: Response) => {
 		throw new Error('No files uploaded');
 	}
 
-	
-
 	if (!files) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
@@ -36,8 +34,6 @@ const uploadDocAttachments = catchAsync(async (req: Request, res: Response) => {
 	if (!files || !Array.isArray(files)) {
 		throw new Error('No files uploaded');
 	}
-
-	
 
 	if (!files) {
 		return res.status(400).json({ error: 'File is required.' });
@@ -64,12 +60,11 @@ const createWarrantyReg = catchAsync(async (req: Request, res: Response) => {
 const getAllWarrantyRegList = catchAsync(
 	async (req: Request, res: Response) => {
 		const options = pick(req.query, ['limit', 'page']);
-
 		const currentUser = req.user;
-		const result =
-			await warrantyRegistrationService.getAllWarrantyRegList(
-				currentUser,options
-			);
+		const result = await warrantyRegistrationService.getAllWarrantyRegList(
+			currentUser,
+			options,
+		);
 		res.status(httpStatus.OK).json(result);
 	},
 );

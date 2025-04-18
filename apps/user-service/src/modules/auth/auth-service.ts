@@ -104,11 +104,12 @@ const registerUser = async (data: RegisterUser) => {
 	await sendEmail({
 		emailTo: email,
 		subject,
-		text: 'Request Invitation',
+		text: 'Welcome to Acre Connect!',
 		html,
 	});
 	return user;
 };
+
 const loginUser = async (data: LoginUser) => {
 	const { email, password, deviceToken, role } = data;
 
@@ -170,7 +171,6 @@ const loginUser = async (data: LoginUser) => {
 		}
 		const accessToken = await signAccessToken(user.id);
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password, state, ...userWithoutPassword } = user; // Exclude password
 		return {
 			user: { ...userWithoutPassword, state: state?.name },
