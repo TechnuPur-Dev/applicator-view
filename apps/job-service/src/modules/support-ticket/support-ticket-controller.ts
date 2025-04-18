@@ -107,7 +107,7 @@ const getPilotSupportTicket = catchAsync(
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
 		const user = req.user;
-		const applicatorId =+req.params.applicatorId
+		const applicatorId =Number(req?.query?.applicatorId)
 		const result =
 			await supportTicketService.getAllJobsByApplicator(user,applicatorId);
 		res.status(httpStatus.OK).json({ result });
