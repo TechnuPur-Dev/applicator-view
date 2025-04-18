@@ -39,7 +39,7 @@ router.route('/my-tickets').get(supportTicketController.getMySupportTicket);
 router
 	.route('/pilot-tickets')
 	.get(supportTicketController.getPilotSupportTicket);
-router.route('/my-jobs/:applicatorId').get(supportTicketController.getAllJobsByApplicator);
+router.route('/my-jobs').get(supportTicketController.getAllJobsByApplicator);
 router
 	.route('/delete/:ticketId')
 	.delete(

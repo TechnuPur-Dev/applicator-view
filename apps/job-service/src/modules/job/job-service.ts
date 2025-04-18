@@ -2908,6 +2908,74 @@ const getHeadersData = async (
 						},
 						_sum: { actualAcres: true },
 					});
+
+					if (role === 'APPLICATOR') {
+						result = {
+							pendingFromMe: {
+								pendingJobsForMe,
+								totalAcres:
+									pendingJobForMetotalAcres._sum.actualAcres || 0,
+								totalGrowers:
+									pendingJobForMetotalGrowersorApplicator.length,
+							},
+							pendingFromGrower: {
+								pendingJobsForGrower,
+								totalAcres:
+									pendingJobForGrowertotalAcres._sum.actualAcres || 0,
+								totalGrowers:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							},
+						};
+					} else if (role === 'GROWER') {
+						result = {
+							pendingFromMe: {
+								pendingJobsForMe,
+								totalAcres:
+									pendingJobForMetotalAcres._sum.actualAcres || 0,
+								totalApplicators:
+									pendingJobForMetotalGrowersorApplicator.length,
+							},
+							pendingFromApplicator: {
+								pendingJobsForApplicator: pendingJobsForGrower,
+								totalAcres:
+									pendingJobForGrowertotalAcres._sum.actualAcres || 0,
+								totalApplicators:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							},
+						};
+					}
+					
+				// result = {
+				// 	pendingFromMe: {
+				// 		pendingJobsForMe,
+				// 		totalAcres:
+				// 			pendingJobForMetotalAcres._sum.actualAcres || 0,
+				// 		...(role === 'APPLICATOR'
+				// 			? {
+				// 				totalGrowers:
+				// 					pendingJobForMetotalGrowersorApplicator.length,
+				// 			}
+				// 			: {
+				// 				totalApplicators:
+				// 					pendingJobForMetotalGrowersorApplicator.length,
+				// 			}),
+				// 	},
+				// 	pendingFromGrower: {
+				// 		pendingJobsForGrower,
+				// 		totalAcres:
+				// 			pendingJobForGrowertotalAcres._sum.actualAcres || 0,
+				// 		...(role === 'APPLICATOR'
+				// 			? {
+				// 				totalGrowers:
+				// 					pendingJobForGrowertotalGrowersorApplicator.length,
+				// 			}
+				// 			: {
+				// 				totalApplicators:
+				// 					pendingJobForGrowertotalGrowersorApplicator.length,
+				// 			}),
+				// 	},
+				// };
+
 				result = {
 					pendingFromMe: {
 						pendingJobsForMe,
@@ -2938,6 +3006,7 @@ const getHeadersData = async (
 								}),
 					},
 				};
+
 				break;
 			}
 			default:
@@ -4417,7 +4486,7 @@ const updateBidJobStatus = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId, // Notify the appropriate user
-					jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
+					// jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
 					type: 'BID_ACCEPTED',
 				},
 			});
