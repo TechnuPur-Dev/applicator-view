@@ -153,6 +153,16 @@ const loginUser = async (data: LoginUser) => {
 	if (!isPasswordValid) {
 		throw new ApiError(httpStatus.UNAUTHORIZED, 'Password is incorrect.');
 	} else {
+		if (role === 'WORKER') {
+			await prisma.applicatorWorker.updateMany({
+				where: {
+					workerId: user.id,
+				},
+				data: {
+					lastLogin: new Date(), // Set current timestamp if null/undefined
+				},
+			});
+		}
 		if (deviceToken) {
 			const existingDeviceToken = await prisma.deviceToken.findFirst({
 				where: { userId: user.id },
