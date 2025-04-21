@@ -263,7 +263,6 @@ const acceptJobThroughEmail = catchAsync(
 );
 const getMyJobsByPilot = catchAsync(async (req: Request, res: Response) => {
 	const pilotId = req.payload.id;
-	// const pilotId = +req.params.pilotId;
 	const options = pick(req.query, ['limit', 'page']);
 	const result = await jobService.getMyJobsByPilot(pilotId, options);
 	res.status(httpStatus.OK).json(result);
