@@ -181,23 +181,19 @@ const updateTownship = async (townshipId: number, data: UpdateTownShipData) => {
 
 	return updatedTownship;
 };
-export const getCountiesByState = async (stateId: number) => {
+const getCountiesByState = async (stateId: number) => {
 	return await prisma.county.findMany({
 		where: { stateId },
 	});
 };
 
-export const getTownshipsByCounty = async (countyId: number) => {
+const getTownshipsByCounty = async (countyId: number) => {
 	return await prisma.township.findMany({
 		where: { countyId },
 	});
 };
 
-export const validateAddress = async (
-	street: string,
-	city: string,
-	state: string,
-) => {
+const validateAddress = async (street: string, city: string, state: string) => {
 	const AUTH_ID = '3c1db701-d45f-5411-cafd-7ead392570eb';
 	const AUTH_TOKEN = 'cvuxc0QLqUmBhkpuAkxk';
 
@@ -235,6 +231,26 @@ export const validateAddress = async (
 	}
 };
 
+const getCityByZip = async (zipCode: string) => {
+	const AUTH_ID = '3c1db701-d45f-5411-cafd-7ead392570eb';
+	const AUTH_TOKEN = 'cvuxc0QLqUmBhkpuAkxk';
+
+	// Step 1: Validate City and State
+	const cityStateUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&city=&state=&zipcode=${zipCode}`;
+	const cityStateResponse = await axios.get(cityStateUrl);
+	console.log(cityStateResponse.data[0]);
+
+	if (cityStateResponse.data[0].reason || cityStateResponse.data[0].status) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			cityStateResponse.data[0].reason,
+		);
+	}
+
+	return {
+		cityName: cityStateResponse.data[0].city_states[0].city,
+	};
+};
 export default {
 	createStates,
 	createCounties,
@@ -251,4 +267,5 @@ export default {
 	getCountiesByState,
 	getTownshipsByCounty,
 	validateAddress,
+	getCityByZip,
 };
