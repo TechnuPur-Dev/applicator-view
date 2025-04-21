@@ -80,9 +80,24 @@ const getTownshipsByCounty = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const validateAddress = catchAsync(async (req: Request, res: Response) => {
-	const { street, city, state } = req.query as { street: string; city: string; state: string };
+	const { street, city, state } = req.query as {
+		street: string;
+		city: string;
+		state: string;
+	};
 
-	const result = await geoDataService.validateAddress( street, city, state);
+	const result = await geoDataService.validateAddress(street, city, state);
+	res.status(httpStatus.OK).json(result);
+});
+const getCityByZip = catchAsync(async (req: Request, res: Response) => {
+	// Controller
+	const { zipCode } = req.query;
+
+	if (typeof zipCode !== 'string') {
+		return res.status(400).json({ message: 'zipCode must be a string' });
+	}
+
+	const result = await geoDataService.getCityByZip(zipCode);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -100,5 +115,6 @@ export default {
 	updateTownship,
 	getCountiesByState,
 	getTownshipsByCounty,
-	validateAddress
+	validateAddress,
+	getCityByZip,
 };
