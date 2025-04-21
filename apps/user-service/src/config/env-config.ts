@@ -32,6 +32,10 @@ const envVarsSchema = Joi.object({
 	JWT_REFRESH_EXPIRATION_DAYS: Joi.number()
 		.default(30)
 		.description('Days after which refresh tokens expire'),
+	SMARTY_AUTH_ID: Joi.string().required().description('Auth ID for SMARTY'),
+	SMARTY_AUTH_TOKEN: Joi.string()
+		.required()
+		.description('Auth Token for SMARTY'),
 }).unknown(true);
 
 // Validate the environment variables
@@ -54,6 +58,8 @@ const config = {
 			envVars.JWT_ACCESS_EXPIRATION_MINUTES as string,
 		refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS as number,
 	},
+	smartyAuthId: envVars.SMARTY_AUTH_ID as string,
+	smartyAuthToken: envVars.SMARTY_AUTH_TOKEN as string,
 };
 
 export default config; // Default export
