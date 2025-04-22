@@ -285,7 +285,7 @@ model FieldJob {
   id          Int      @id @default(autoincrement())
   fieldId     Int
   jobId       Int
-  actualAcres Int?
+  actualAcres Decimal?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   field       Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)

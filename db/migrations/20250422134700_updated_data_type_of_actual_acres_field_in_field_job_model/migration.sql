@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "FieldJob" ALTER COLUMN "actualAcres" SET DATA TYPE DECIMAL(65,30);
