@@ -1,7 +1,4 @@
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
-// import sharp from 'sharp';
-// import { v4 as uuidv4 } from 'uuid';
 import {
 	BidStatus,
 	JobSource,
@@ -17,13 +14,9 @@ import { v4 as uuidv4 } from 'uuid';
 import config from '../../../../../shared/config/env-config';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { User, PaginateOptions } from '../../../../../shared/types/global';
-// import { object } from 'joi';
-// import config from '../../../../../shared/config/env-config';
-// import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
-import { result } from 'lodash';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -182,7 +175,7 @@ const createJob = async (user: User, data: CreateJob) => {
 		const inviteLink =
 			job.grower?.profileStatus === 'INCOMPLETE'
 				? `https://grower-ac.netlify.app/#/growerJob?token=${job.id}`
-				: `https://grower-ac.netlify.app/#/myjobs`;
+				: `https://grower-ac.netlify.app/#/pendingApprovals`;
 		const subject = 'Job Confirmation';
 		const message = `
 	  ${user.firstName} ${user.lastName} added a job that needs your confirmation.!<br><br>
@@ -332,7 +325,7 @@ const createJob = async (user: User, data: CreateJob) => {
 					// },
 				},
 				include: {
-					grower: {
+					applicator: {
 						select: {
 							firstName: true,
 							lastName: true,
@@ -384,6 +377,27 @@ const createJob = async (user: User, data: CreateJob) => {
 				},
 			});
 			return { job };
+		});
+
+		const inviteLink = `https://applicator-ac.netlify.app/#/pendingApprovals`;
+		const subject = 'Job Confirmation';
+		const message = `
+  ${user.firstName} ${user.lastName} added a job that needs your confirmation.!<br><br>
+  Click the link below to accept or reject it.<br><br>
+  <a href="${inviteLink}">${inviteLink}</a><br><br>
+  If you did not expect this invitation, please ignore this email.
+`;
+
+		const email = result.job?.applicator?.email;
+		if (!email) {
+			throw new Error('Email address is not available for the grower.');
+		}
+		const html = await mailHtmlTemplate(subject, message);
+		await sendEmail({
+			emailTo: email,
+			subject,
+			text: 'Job Confirmation',
+			html,
 		});
 		await sendPushNotifications({
 			userIds: applicatorId,
@@ -1155,17 +1169,15 @@ const getFarmListByApplicatorId = async (
 	applicatorId: number,
 	growerId: number,
 ) => {
-	console.log(applicatorId, growerId, "grower")
+	console.log(applicatorId, growerId, 'grower');
 	const farms = await prisma.farm.findMany({
 		where: {
 			growerId,
 			permissions: {
 				some: {
-					applicatorId:applicatorId,
-					canView:true
+					applicatorId: applicatorId,
+					canView: true,
 				},
-				
-			
 			},
 		},
 		select: {
@@ -2945,42 +2957,44 @@ const getHeadersData = async (
 						_sum: { actualAcres: true },
 					});
 
-					if (role === 'APPLICATOR') {
-						result = {
-							pendingFromMe: {
-								pendingJobsForMe,
-								totalAcres:
-									pendingJobForMetotalAcres._sum.actualAcres || 0,
-								totalGrowers:
-									pendingJobForMetotalGrowersorApplicator.length,
-							},
-							pendingFromGrower: {
-								pendingJobsForGrower,
-								totalAcres:
-									pendingJobForGrowertotalAcres._sum.actualAcres || 0,
-								totalGrowers:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							},
-						};
-					} else if (role === 'GROWER') {
-						result = {
-							pendingFromMe: {
-								pendingJobsForMe,
-								totalAcres:
-									pendingJobForMetotalAcres._sum.actualAcres || 0,
-								totalApplicators:
-									pendingJobForMetotalGrowersorApplicator.length,
-							},
-							pendingFromApplicator: {
-								pendingJobsForApplicator: pendingJobsForGrower,
-								totalAcres:
-									pendingJobForGrowertotalAcres._sum.actualAcres || 0,
-								totalApplicators:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							},
-						};
-					}
-					
+				if (role === 'APPLICATOR') {
+					result = {
+						pendingFromMe: {
+							pendingJobsForMe,
+							totalAcres:
+								pendingJobForMetotalAcres._sum.actualAcres || 0,
+							totalGrowers:
+								pendingJobForMetotalGrowersorApplicator.length,
+						},
+						pendingFromGrower: {
+							pendingJobsForGrower,
+							totalAcres:
+								pendingJobForGrowertotalAcres._sum
+									.actualAcres || 0,
+							totalGrowers:
+								pendingJobForGrowertotalGrowersorApplicator.length,
+						},
+					};
+				} else if (role === 'GROWER') {
+					result = {
+						pendingFromMe: {
+							pendingJobsForMe,
+							totalAcres:
+								pendingJobForMetotalAcres._sum.actualAcres || 0,
+							totalApplicators:
+								pendingJobForMetotalGrowersorApplicator.length,
+						},
+						pendingFromApplicator: {
+							pendingJobsForApplicator: pendingJobsForGrower,
+							totalAcres:
+								pendingJobForGrowertotalAcres._sum
+									.actualAcres || 0,
+							totalApplicators:
+								pendingJobForGrowertotalGrowersorApplicator.length,
+						},
+					};
+				}
+
 				// result = {
 				// 	pendingFromMe: {
 				// 		pendingJobsForMe,
@@ -4702,5 +4716,4 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobByIdThroughEmail,
-
 };
