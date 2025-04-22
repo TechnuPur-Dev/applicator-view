@@ -18,9 +18,12 @@ const searchApplicatorUserByEmail = async (
 	email: string,
 ) => {
 	// Find all users matching the email pattern (debounced search)
-	const user = await prisma.user.findUnique({
+	const user = await prisma.user.findFirst({
 		where: {
-			email,
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
 		},
 		include: {
 			state: {

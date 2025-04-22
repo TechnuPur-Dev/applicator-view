@@ -233,9 +233,12 @@ const getAllUsers = async (options: PaginateOptions) => {
 
 // getUserByEmail
 const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
-	const grower = await prisma.user.findUnique({
+	const grower = await prisma.user.findFirst({
 		where: {
-			email: userEmail,
+			email: {
+				equals: userEmail,
+				mode: 'insensitive',
+			},
 		},
 		include: {
 			state: {
@@ -1192,9 +1195,12 @@ const updateArchivedStatus = async (user: User, data: UpdateArchiveStatus) => {
 
 const getApplicatorByEmail = async (growerId: number, email: string) => {
 	// Find all users matching the email pattern (debounced search)
-	const user = await prisma.user.findUnique({
+	const user = await prisma.user.findFirst({
 		where: {
-			email,
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
 		},
 		include: {
 			state: {
