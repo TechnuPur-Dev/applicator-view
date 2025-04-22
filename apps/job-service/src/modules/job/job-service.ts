@@ -589,10 +589,10 @@ const getAllJobsByApplicator = async (
 	// Calculate total acres for each job
 	const formattedJobs = jobs.map((job) => ({
 		...job,
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		),
+		).toFixed(2)),
 	}));
 
 	// Count total results for pagination
@@ -753,16 +753,16 @@ const getJobById = async (user: User, jobId: number) => {
 		...(role === 'GROWER'
 			? { applicator, createdBy: grower?.fullName }
 			: {}), // Include applicator and grower name for createdby prop only if role is GROWER
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		),
+		).toFixed(2)),
 		farm: {
 			...job.farm,
-			totalAcres: fields.reduce(
+			totalAcres: parseFloat(fields.reduce(
 				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
 				0,
-			),
+			).toFixed(2)),
 		},
 		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
 			...rest,
@@ -1343,10 +1343,10 @@ const getJobs = async (
 			applicatorFullName: job.applicator?.fullName || null,
 			applicatorBusinessName: job.applicator?.businessName || null,
 			farmName: job.farm?.name || null,
-			totalAcres: job.fields.reduce(
+			totalAcres: parseFloat(job.fields.reduce(
 				(sum, f) => sum + (f.actualAcres || 0),
 				0,
-			),
+			).toFixed(2)),
 		};
 	});
 	const totalResults = jobs.length;
@@ -1541,10 +1541,10 @@ const getOpenJobs = async (
 	});
 	const formattedJobs = jobs.map((job) => ({
 		...job,
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		), // Sum actualAcres, default to 0 if null
+		).toFixed(2)), // Sum actualAcres, default to 0 if null
 		// farm: {
 		// 	...job.farm,
 		// 	totalAcres: job.fields.reduce(
@@ -1739,10 +1739,10 @@ const getMyBidJobs = async (
 			township: bid.job.farm.township,
 		},
 		fields: bid.job.fields, // Keeps fields as an array
-		totalAcres: bid.job.fields.reduce(
+		totalAcres: parseFloat(bid.job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		),
+		).toFixed(2)),
 	}));
 
 	const totalResults = await prisma.bid.count({
@@ -1954,10 +1954,10 @@ const getJobsPendingFromMe = async (
 			...job,
 			...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 			...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
-			totalAcres: job.fields.reduce(
+			totalAcres: parseFloat(job.fields.reduce(
 				(sum, f) => sum + (f.actualAcres || 0),
 				0,
-			),
+			).toFixed(2)),
 		};
 	});
 	// Calculate the total number of pages based on the total results and limit
@@ -2168,10 +2168,10 @@ const getJobsPendingFromGrowers = async (
 			...job,
 			...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is  APPLICATOR
 			...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role GROWER
-			totalAcres: job.fields.reduce(
+			totalAcres: parseFloat(job.fields.reduce(
 				(sum, f) => sum + (f.actualAcres || 0),
 				0,
-			),
+			).toFixed(2)),
 		};
 	});
 
@@ -3154,10 +3154,10 @@ const getRejectedJobs = async (user: User, options: PaginateOptions) => {
 				...job,
 				...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 				...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
-				totalAcres: job.fields.reduce(
+				totalAcres:parseFloat(job.fields.reduce(
 					(sum, f) => sum + (f.actualAcres || 0),
 					0,
-				),
+				).toFixed(2)),
 			};
 		});
 		// Calculate the total number of pages based on the total results and limit
@@ -3253,10 +3253,10 @@ const getRejectedJobs = async (user: User, options: PaginateOptions) => {
 				...job,
 				...(role === 'APPLICATOR' ? { grower } : {}), // Include grower only if role is APPLICATOR
 				...(role === 'GROWER' ? { applicator } : {}), // Include applicator only if role is GROWER
-				totalAcres: job.fields.reduce(
+				totalAcres: parseFloat(job.fields.reduce(
 					(sum, f) => sum + (f.actualAcres || 0),
 					0,
-				),
+				).toFixed(2)),
 			};
 		});
 		// Calculate the total number of pages based on the total results and limit
@@ -3473,16 +3473,16 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 			...job,
 			...(role === 'APPLICATOR' ? { grower } : {}),
 			...(role === 'GROWER' ? { applicator } : {}),
-			totalAcres: job.fields.reduce(
+			totalAcres: parseFloat(job.fields.reduce(
 				(sum, f) => sum + (f.actualAcres || 0),
 				0,
-			),
+			).toFixed(2)),
 			farm: {
 				...job.farm,
-				totalAcres: fields.reduce(
+				totalAcres: parseFloat(fields.reduce(
 					(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
 					0,
-				),
+				).toFixed(2)),
 			},
 			products: formattedProducts,
 			applicationFees: formattedApplicationFees,
@@ -3644,10 +3644,12 @@ const getJobInvoice = async (user: User, jobId: number) => {
 		totalAmount: totalAmount,
 		farm: {
 			...job.farm,
-			totalAcres: fields.reduce(
-				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
-				0,
-			),
+			totalAcres: parseFloat(
+				fields
+				  .reduce((sum, f) => sum + (f.acres ? f.acres.toNumber() : 0), 0)
+				  .toFixed(2)
+			  ),
+			  
 		},
 		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
 			...rest,
@@ -3905,11 +3907,12 @@ const getMyJobsByPilot = async (
 		status:
 			job.status === 'INVOICED' || job.status === 'PAID'
 				? 'SPRAYED'
-				: job.status,
-		totalAcres: job.fields.reduce(
+				: job.status,		
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		),
+		).toFixed(2),
+	)
 	}));
 
 	return {
@@ -3987,10 +3990,10 @@ const getPilotPendingJobs = async (
 	const formattedJobs = jobs.map((job) => ({
 		...job,
 		status: 'PENDING',
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		), // Sum actualAcres, default to 0 if null
+		).toFixed(2)) // Sum actualAcres, default to 0 if null
 	}));
 	const totalResults = await prisma.job.count({
 		where: { fieldWorkerId: pilotId, status: 'ASSIGNED_TO_PILOT' },
@@ -4025,19 +4028,23 @@ const getPilotRejectedJobs = async (
 	const skip = (page - 1) * limit;
 
 	const jobs = await prisma.job.findMany({
+		// where: {
+		// 	jobActivities: {
+		// 		some: {
+		// 			changedById: pilotId,
+		// 			newStatus: 'PILOT_REJECTED',
+		// 		},
+		// 		none: {
+		// 			changedById: pilotId,
+		// 			newStatus: {
+		// 				in: ['IN_PROGRESS', 'SPRAYED'],
+		// 			}, // Exclude accepted reassigned jobs
+		// 		},
+		// 	},
+		// },
 		where: {
-			jobActivities: {
-				some: {
-					changedById: pilotId,
-					newStatus: 'PILOT_REJECTED',
-				},
-				none: {
-					changedById: pilotId,
-					newStatus: {
-						in: ['IN_PROGRESS', 'SPRAYED'],
-					}, // Exclude accepted reassigned jobs
-				},
-			},
+			fieldWorkerId: pilotId,
+			status: 'PILOT_REJECTED',
 		},
 		select: {
 			id: true,
@@ -4083,27 +4090,14 @@ const getPilotRejectedJobs = async (
 	const formattedJobs = jobs.map((job) => ({
 		...job,
 		status: 'REJECTED',
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		), // Sum actualAcres, default to 0 if null
+		).toFixed(2)) // Sum actualAcres, default to 0 if null
 	}));
 
 	const totalResults = await prisma.job.count({
-		where: {
-			jobActivities: {
-				some: {
-					changedById: pilotId,
-					newStatus: 'PILOT_REJECTED',
-				},
-				none: {
-					changedById: pilotId,
-					newStatus: {
-						in: ['IN_PROGRESS', 'SPRAYED'],
-					}, // Exclude accepted reassigned jobs
-				},
-			},
-		},
+		where: { fieldWorkerId: pilotId, status: 'PILOT_REJECTED' },
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -4237,16 +4231,16 @@ const getJobByIdForPilot = async (
 	// Format the job object with conditional removal of applicator or grower
 	const formattedJob = (({ products, jobActivities, ...job }) => ({
 		...job,
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		),
+		).toFixed(2)), // Sum actualAcres, default to 0 if null
 		farm: {
 			...job.farm,
-			totalAcres: fields.reduce(
+			totalAcres: parseFloat(fields.reduce(
 				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
 				0,
-			),
+			).toFixed(2),)
 		},
 		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
 			...rest,
@@ -4655,16 +4649,16 @@ const getJobByIdThroughEmail = async (jobId: number) => {
 	const formattedJob = (({ applicator, products, ...job }) => ({
 		...job,
 		applicator,
-		totalAcres: job.fields.reduce(
+		totalAcres: parseFloat(job.fields.reduce(
 			(sum, f) => sum + (f.actualAcres || 0),
 			0,
-		),
+		).toFixed(2)),
 		farm: {
 			...job.farm,
-			totalAcres: fields.reduce(
+			totalAcres: parseFloat(fields.reduce(
 				(sum, f) => sum + (f.acres ? f.acres.toNumber() : 0),
 				0,
-			),
+			).toFixed(2)),
 		},
 		products: products.map(({ product, name, perAcreRate, ...rest }) => ({
 			...rest,
