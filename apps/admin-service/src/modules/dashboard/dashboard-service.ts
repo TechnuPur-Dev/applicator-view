@@ -62,9 +62,7 @@ const getSummary = async () => {
 	  },
 	};
   };
-
-
-const getBarChartData = async (role?: UserRole) => {
+const getBarChartData = async (role?: UserRole| 'ALL') => {
 	const nowDate = new Date();
 	nowDate.setHours(0, 0, 0, 0); // start of today
   
@@ -74,10 +72,10 @@ const getBarChartData = async (role?: UserRole) => {
   
 	// Current 7 Days: Day-wise Breakdown
 	for (let i = 6; i >= 0; i--) {
-	  const dayDate = new Date(nowDate);
-	  dayDate.setDate(nowDate.getDate() - i);
+	  const dayDate = new Date(nowDate); // current date 
+	  dayDate.setDate(nowDate.getDate() - i); //get prevoius  date i.e if i is 2 then we get 2 days before date
   
-	  const start = new Date(dayDate);
+	  const start = new Date(dayDate);//i.e get start and end time of 2 days before date
 	  start.setHours(0, 0, 0, 0);
   
 	  const end = new Date(dayDate);
@@ -86,7 +84,7 @@ const getBarChartData = async (role?: UserRole) => {
 	  const count = await prisma.user.count({
 		where: {
 		  createdAt: { gte: start, lte: end },
-		  ...(role ? { role } : {}),
+		  ...(role && role !== 'ALL' ? { role } : {}), // condition for ignoring 'ALL'
 		},
 	  });
   
@@ -96,10 +94,10 @@ const getBarChartData = async (role?: UserRole) => {
 		value: count,
 	  });
 	}
-  
-	//Previous 7 Days Total
+ 
+	//Previous 7 Days  Total
 	const prevStart = new Date(nowDate);
-	prevStart.setDate(prevStart.getDate() - 13);
+	prevStart.setDate(prevStart.getDate() - 13); //now get last week start date
 	prevStart.setHours(0, 0, 0, 0);
   
 	const prevEnd = new Date(nowDate);
@@ -109,22 +107,97 @@ const getBarChartData = async (role?: UserRole) => {
 	const prevTotal = await prisma.user.count({
 	  where: {
 		createdAt: { gte: prevStart, lte: prevEnd },
-		...(role ? { role } : {}),
+		...(role && role !== 'ALL' ? { role } : {}),
 	  },
 	});
-  //curent 7 daya and previous 7 days percentage 
+	console.log(current7Days,"current7Dayssssss")
+  //curent 7 days and previous 7 days percentage 
 	const currentTotal = current7Days.reduce((a, b) => a + b, 0);
 	const change = prevTotal === 0 ? 100 : +(((currentTotal - prevTotal) / prevTotal) * 100).toFixed(2);
-  
 	return {
 	  change,
 	  data: days,
 	};
   };
+const getLineChartData = async (role?: UserRole| 'ALL') => {
+	const nowDate = new Date();
+	nowDate.setHours(0, 0, 0, 0); // start of today
+  
+	const current7Days = [];
+	const days = [];
+	const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+	// Current 7 Days: Day-wise Breakdown
+	for (let i = 6; i >= 0; i--) {
+	  const dayDate = new Date(nowDate); // current date 
+	  dayDate.setDate(nowDate.getDate() - i); //get prevoius  date i.e if i is 2 then we get 2 days before date
+  
+	  const start = new Date(dayDate);//i.e get start and end time of 2 days before date
+	  start.setHours(0, 0, 0, 0);
+  
+	  const end = new Date(dayDate);
+	  end.setHours(23, 59, 59, 999);
+  
+	  const count = await prisma.user.count({ //count the user who comes on that particular date 
+		where: {
+		  createdAt: { gte: start, lte: end },
+		  ...(role === 'ALL' ? {} : { role: role || 'APPLICATOR' }),
+		  
+		},
+	  });
+  
+	  current7Days.push(count);
+	  days.push({
+		day: weekDays[dayDate.getDay()],
+		value: count,
+	  });
+	}
+
+	return {
+	  data: days,
+	};
+  };
+const getDonutChartData = async (role?: UserRole | 'ALL') => {
+	const users = await prisma.user.findMany({
+	  where: {
+		...(role === 'ALL' ? {} : { role: role || 'GROWER' }),
+	  },
+	  select: {
+		state: true, 
+	  },
+	});
+  
+	// Count user per state name
+	const stateCount: Record<string, number> = {};
+  
+	users.forEach((user) => {
+	  const stateName =
+		typeof user.state === 'string' ? user.state : user.state?.name || 'Unknown';
+	  stateCount[stateName] = (stateCount[stateName] || 0) + 1;
+	});
+  console.log(stateCount,"stateCount")
+
+	const totalUsers = users.length;
+	const data = Object.entries(stateCount).map(([state, count]) => ({
+	  state,
+	  userPercent: totalUsers ? +((count / totalUsers) * 100).toFixed(2) : 0,
+	}));
+  
+	return {
+	  data,
+	};
+  };
+  
+  
+
+	
+  
 export default {
 
 	getSummary,
-	getBarChartData
+	getBarChartData,
+	getLineChartData,
+	getDonutChartData
 
 	
 };

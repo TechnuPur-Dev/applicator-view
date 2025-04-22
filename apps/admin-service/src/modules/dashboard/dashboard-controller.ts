@@ -18,9 +18,19 @@ const getBarChartData  = catchAsync(async (req: Request, res: Response) => {
 	const userData = await dashboardService.getBarChartData(role);
 	res.status(httpStatus.OK).json(userData);
 });
-
-
+const getLineChartData = catchAsync(async (req: Request, res: Response) => {
+    const role = req?.query?.searchValue as UserRole
+	const userData = await dashboardService.getLineChartData(role);
+	res.status(httpStatus.OK).json(userData);
+});
+const getDonutChartData = catchAsync(async (req: Request, res: Response) => {
+    const role = req?.query?.searchValue as UserRole
+	const userData = await dashboardService.getDonutChartData(role);
+	res.status(httpStatus.OK).json(userData);
+});
 export default {
 	getSummary ,
-	getBarChartData
+	getBarChartData,
+	getLineChartData,
+	getDonutChartData
 };

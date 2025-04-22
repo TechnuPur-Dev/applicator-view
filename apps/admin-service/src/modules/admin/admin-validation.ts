@@ -13,20 +13,8 @@ const paramsSchema: Schema = Joi.object({
 		.required(),
 });
 
-const updateArchiveStatus: Schema = Joi.object({
-	body: Joi.object({
-		userId: Joi.number().integer().positive().required(),
-		archiveStatus: Joi.boolean().optional(),
-		canManageFarmsStauts: Joi.boolean().optional(),
-	}).required(),
-});
-
-
-
-
 
 export default {
 	paramsSchema,
-	updateArchiveStatus,
 	
 };
