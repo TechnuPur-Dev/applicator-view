@@ -89,7 +89,12 @@ router
 		normalizeApplicatorUser,
 		jobController.getFarmListByGrowerId,
 	);
-
+	router
+	.route('/farmslist/:applicatorId')
+	.get(
+		verifyToken,
+		jobController.getFarmListByApplicatorId,
+	);
 //upload job attachments
 router
 	.route('/upload/job-attachments')

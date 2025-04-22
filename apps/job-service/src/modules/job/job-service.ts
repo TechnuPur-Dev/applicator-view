@@ -1151,6 +1151,42 @@ const getFarmListByGrowerId = async (
 	// });
 	return farms;
 };
+const getFarmListByApplicatorId = async (
+	applicatorId: number,
+	growerId: number,
+) => {
+	console.log(applicatorId, growerId, "grower")
+	const farms = await prisma.farm.findMany({
+		where: {
+			growerId,
+			permissions: {
+				some: {
+					applicatorId:applicatorId,
+					canView:true
+				},
+				
+			
+			},
+		},
+		select: {
+			id: true,
+			name: true,
+			farmImageUrl: true,
+			// isActive: true,
+			fields: {
+				select: {
+					id: true,
+					name: true,
+					acres: true,
+				},
+			},
+		},
+		orderBy: {
+			createdAt: 'desc',
+		},
+	});
+	return farms;
+};
 
 const uploadJobAttachments = async (
 	userId: number,
@@ -4638,6 +4674,7 @@ export default {
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerId,
+	getFarmListByApplicatorId,
 	uploadJobAttachments,
 	getJobs,
 	getOpenJobs,
@@ -4665,4 +4702,5 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobByIdThroughEmail,
+
 };

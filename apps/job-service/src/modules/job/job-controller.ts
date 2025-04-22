@@ -100,6 +100,17 @@ const getFarmListByGrowerId = catchAsync(
 		res.status(httpStatus.OK).json({ result: result });
 	},
 );
+const getFarmListByApplicatorId = catchAsync(
+	async (req: Request, res: Response) => {
+		const applicatorId = +req.params.applicatorId;
+		const growerId = +req.payload.id;
+		const result = await jobService.getFarmListByApplicatorId(
+			applicatorId,
+			growerId,
+		);
+		res.status(httpStatus.OK).json({ result: result });
+	},
+);
 const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const files = req.files;
@@ -337,6 +348,7 @@ export default {
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerId,
+	getFarmListByApplicatorId,
 	uploadJobAttachments,
 	getJobs,
 	getOpenJobs,
