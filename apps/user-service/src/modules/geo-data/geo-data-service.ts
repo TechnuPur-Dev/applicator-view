@@ -8,7 +8,7 @@ import {
 	UpdateTownShipData,
 	UpdateCountyData,
 } from './geo-data-types';
-import axios from 'axios';
+import validateAddressHelper from '../../helper/validate-address';
 
 // to update user profile
 const createStates = async (data: StateData[]) => {
@@ -194,62 +194,16 @@ const getTownshipsByCounty = async (countyId: number) => {
 };
 
 const validateAddress = async (street: string, city: string, state: string) => {
-	const AUTH_ID = '3c1db701-d45f-5411-cafd-7ead392570eb';
-	const AUTH_TOKEN = 'cvuxc0QLqUmBhkpuAkxk';
-
-	try {
-		// Step 1: Validate City and State
-		const cityStateUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
-		const cityStateResponse = await axios.get(cityStateUrl);
-
-		if (
-			cityStateResponse.data[0].reason ||
-			cityStateResponse.data[0].status
-		) {
-			throw new ApiError(
-				httpStatus.UNAUTHORIZED,
-				cityStateResponse.data[0].reason,
-			);
-		}
-
-		// Step 2: Validate Full Address if City and State are valid
-		if (street) {
-			const streetUrl = `https://us-street.api.smarty.com/street-address?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&street=${encodeURIComponent(street)}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
-			const streetResponse = await axios.get(streetUrl);
-
-			if (!streetResponse.data || streetResponse.data.length === 0) {
-				throw new ApiError(
-					httpStatus.NOT_FOUND,
-					'Invalid Street Address',
-				);
-			}
-		}
-
-		return { message: 'Valid Address' };
-	} catch (error: any) {
-		return { message: error.response?.data || error.message };
-	}
+	await validateAddressHelper({
+		street,
+		city,
+		state,
+	});
+	return { message: 'Valid Address' };
 };
 
 const getCityByZip = async (zipCode: string) => {
-	const AUTH_ID = '3c1db701-d45f-5411-cafd-7ead392570eb';
-	const AUTH_TOKEN = 'cvuxc0QLqUmBhkpuAkxk';
-
-	// Step 1: Validate City and State
-	const cityStateUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&city=&state=&zipcode=${zipCode}`;
-	const cityStateResponse = await axios.get(cityStateUrl);
-	console.log(cityStateResponse.data[0]);
-
-	if (cityStateResponse.data[0].reason || cityStateResponse.data[0].status) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			cityStateResponse.data[0].reason,
-		);
-	}
-
-	return {
-		cityName: cityStateResponse.data[0].city_states[0].city,
-	};
+	return await validateAddressHelper({ zipCode });
 };
 export default {
 	createStates,
