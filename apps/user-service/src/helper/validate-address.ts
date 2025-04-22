@@ -52,7 +52,8 @@ const validateAddressHelper = async ({
 	}
 
 	// Step 2: Validate City + State
-	if (city && state) {
+	if (!street && city && state) {
+		console.log(street, city, state);
 		const cityStateUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`;
 		const cityStateResponse = await axios.get(cityStateUrl);
 
@@ -65,6 +66,7 @@ const validateAddressHelper = async ({
 				'Invalid city/state combination.';
 			throw new ApiError(httpStatus.BAD_REQUEST, userMessage);
 		}
+		return { message: 'Valid full address.' };
 	}
 
 	// Step 3: Validate Full Address
@@ -76,7 +78,7 @@ const validateAddressHelper = async ({
 			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid street address.');
 		}
 
-		return { message: 'Valid full address.', cityName: undefined };
+		return { message: 'Valid full address.' };
 	}
 
 	throw new ApiError(

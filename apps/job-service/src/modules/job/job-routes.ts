@@ -90,7 +90,7 @@ router
 		jobController.getFarmListByGrowerId,
 	);
 	router
-	.route('/farmslist/:applicatorId')
+	.route('/farms-list/by-grower/:applicatorId')
 	.get(
 		verifyToken,
 		jobController.getFarmListByApplicatorId,
