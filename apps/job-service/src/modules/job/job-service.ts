@@ -3527,6 +3527,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 			},
 			products: formattedProducts,
 			applicationFees: formattedApplicationFees,
+			bidDescription: Bid[0]?.description,
 			totalBidAmount,
 			bidPlaced,
 		};
