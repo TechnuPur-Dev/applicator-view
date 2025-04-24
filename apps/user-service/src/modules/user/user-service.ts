@@ -657,7 +657,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 	// Handle Worker Invitations
 	if (isWorker) {
 		await prisma.$transaction(async (prisma) => {
-			await prisma.applicatorWorker.update({
+			const invite = await prisma.applicatorWorker.update({
 				where: {
 					applicatorId_workerId: { applicatorId, workerId: userId },
 					inviteStatus: 'PENDING',
@@ -667,6 +667,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 			await prisma.notification.create({
 				data: {
 					userId: targetUserId, // Notify the appropriate user
+					inviteId:invite.id,
 					type:
 						status === 'ACCEPTED'
 							? 'ACCEPT_INVITE'
@@ -731,6 +732,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 				await prisma.notification.create({
 					data: {
 						userId: targetUserId, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -739,7 +741,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 		}
 		if (status === 'REJECTED') {
 			await prisma.$transaction(async (prisma) => {
-				await prisma.applicatorGrower.update({
+				const invite = await prisma.applicatorGrower.update({
 					where: {
 						applicatorId_growerId: { applicatorId, growerId },
 						inviteStatus: 'PENDING',
@@ -749,6 +751,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 				await prisma.notification.create({
 					data: {
 						userId: targetUserId, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2458,6 +2461,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite.applicator.id, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -2493,6 +2497,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.applicator?.id, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2530,6 +2535,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.grower?.id, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -2588,6 +2594,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.grower?.id, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2631,6 +2638,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite.applicator.id, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -2664,6 +2672,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.applicator?.id, // Notify the appropriate user
+						inviteId:invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});

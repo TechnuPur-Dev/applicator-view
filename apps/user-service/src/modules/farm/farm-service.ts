@@ -232,7 +232,7 @@ const getFarmById = async (user: User, id: number) => {
 
 	return {
 		...farm,
-		totalAcres: totalAcresByFarm, // Keep totalAcres
+		totalAcres: totalAcresByFarm.toFixed(2), // Keep totalAcres
 	};
 };
 
@@ -711,7 +711,7 @@ const getAllFarms = async (growerId: number, options: PaginateOptions) => {
 
 		return {
 			...farmWithoutFields,
-			totalAcres: totalAcresByFarm, // Keep totalAcres
+			totalAcres: totalAcresByFarm.toFixed(2), // Keep totalAcres
 		};
 	});
 

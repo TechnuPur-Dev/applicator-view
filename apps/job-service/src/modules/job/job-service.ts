@@ -896,6 +896,7 @@ const updateJobByApplicator = async (
 			await prisma.notification.create({
 				data: {
 					userId: fieldWorkerId, // Notify the appropriate user
+					jobId:job.id,
 					type: 'JOB_ASSIGNED',
 				},
 			});
@@ -998,6 +999,7 @@ const updateJobByApplicator = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId,
+					jobId:job.id,
 					type:
 						requestedStatus === 'SPRAYED'
 							? 'JOB_COMPLETED'
@@ -2349,6 +2351,7 @@ const updatePendingJobStatus = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId, // Notify the appropriate user
+					jobId:updatedJob.id,
 					type:
 						data.status === 'READY_TO_SPRAY'
 							? 'JOB_ACCEPTED'
@@ -4581,7 +4584,7 @@ const updateBidJobStatus = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId, // Notify the appropriate user
-					// jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
+					jobId: data.status === 'ACCEPTED' ? updatedBid.jobId : null,
 					type: 'BID_ACCEPTED',
 				},
 			});
