@@ -157,7 +157,7 @@ const getLineChartData = async (role?: UserRole| 'ALL') => {
 	  data: days,
 	};
   };
-const getDonutChartData = async (role?: UserRole | 'ALL') => {
+ const getDonutChartData = async (role?: UserRole | 'ALL') => {
 	const users = await prisma.user.findMany({
 	  where: {
 		...(role === 'ALL' ? {} : { role: role || 'GROWER' }),
@@ -175,7 +175,6 @@ const getDonutChartData = async (role?: UserRole | 'ALL') => {
 		typeof user.state === 'string' ? user.state : user.state?.name || 'Unknown';
 	  stateCount[stateName] = (stateCount[stateName] || 0) + 1;
 	});
-  console.log(stateCount,"stateCount")
 
 	const totalUsers = users.length;
 	const data = Object.entries(stateCount).map(([state, count]) => ({
@@ -186,8 +185,32 @@ const getDonutChartData = async (role?: UserRole | 'ALL') => {
 	return {
 	  data,
 	};
-  };
-  
+  }; 
+  // const getDonutChartData = async (role?: UserRole | 'ALL') => {
+// 	const roleCondition =
+// 		role && role !== 'ALL' ? Prisma.sql`WHERE u.role = ${role}` : Prisma.empty;
+
+// 	const results = await prisma.$queryRaw<
+// 		{ state: string | null; count: number }[]
+// 	>(Prisma.sql`
+// 		SELECT
+// 			s."name" AS state,
+// 			COUNT(*) as count
+// 		FROM "User" u
+// 		LEFT JOIN "State" s ON u."stateId" = s.id
+// 		${roleCondition}
+// 		GROUP BY s."name"
+// 	`);
+
+// 	const total = results.reduce((sum, row) => sum + Number(row.count), 0);
+
+// 	return results.map(row => ({
+// 		state: row.state ?? 'Unknown',
+// 		percent: Math.round((Number(row.count) / total) * 100),
+// 	}));
+// };
+
+
   
 
 	

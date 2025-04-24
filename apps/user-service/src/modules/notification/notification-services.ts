@@ -19,12 +19,15 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 		where: { userId },
 		include: {
 			invite: true, // we include full invite here, but later we'll filter it
+			job:true,
+			ticket:true
 		},
 		skip,
 		take: limit,
 		orderBy: {
 			id: 'desc',
 		},
+		
 	});
 
 	if (!notifications) {
@@ -38,10 +41,16 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 
 	// Format notifications with selective invite fields
 	const formattedNotifications = notifications.map((notif) => {
-		const invite = notif.invite;
-
 		let filteredInvite = null;
-		if (invite) {
+		let filteredJob = null;
+		let filteredTicket = null;
+		switch (notif.type) {
+			case 'ACCOUNT_INVITATION':
+			case 'ACCEPT_INVITE':
+			case 'REJECT_INVITE':
+		
+		if (notif.invite) {
+			const invite = notif.invite;
 			if (invite.inviteInitiator === 'APPLICATOR') {
 				filteredInvite = {
 					inviteInitiator: invite.inviteInitiator,
@@ -58,11 +67,42 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 				};
 			}
 		}
-
+		break;
+		case 'JOB_ASSIGNED':
+		case 'JOB_ACCEPTED':
+		case 'JOB_REJECTED':
+		case 'JOB_REQUEST':
+		case 'JOB_COMPLETED':
+		case 'BID_PLACED':
+		case 'BID_ACCEPTED':
+			if (notif.job) {
+				const jobInvite = notif.job
+				filteredJob = {
+				
+					title: jobInvite.title,
+					type: jobInvite.type,
+					status: jobInvite.status
+				};
+			}
+			break;
+			case 'TICKET_ASSIGNED':
+		    case 'TICKET_RESOLVED':
+			if (notif.ticket) {
+				filteredTicket = {
+				
+					subject: notif.ticket.subject,
+					status: notif.ticket.status,
+					description: notif.ticket.description
+				};
+			}
+			break;
+	}
 		// Return the full notification data, but replace invite with filteredInvite
 		return {
 			...notif,
 			invite: filteredInvite,
+			job:filteredJob,
+			ticket:filteredTicket
 		};
 	});
 
