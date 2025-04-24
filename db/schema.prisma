@@ -211,6 +211,8 @@ model TableView {
 
 model Job {
   id                  Int                 @id @default(autoincrement())
+  token               String?             @unique
+  tokenExpiresAt      DateTime? // Optional: Invite expiration time
   title               String
   type                JobType
   source              JobSource
