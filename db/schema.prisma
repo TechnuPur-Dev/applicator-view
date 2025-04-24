@@ -238,7 +238,7 @@ model Job {
   jobActivities       JobActivity[]
   applicationFees     JobApplicationFee[]
   products            JobProduct[]
-  Notification        Notification?
+  Notification        Notification[]
   supportTickets      SupportTicket[]
 }
 
@@ -428,7 +428,7 @@ model Notification {
   isRead Boolean          @default(false)
 
   // Nullable foreign keys for referencing related entities
-  jobId Int? @unique // Only set if related to a job
+  jobId Int?
   job   Job? @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
