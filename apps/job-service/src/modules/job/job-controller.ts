@@ -266,9 +266,9 @@ const getAllJobInvoices = catchAsync(async (req: Request, res: Response) => {
 });
 const acceptJobThroughEmail = catchAsync(
 	async (req: Request, res: Response) => {
-		const id = +req.params.jobId;
+		// const id = +req.params.jobId;
 		const data = req.body;
-		const result = await jobService.acceptJobThroughEmail(id, data);
+		const result = await jobService.acceptJobThroughEmail(data);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -329,10 +329,11 @@ const updateBidJobStatus = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-const getJobByIdThroughEmail = catchAsync(
+const getJobBytokenThroughEmail = catchAsync(
 	async (req: Request, res: Response) => {
-		const id = +req.params.jobId;
-		const result = await jobService.getJobByIdThroughEmail(id);
+		// const id = +req.params.jobId;
+		const { token } = req.body;
+		const result = await jobService.getJobBytokenThroughEmail(token);
 		res.status(httpStatus.OK).json(result);
 	},
 );
@@ -375,5 +376,5 @@ export default {
 	placeBidForJob,
 	getAllBidsByJobId,
 	updateBidJobStatus,
-	getJobByIdThroughEmail,
+	getJobBytokenThroughEmail,
 };

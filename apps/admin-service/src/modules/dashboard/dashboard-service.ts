@@ -21,7 +21,7 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 	
 // } from '../../../../../shared/types/global';
 // import ApiError from '../../../../../shared/utils/api-error';
-// import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
+// import { generateToken, verifyInvite } from '../../helper/invite-token';
 // import { InviteStatus } from '@prisma/client';
 
 

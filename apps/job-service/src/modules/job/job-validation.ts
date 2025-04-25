@@ -103,12 +103,18 @@ const updateJobSchema = Joi.object({
 		)
 		.required(),
 });
-
+const inviteTokenSchema: Schema = Joi.object({
+	body: Joi.object({
+		token: Joi.string().required(),
+	}).required(),
+	
+});
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
 		jobId: Joi.number().integer().positive(),
 	}).required(),
 });
+
 const jobSourceParamSchema: Schema = Joi.object({
 	params: Joi.object({
 		type: Joi.string()
@@ -212,10 +218,11 @@ const updateBidStatusSchema = Joi.object({
 		.required(),
 });
 const acceptJobSchema = Joi.object({
-	params: Joi.object({
-		jobId: Joi.number().integer().positive().required(),
-	}).required(),
+	// params: Joi.object({
+	// 	jobId: Joi.number().integer().positive().required(),
+	// }).required(),
 	body: Joi.object({
+		token: Joi.string().required(),
 		status: Joi.string().valid('ACCEPT', 'REJECT').required(),
 		rejectionReason: Joi.string()
 			.min(1)
@@ -239,4 +246,5 @@ export default {
 	placeBidJobSchema,
 	updateBidStatusSchema,
 	acceptJobSchema,
+	inviteTokenSchema
 };
