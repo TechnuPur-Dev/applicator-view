@@ -21,7 +21,7 @@ import { generateToken } from '../../../../user-service/src/helper/invite-token'
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
 	if (user.role === 'APPLICATOR') {
-		const token = generateToken('GROWER');// job created for grower by applicator
+		const token = generateToken('GROWER'); // job created for grower by applicator
 		const {
 			title,
 			type,
@@ -284,8 +284,10 @@ const createJob = async (user: User, data: CreateJob) => {
 		const result = await prisma.$transaction(async (prisma) => {
 			const job = await prisma.job.create({
 				data: {
-					token:token,
-					tokenExpiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+					token: token,
+					tokenExpiresAt: new Date(
+						Date.now() + 3 * 24 * 60 * 60 * 1000,
+					),
 					title,
 					type,
 					source: 'GROWER',
@@ -901,7 +903,7 @@ const updateJobByApplicator = async (
 			await prisma.notification.create({
 				data: {
 					userId: fieldWorkerId, // Notify the appropriate user
-					jobId:job.id,
+					jobId: job.id,
 					type: 'JOB_ASSIGNED',
 				},
 			});
@@ -1004,7 +1006,7 @@ const updateJobByApplicator = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId,
-					jobId:job.id,
+					jobId: job.id,
 					type:
 						requestedStatus === 'SPRAYED'
 							? 'JOB_COMPLETED'
@@ -2356,7 +2358,7 @@ const updatePendingJobStatus = async (
 			await tx.notification.create({
 				data: {
 					userId: notificationUserId, // Notify the appropriate user
-					jobId:updatedJob.id,
+					jobId: updatedJob.id,
 					type:
 						data.status === 'READY_TO_SPRAY'
 							? 'JOB_ACCEPTED'
@@ -3789,19 +3791,20 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 	};
 };
 const acceptJobThroughEmail = async (
-	data: { token:string, status: 'ACCEPT' | 'REJECT'; rejectionReason: string },
+	token: string,
+	data: { status: 'ACCEPT' | 'REJECT'; rejectionReason: string },
 ) => {
-	const {token, status, rejectionReason } = data;
+	const { status, rejectionReason } = data;
 	const whereCondition: {
 		token: string;
 		status: JobStatus;
-	} = { token:token , status: 'PENDING' };
-	
+	} = { token: token, status: 'PENDING' };
+
 	if (status === 'ACCEPT') {
 		await prisma.$transaction(async (tx) => {
 			const job = await tx.job.update({
 				where: {
-					token:token
+					token: token,
 				},
 				data: {
 					status: 'READY_TO_SPRAY',
@@ -3843,7 +3846,7 @@ const acceptJobThroughEmail = async (
 		await prisma.$transaction(async (tx) => {
 			const job = await tx.job.update({
 				where: {
-					token:token
+					token: token,
 				},
 				data: {
 					status: 'REJECTED',
@@ -4634,10 +4637,10 @@ const updateBidJobStatus = async (
 };
 
 // service for Job
-const getJobBytokenThroughEmail = async (token: string,) => {
+const getJobBytokenThroughEmail = async (token: string) => {
 	const job = await prisma.job.findUnique({
 		where: {
-			token: token,
+			token,
 			// source: 'APPLICATOR',
 			// status: 'PENDING',
 		},

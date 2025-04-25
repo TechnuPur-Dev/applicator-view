@@ -188,7 +188,7 @@ router // TODO: Update service accroding to the business logic
 	.route('/get-all/job-invoices')
 	.get(verifyToken, normalizeApplicatorUser, jobController.getAllJobInvoices);
 router
-	.route('/accept-reject/by-email')
+	.route('/accept-reject/by-email/:token')
 	.put(
 		validateSchema(jobValidation.acceptJobSchema),
 		jobController.acceptJobThroughEmail,
@@ -242,7 +242,7 @@ router
 	);
 // get Job by Id
 router
-	.route('/get-job/by-email')
+	.route('/get-job/by-email/:token')
 	.get(
 		validateSchema(jobValidation.inviteTokenSchema),
 		jobController.getJobBytokenThroughEmail,
