@@ -10,7 +10,7 @@ import {
 	mailHtmlTemplate,
 	sendEmail,
 } from '../../../../../shared/helpers/node-mailer';
-import { generateInviteToken } from '../../helper/invite-token';
+import { generateToken } from '../../helper/invite-token';
 //
 
 const createWorker = async (user: User, data: ApplicatorWorker) => {
@@ -20,7 +20,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 			'You are not authorized to perform this action.',
 		);
 	}
-	const token = generateInviteToken('WORKER');
+	const token = generateToken('WORKER');
 	return prisma.$transaction(async (prisma) => {
 		const worker = await prisma.user.create({
 			data: {
@@ -315,7 +315,7 @@ const sendInviteToWorker = async (
 	data: ApplicatorWorker,
 ) => {
 	let invite;
-	const token = generateInviteToken('WORKER');
+	const token = generateToken('WORKER');
 
 	const existingInvite = await prisma.applicatorWorker.findUnique({
 		where: {

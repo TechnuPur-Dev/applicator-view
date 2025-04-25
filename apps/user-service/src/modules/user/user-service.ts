@@ -22,7 +22,7 @@ import {
 	User,
 	city,
 } from '../../../../../shared/types/global';
-import { generateInviteToken, verifyInvite } from '../../helper/invite-token';
+import { generateToken, verifyInvite } from '../../helper/invite-token';
 import { InviteStatus } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
@@ -350,7 +350,7 @@ const getGrowerByEmail = async (applicatorId: number, userEmail: string) => {
 const createGrower = async (data: UpdateUser, userId: number) => {
 	const { firstName, lastName } = data;
 	// Generate Token
-	const token = generateInviteToken('GROWER');
+	const token = generateToken('GROWER');
 	const [grower] = await prisma.$transaction(async (prisma) => {
 		const grower = await prisma.user.create({
 			data: {
@@ -1307,7 +1307,7 @@ const sendInviteToApplicator = async (
 		},
 	});
 
-	const inviteToken = generateInviteToken('APPLICATOR');
+	const inviteToken = generateToken('APPLICATOR');
 	//  Fetch farms owned by the grower
 	const growerFarms = await prisma.farm.findMany({
 		where: { growerId: user.id },
@@ -1485,7 +1485,7 @@ const sendInviteToGrower = async (
 	},
 ) => {
 	const { id: applicatorId, role } = currentUser;
-	const token = generateInviteToken('GROWER');
+	const token = generateToken('GROWER');
 
 	if (role !== 'APPLICATOR')
 		return 'You are not allowed to perform this action.';

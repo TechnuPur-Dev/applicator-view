@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/env-config';
 
-const generateInviteToken = (role: string) => {
+const generateToken = (role: string) => {
 	const payload = { role };
 	return jwt.sign(payload, config.jwt.accessSecret, { expiresIn: '7d' });
 };
@@ -21,4 +21,4 @@ const verifyInvite = (token: string): string | null => {
 	}
 };
 
-export { generateInviteToken, verifyInvite };
+export { generateToken, verifyInvite };

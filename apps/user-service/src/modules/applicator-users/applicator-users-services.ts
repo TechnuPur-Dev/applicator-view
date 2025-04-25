@@ -11,7 +11,7 @@ import {
 	mailHtmlTemplate,
 	sendEmail,
 } from '../../../../../shared/helpers/node-mailer';
-import { generateInviteToken } from '../../helper/invite-token';
+import { generateToken } from '../../helper/invite-token';
 //
 const searchApplicatorUserByEmail = async (
 	applicatorId: number,
@@ -75,7 +75,7 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 	}
 	let { password } = data;
 	const { userPermission = [] } = data;
-	const token = generateInviteToken('APPLICATOR_USER');
+	const token = generateToken('APPLICATOR_USER');
 	// hash the password only if it is provided
 	if (password) {
 		const hashedPassword = await hashPassword(data.password);
@@ -238,7 +238,7 @@ const sendInviteToUser = async (
 	const { userId, userPermission = [] } = data;
 	console.log(userId, applicatorId, 'idss');
 	let invite;
-	const token = generateInviteToken('APPLICATOR_USER');
+	const token = generateToken('APPLICATOR_USER');
 
 	const existingInvite = await prisma.applicatorUser.findFirst({
 		where: {

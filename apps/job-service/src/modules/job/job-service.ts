@@ -17,10 +17,11 @@ import { User, PaginateOptions } from '../../../../../shared/types/global';
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
-
+import { generateToken } from '../../../../user-service/src/helper/invite-token';
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
 	if (user.role === 'APPLICATOR') {
+		const token = generateToken('GROWER');// job created for grower by applicator
 		const {
 			title,
 			type,
@@ -88,6 +89,8 @@ const createJob = async (user: User, data: CreateJob) => {
 		}
 		const job = await prisma.job.create({
 			data: {
+				token: token,
+				tokenExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				title,
 				type,
 				source: 'APPLICATOR',
@@ -174,10 +177,9 @@ const createJob = async (user: User, data: CreateJob) => {
 				applicationFees: true,
 			},
 		});
-		console.log('Fields After job Creation:', job.fields);
 		const inviteLink =
 			job.grower?.profileStatus === 'INCOMPLETE'
-				? `https://grower-ac.netlify.app/#/growerJob?token=${job.id}`
+				? `https://grower-ac.netlify.app/#/growerJob?token=${job.token}`
 				: `https://grower-ac.netlify.app/#/pendingApprovals`;
 		const subject = 'Job Confirmation';
 		const message = `
@@ -214,6 +216,7 @@ const createJob = async (user: User, data: CreateJob) => {
 		return job;
 	}
 	if (user.role === 'GROWER') {
+		const token = generateToken('APPLICATOR');
 		const {
 			title,
 			type,
@@ -281,6 +284,8 @@ const createJob = async (user: User, data: CreateJob) => {
 		const result = await prisma.$transaction(async (prisma) => {
 			const job = await prisma.job.create({
 				data: {
+					token:token,
+					tokenExpiresAt:new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 					title,
 					type,
 					source: 'GROWER',
@@ -3784,18 +3789,20 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 	};
 };
 const acceptJobThroughEmail = async (
-	jobId: number,
-	data: { status: 'ACCEPT' | 'REJECT'; rejectionReason: string },
+	data: { token:string, status: 'ACCEPT' | 'REJECT'; rejectionReason: string },
 ) => {
-	const { status, rejectionReason } = data;
+	const {token, status, rejectionReason } = data;
 	const whereCondition: {
-		id: number;
+		token: string;
 		status: JobStatus;
-	} = { id: jobId, status: 'PENDING' };
+	} = { token:token , status: 'PENDING' };
+	
 	if (status === 'ACCEPT') {
 		await prisma.$transaction(async (tx) => {
 			const job = await tx.job.update({
-				where: whereCondition,
+				where: {
+					token:token
+				},
 				data: {
 					status: 'READY_TO_SPRAY',
 				},
@@ -3823,6 +3830,10 @@ const acceptJobThroughEmail = async (
 					},
 				});
 			}
+			await tx.job.update({
+				where: { id: job.id },
+				data: { token: null, tokenExpiresAt: null },
+			});
 		});
 		return {
 			message: 'Job accepted successfully.',
@@ -3831,7 +3842,9 @@ const acceptJobThroughEmail = async (
 	if (status === 'REJECT') {
 		await prisma.$transaction(async (tx) => {
 			const job = await tx.job.update({
-				where: whereCondition,
+				where: {
+					token:token
+				},
 				data: {
 					status: 'REJECTED',
 				},
@@ -3861,6 +3874,10 @@ const acceptJobThroughEmail = async (
 					},
 				});
 			}
+			await tx.job.update({
+				where: { id: job.id },
+				data: { token: null, tokenExpiresAt: null },
+			});
 		});
 
 		return {
@@ -4617,10 +4634,10 @@ const updateBidJobStatus = async (
 };
 
 // service for Job
-const getJobByIdThroughEmail = async (jobId: number) => {
+const getJobBytokenThroughEmail = async (token: string,) => {
 	const job = await prisma.job.findUnique({
 		where: {
-			id: jobId,
+			token: token,
 			// source: 'APPLICATOR',
 			// status: 'PENDING',
 		},
@@ -4768,5 +4785,5 @@ export default {
 	placeBidForJob,
 	getAllBidsByJobId,
 	updateBidJobStatus,
-	getJobByIdThroughEmail,
+	getJobBytokenThroughEmail,
 };
