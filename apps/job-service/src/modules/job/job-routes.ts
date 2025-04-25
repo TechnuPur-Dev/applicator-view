@@ -89,12 +89,9 @@ router
 		normalizeApplicatorUser,
 		jobController.getFarmListByGrowerId,
 	);
-	router
+router
 	.route('/farms-list/by-grower/:applicatorId')
-	.get(
-		verifyToken,
-		jobController.getFarmListByApplicatorId,
-	);
+	.get(verifyToken, jobController.getFarmListByApplicatorId);
 //upload job attachments
 router
 	.route('/upload/job-attachments')
@@ -245,7 +242,7 @@ router
 	);
 // get Job by Id
 router
-	.route('/getJob/by-email')
+	.route('/get-job/by-email')
 	.get(
 		validateSchema(jobValidation.inviteTokenSchema),
 		jobController.getJobBytokenThroughEmail,
