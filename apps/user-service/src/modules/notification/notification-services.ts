@@ -19,13 +19,18 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 		where: { userId },
 		include: {
 			invite: true, // we include full invite here, but later we'll filter it
-			job: true,
+			job: {
+				include: {
+					grower: true,
+					applicator: true
+				}
+			},
 			ticket: true
 		},
-		omit:{
-			inviteId:true,
-			jobId:true,
-			ticketId:true
+		omit: {
+			inviteId: true,
+			jobId: true,
+			ticketId: true
 		},
 		skip,
 		take: limit,
@@ -56,7 +61,7 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 					const invite = notif.invite;
 					if (invite.inviteInitiator === 'APPLICATOR') {
 						filteredInvite = {
-							inviteId:invite.id,
+							inviteId: invite.id,
 							inviteInitiator: invite.inviteInitiator,
 							applicatorId: invite.applicatorId,
 							applicatorFirstName: invite.applicatorFirstName,
@@ -64,7 +69,7 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 						};
 					} else if (invite.inviteInitiator === 'GROWER') {
 						filteredInvite = {
-							inviteId:invite.id,
+							inviteId: invite.id,
 							inviteInitiator: invite.inviteInitiator,
 							growerId: invite.growerId,
 							growerFirstName: invite.growerFirstName,
@@ -80,7 +85,7 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 					const invite = notif.invite;
 					if (invite.inviteInitiator === 'APPLICATOR') {
 						filteredInvite = {
-							inviteId:invite.id,
+							inviteId: invite.id,
 							growerId: invite.growerId,
 							growerFirstName: invite.growerFirstName,
 							growerLastName: invite.growerLastName,
@@ -88,7 +93,7 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 						};
 					} else if (invite.inviteInitiator === 'GROWER') {
 						filteredInvite = {
-							inviteId:invite.id,
+							inviteId: invite.id,
 							applicatorId: invite.applicatorId,
 							applicatorFirstName: invite.applicatorFirstName,
 							applicatorLastName: invite.applicatorLastName,
@@ -107,19 +112,34 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 			case 'BID_ACCEPTED':
 				if (notif.job) {
 					const jobInvite = notif.job
-					filteredJob = {
-                        id:jobInvite.id,
-						title: jobInvite.title,
-						type: jobInvite.type,
-						status: jobInvite.status
-					};
+
+					// Return opposite user info
+					if (userId === jobInvite.applicatorId && jobInvite.grower) {
+						filteredJob = {
+							id: jobInvite.id,
+							title: jobInvite.title,
+							growerId: jobInvite.grower.id,
+							growerFirstName: jobInvite.grower.firstName,
+							growerLastName: jobInvite.grower.lastName
+						};
+
+					} else if (userId === jobInvite.growerId && jobInvite.applicator) {
+						filteredJob = {
+							id: jobInvite.id,
+							title: jobInvite.title,
+							applicatorId: jobInvite.applicator.id,
+							applicatorFirstName: jobInvite.applicator.firstName,
+							applicatorLastName: jobInvite.applicator.lastName
+						};
+
+					}
 				}
 				break;
 			case 'TICKET_ASSIGNED':
 			case 'TICKET_RESOLVED':
 				if (notif.ticket) {
 					filteredTicket = {
-                        id:notif.ticket.id,
+						id: notif.ticket.id,
 						subject: notif.ticket.subject,
 						status: notif.ticket.status,
 						description: notif.ticket.description
@@ -130,8 +150,8 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 		// Return the full notification data, but replace invite with filteredInvite
 		return {
 			...notif,
-			invite: filteredInvite? filteredInvite : undefined,
-			job: filteredJob? filteredJob : undefined ,
+			invite: filteredInvite ? filteredInvite : undefined,
+			job: filteredJob ? filteredJob : undefined,
 			ticket: filteredTicket ? filteredTicket : undefined
 		};
 	});
