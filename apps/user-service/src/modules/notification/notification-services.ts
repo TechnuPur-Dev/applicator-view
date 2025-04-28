@@ -1,158 +1,193 @@
 import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
-import { PaginateOptions } from '../../../../../shared/types/global';
+import { PaginateOptions, User } from '../../../../../shared/types/global';
 
-// get all notification by current user Id
-const getAllNotificationByUserId = async (userId: number, options: PaginateOptions) => {
-	const limit = options.limit && parseInt(options.limit, 10) > 0
-		? parseInt(options.limit, 10)
-		: 10;
+const getAllNotificationByUserId = async (
+	user: User,
+	options: PaginateOptions,
+) => {
+	const { id: userId } = user;
 
-	const page = options.page && parseInt(options.page, 10) > 0
-		? parseInt(options.page, 10)
-		: 1;
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
 
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
 	const skip = (page - 1) * limit;
 
-	const notifications = await prisma.notification.findMany({
-		where: { userId },
-		include: {
-			invite: true, // we include full invite here, but later we'll filter it
-			job: {
-				include: {
-					grower: true,
-					applicator: true
-				}
+	const [notifications, totalResults] = await Promise.all([
+		prisma.notification.findMany({
+			where: { userId },
+			include: {
+				invite: true,
+				job: {
+					include: {
+						grower: true,
+						applicator: true,
+						fieldWorker: true,
+					},
+				},
+				ticket: true,
+				bid: {
+					select: {
+						applicator: {
+							select: {
+								id: true,
+								firstName: true,
+								lastName: true,
+							},
+						},
+					},
+				},
 			},
-			ticket: true
-		},
-		omit: {
-			inviteId: true,
-			jobId: true,
-			ticketId: true
-		},
-		skip,
-		take: limit,
-		orderBy: {
-			id: 'desc',
-		},
+			skip,
+			take: limit,
+			orderBy: { id: 'desc' },
+		}),
+		prisma.notification.count({ where: { userId } }),
+	]);
 
-	});
-
-	if (!notifications) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'No notifications found for this user.');
+	if (!notifications.length) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'No notifications found for this user.',
+		);
 	}
 
-	const totalResults = await prisma.notification.count({
-		where: { userId },
-	});
-	const totalPages = Math.ceil(totalResults / limit);
+	console.log(notifications);
 
-	// Format notifications with selective invite fields
 	const formattedNotifications = notifications.map((notif) => {
-		let filteredInvite = null;
-		let filteredJob = null;
-		let filteredTicket = null;
-		switch (notif.type) {
-			case 'ACCOUNT_INVITATION':
+		const { invite, job, ticket, type } = notif;
+		let filteredInvite, filteredJob, filteredTicket;
 
-				if (notif.invite) {
-					const invite = notif.invite;
-					if (invite.inviteInitiator === 'APPLICATOR') {
-						filteredInvite = {
-							inviteId: invite.id,
-							inviteInitiator: invite.inviteInitiator,
-							applicatorId: invite.applicatorId,
-							applicatorFirstName: invite.applicatorFirstName,
-							applicatorLastName: invite.applicatorLastName,
-						};
-					} else if (invite.inviteInitiator === 'GROWER') {
-						filteredInvite = {
-							inviteId: invite.id,
-							inviteInitiator: invite.inviteInitiator,
-							growerId: invite.growerId,
-							growerFirstName: invite.growerFirstName,
-							growerLastName: invite.growerLastName,
-						};
-					}
-				}
+		if (
+			['ACCOUNT_INVITATION', 'ACCEPT_INVITE', 'REJECT_INVITE'].includes(
+				type,
+			) &&
+			invite
+		) {
+			const commonFields = {
+				inviteId: invite.id,
+				inviteInitiator: invite.inviteInitiator,
+			};
+			if (invite.inviteInitiator === 'APPLICATOR') {
+				filteredInvite =
+					type === 'ACCOUNT_INVITATION'
+						? {
+								...commonFields,
+								applicatorId: invite.applicatorId,
+								applicatorFirstName: invite.applicatorFirstName,
+								applicatorLastName: invite.applicatorLastName,
+							}
+						: {
+								inviteId: invite.id,
+								growerId: invite.growerId,
+								growerFirstName: invite.growerFirstName,
+								growerLastName: invite.growerLastName,
+								status: invite.inviteStatus,
+							};
+			} else if (invite.inviteInitiator === 'GROWER') {
+				filteredInvite =
+					type === 'ACCOUNT_INVITATION'
+						? {
+								...commonFields,
+								growerId: invite.growerId,
+								growerFirstName: invite.growerFirstName,
+								growerLastName: invite.growerLastName,
+							}
+						: {
+								inviteId: invite.id,
+								applicatorId: invite.applicatorId,
+								applicatorFirstName: invite.applicatorFirstName,
+								applicatorLastName: invite.applicatorLastName,
+								status: invite.inviteStatus,
+							};
+			}
+		}
 
-				break;
-			case 'ACCEPT_INVITE':
-			case 'REJECT_INVITE':
-				if (notif.invite) {
-					const invite = notif.invite;
-					if (invite.inviteInitiator === 'APPLICATOR') {
-						filteredInvite = {
-							inviteId: invite.id,
-							growerId: invite.growerId,
-							growerFirstName: invite.growerFirstName,
-							growerLastName: invite.growerLastName,
-							status: invite.inviteStatus,
-						};
-					} else if (invite.inviteInitiator === 'GROWER') {
-						filteredInvite = {
-							inviteId: invite.id,
-							applicatorId: invite.applicatorId,
-							applicatorFirstName: invite.applicatorFirstName,
-							applicatorLastName: invite.applicatorLastName,
-							status: invite.inviteStatus,
-						};
-					}
-				}
-
-				break;
-			case 'JOB_ASSIGNED':
-			case 'JOB_ACCEPTED':
-			case 'JOB_REJECTED':
-			case 'JOB_REQUEST':
-			case 'JOB_COMPLETED':
-			case 'BID_PLACED':
-			case 'BID_ACCEPTED':
-				if (notif.job) {
-					const jobInvite = notif.job
-
-					// Return opposite user info
-					if (userId === jobInvite.applicatorId && jobInvite.grower) {
-						filteredJob = {
-							id: jobInvite.id,
-							title: jobInvite.title,
-							growerId: jobInvite.grower.id,
-							growerFirstName: jobInvite.grower.firstName,
-							growerLastName: jobInvite.grower.lastName
-						};
-
-					} else if (userId === jobInvite.growerId && jobInvite.applicator) {
-						filteredJob = {
-							id: jobInvite.id,
-							title: jobInvite.title,
-							applicatorId: jobInvite.applicator.id,
-							applicatorFirstName: jobInvite.applicator.firstName,
-							applicatorLastName: jobInvite.applicator.lastName
-						};
-
-					}
-				}
-				break;
-			case 'TICKET_ASSIGNED':
-			case 'TICKET_RESOLVED':
-				if (notif.ticket) {
-					filteredTicket = {
-						id: notif.ticket.id,
-						subject: notif.ticket.subject,
-						status: notif.ticket.status,
-						description: notif.ticket.description
+		if (
+			[
+				'JOB_REQUEST',
+				'JOB_ACCEPTED',
+				'JOB_REJECTED',
+				'PILOT_JOB_ACCEPTED',
+				'PILOT_JOB_REJECTED',
+				'JOB_ASSIGNED',
+				'JOB_COMPLETED',
+				'INVOICE_GENERATED',
+				'PAYMENT_RECEIVED',
+				'BID_PLACED',
+				'BID_ACCEPTED',
+			].includes(type) &&
+			job
+		) {
+			const { grower, applicator, fieldWorker } = job;
+			if (userId === job.applicatorId && (grower || fieldWorker)) {
+				if (
+					notif.type === 'PILOT_JOB_ACCEPTED' ||
+					notif.type === 'PILOT_JOB_REJECTED'
+				) {
+					filteredJob = {
+						id: job.id,
+						title: job.title,
+						workerId: fieldWorker?.id,
+						workerFirstName: fieldWorker?.firstName,
+						workerLastName: fieldWorker?.lastName,
+					};
+				} else {
+					filteredJob = {
+						id: job.id,
+						title: job.title,
+						growerId: grower?.id,
+						growerFirstName: grower?.firstName,
+						growerLastName: grower?.lastName,
 					};
 				}
-				break;
+			} else if (
+				userId === job.growerId ||
+				userId === job.fieldWorkerId
+			) {
+				if (notif.type === 'BID_PLACED') {
+					filteredJob = {
+						id: job.id,
+						bidId: notif.bidId,
+						title: job.title,
+						applicatorId: notif?.bid?.applicator?.id,
+						applicatorFirstName: notif?.bid?.applicator?.firstName,
+						applicatorLastName: notif?.bid?.applicator?.lastName,
+					};
+				} else {
+					filteredJob = {
+						id: job.id,
+						title: job.title,
+						applicatorId: applicator?.id,
+						applicatorFirstName: applicator?.firstName,
+						applicatorLastName: applicator?.lastName,
+					};
+				}
+			}
 		}
-		// Return the full notification data, but replace invite with filteredInvite
+
+		if (['TICKET_ASSIGNED', 'TICKET_RESOLVED'].includes(type) && ticket) {
+			filteredTicket = {
+				id: ticket.id,
+				subject: ticket.subject,
+				status: ticket.status,
+				description: ticket.description,
+			};
+		}
+
 		return {
 			...notif,
-			invite: filteredInvite ? filteredInvite : undefined,
-			job: filteredJob ? filteredJob : undefined,
-			ticket: filteredTicket ? filteredTicket : undefined
+			invite: filteredInvite,
+			job: filteredJob,
+			ticket: filteredTicket,
+			bid: undefined,
 		};
 	});
 
@@ -160,11 +195,10 @@ const getAllNotificationByUserId = async (userId: number, options: PaginateOptio
 		result: formattedNotifications,
 		page,
 		limit,
-		totalPages,
+		totalPages: Math.ceil(totalResults / limit),
 		totalResults,
 	};
 };
-
 
 export default {
 	getAllNotificationByUserId,

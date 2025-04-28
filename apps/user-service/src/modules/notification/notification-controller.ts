@@ -4,15 +4,18 @@ import httpStatus from 'http-status';
 import userNotificationService from './notification-services';
 import pick from '../../../../../shared/utils/pick';
 
-const getAllNotificationByUserId = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);	
-	const userId = req.payload.id;
-	const result = await userNotificationService.getAllNotificationByUserId(userId,options);
-	res.status(httpStatus.OK).json(result);
-});
+const getAllNotificationByUserId = catchAsync(
+	async (req: Request, res: Response) => {
+		const options = pick(req.query, ['limit', 'page']);
+		const user = req.user;
+		const result = await userNotificationService.getAllNotificationByUserId(
+			user,
+			options,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 
 export default {
-    getAllNotificationByUserId
-}
-
-
+	getAllNotificationByUserId,
+};
