@@ -247,4 +247,6 @@ router
 		validateSchema(jobValidation.inviteTokenSchema),
 		jobController.getJobBytokenThroughEmail,
 	);
+	router.route('/dashboard/acres-sprayed').get(verifyToken , jobController.getAllAcreSprayed);
+
 export default router;

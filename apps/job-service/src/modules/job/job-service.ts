@@ -18,6 +18,7 @@ import { sendPushNotifications } from '../../../../../shared/helpers/push-notifi
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { generateToken } from '../../../../user-service/src/helper/invite-token';
+import { gte } from 'lodash';
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
 	if (user.role === 'APPLICATOR') {
@@ -4748,7 +4749,63 @@ const getJobBytokenThroughEmail = async (token: string) => {
 
 	return formattedJob;
 };
+const getAllAcreSprayed = async (user: User, days: string) => {
+	const { id, role } = user;
+	const startDate = new Date();
+	const filterDays = days ? parseInt(days) : 30; // Default 30 days
+	startDate.setDate(startDate.getDate() - filterDays);
+  
+	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+	let jobs;
+  
+	if (role === 'APPLICATOR') {
+	  jobs = await prisma.job.findMany({
+		where: {
+		  updatedAt: { gte: startDate },
+		  applicatorId: id,
+		  status: { in: ['SPRAYED', 'INVOICED', 'PAID'] },
+		},
+		select: {
+		  updatedAt: true,
+		  status: true, 
+		},
+	  });
+	  return jobs;
+	} else if (role === 'GROWER') {
+	  jobs = await prisma.job.findMany({
+		where: {
+		  updatedAt: { gte: startDate },
+		  growerId: id,
+		  status: { in: ['SPRAYED', 'INVOICED', 'PAID'] },
+		},
+		select: {
+		  updatedAt: true,
+		  status: true,
+		},
+	  });
+	} else {
+	  throw new Error('Invalid user role');// to avoid undefined jobs 
+	}
+  console.log(jobs,'jons')
+	// MonthWise grouping
+	const monthData: Record<string,number> = {};
 
+	jobs.forEach((job) => {
+	  const month = months[new Date(job.updatedAt).getMonth()];//updated date k according month get krna kab job sprayed hoi 
+	  console.log(month,"month")
+	  monthData[month] = (monthData[month] || 0) + 1;
+	});
+	const result = months.map((month) => ({
+	  month,
+	  totalAcresSprayed: monthData[month] || 0,
+	}));
+  
+	return {
+	  data: result,
+	};
+  };
+  
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -4789,4 +4846,5 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
+	getAllAcreSprayed
 };
