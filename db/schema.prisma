@@ -70,7 +70,7 @@ model User {
 }
 
 model ApplicatorWorker {
-  id                     Int          @id @default(autoincrement())
+  id                     Int            @id @default(autoincrement())
   applicatorId           Int
   workerId               Int
   workerType             WorkerType
@@ -79,19 +79,20 @@ model ApplicatorWorker {
   planeOrUnitNumber      String?
   percentageFee          Decimal?
   dollarPerAcre          Decimal?
-  autoAcceptJobs         Boolean      @default(false)
-  canViewPricingDetails  Boolean      @default(false)
+  autoAcceptJobs         Boolean        @default(false)
+  canViewPricingDetails  Boolean        @default(false)
   code                   String?
   lastLogin              DateTime?
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
-  inviteStatus           InviteStatus @default(PENDING)
-  isActive               Boolean      @default(true)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  inviteStatus           InviteStatus   @default(PENDING)
+  isActive               Boolean        @default(true)
   pilotPestLicenseNumber String?
-  inviteToken            String?      @unique
+  inviteToken            String?        @unique
   expiresAt              DateTime?
-  applicator             User         @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
-  worker                 User         @relation("WorkerAssignments", fields: [workerId], references: [id])
+  applicator             User           @relation("ApplicatorToWorkers", fields: [applicatorId], references: [id])
+  worker                 User           @relation("WorkerAssignments", fields: [workerId], references: [id])
+  Notification           Notification[]
 
   @@unique([applicatorId, workerId])
 }
@@ -419,15 +420,17 @@ model Township {
 }
 
 model Notification {
-  id       Int               @id @default(autoincrement())
-  userId   Int
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inviteId Int?
-  invite   ApplicatorGrower? @relation(fields: [inviteId], references: [id], onDelete: Cascade)
-  ticketId Int?
-  ticket   SupportTicket?    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  bidId    Int?
-  bid      Bid?              @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  id             Int               @id @default(autoincrement())
+  userId         Int
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviteId       Int?
+  invite         ApplicatorGrower? @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  workerInviteId Int?
+  workerInvite   ApplicatorWorker? @relation(fields: [workerInviteId], references: [id], onDelete: Cascade)
+  ticketId       Int?
+  ticket         SupportTicket?    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  bidId          Int?
+  bid            Bid?              @relation(fields: [bidId], references: [id], onDelete: Cascade)
 
   type   NotificationType
   isRead Boolean          @default(false)

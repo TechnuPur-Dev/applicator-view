@@ -44,6 +44,16 @@ const getAllNotificationByUserId = async (
 						},
 					},
 				},
+				workerInvite: {
+					include: {
+						applicator: {
+							select: {
+								firstName: true,
+								lastName: true,
+							},
+						},
+					},
+				},
 			},
 			skip,
 			take: limit,
@@ -62,7 +72,7 @@ const getAllNotificationByUserId = async (
 	console.log(notifications);
 
 	const formattedNotifications = notifications.map((notif) => {
-		const { invite, job, ticket, type } = notif;
+		const { invite, job, ticket, type, workerInvite } = notif;
 		let filteredInvite, filteredJob, filteredTicket;
 
 		if (
@@ -107,6 +117,14 @@ const getAllNotificationByUserId = async (
 								applicatorLastName: invite.applicatorLastName,
 								status: invite.inviteStatus,
 							};
+			} else if (workerInvite) {
+				filteredInvite = {
+					inviteId: workerInvite.id,
+					applicatorId: workerInvite.applicatorId,
+					applicatorFirstName: workerInvite.applicator.firstName,
+					applicatorLastName: workerInvite.applicator.lastName,
+					status: workerInvite.inviteStatus,
+				};
 			}
 		}
 

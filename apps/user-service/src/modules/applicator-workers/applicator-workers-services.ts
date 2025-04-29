@@ -408,6 +408,7 @@ const sendInviteToWorker = async (
 		await prisma.notification.create({
 			data: {
 				userId: workerId, // Notify the appropriate user
+				workerInviteId: invite.id,
 				type: 'ACCOUNT_INVITATION',
 			},
 		});

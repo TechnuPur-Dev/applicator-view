@@ -1278,6 +1278,7 @@ const getJobs = async (
 	let jobs = await prisma.job.findMany({
 		where: {
 			growerId,
+			source: type === 'ALL' ? undefined : (type as JobSource),
 		},
 		include: {
 			applicator: {
@@ -1322,13 +1323,13 @@ const getJobs = async (
 		},
 	}); // Fetch all users
 	// Calculate total acres for each job
-	if (type === 'BIDDING') {
-		jobs = jobs.filter((job) => job.source === 'BIDDING');
-	} else if (type === 'GROWER') {
-		jobs = jobs.filter((job) => job.source === 'GROWER');
-	} else if (type === 'APPLICATOR') {
-		jobs = jobs.filter((job) => job.source === 'APPLICATOR');
-	}
+	// if (type === 'BIDDING') {
+	// 	jobs = jobs.filter((job) => job.source === 'BIDDING');
+	// } else if (type === 'GROWER') {
+	// 	jobs = jobs.filter((job) => job.source === 'GROWER');
+	// } else if (type === 'APPLICATOR') {
+	// 	jobs = jobs.filter((job) => job.source === 'APPLICATOR');
+	// }
 	// const formattedJobs = jobs.map((job) => ({
 	// 	...job,
 	// 	...job,
