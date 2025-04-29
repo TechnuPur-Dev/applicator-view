@@ -1,4 +1,4 @@
-import httpStatus, { CONFLICT } from 'http-status';
+import httpStatus from 'http-status';
 import {
 	BidStatus,
 	JobSource,
@@ -18,8 +18,7 @@ import { sendPushNotifications } from '../../../../../shared/helpers/push-notifi
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { generateToken } from '../../../../user-service/src/helper/invite-token';
-import { gte } from 'lodash';
-import { number } from 'joi';
+
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
 	if (user.role === 'APPLICATOR') {
@@ -1372,14 +1371,14 @@ const getJobs = async (
 			),
 		};
 	});
-	console.log(jobs.length,'length')
+	console.log(jobs.length, 'length');
 	const totalResults = await prisma.job.count({
 		where: {
 			growerId,
-			source:type === 'ALL'? undefined  : type as JobSource
+			source: type === 'ALL' ? undefined : (type as JobSource),
 		},
-	})
-	
+	});
+
 	// const totalResults = jobs.length;
 	const totalPages = Math.ceil(totalResults / limit);
 	return {
@@ -4919,6 +4918,7 @@ const getCalendarApplications = async (userId: number, month?: string) => {
 			},
 		},
 	});
+	console.log(jobs);
 
 	// 3. Group Jobs by Date
 	const grouped: Record<string, any[]> = {};
