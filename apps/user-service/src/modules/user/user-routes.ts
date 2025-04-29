@@ -149,5 +149,6 @@ router
 		validateSchema(userValidation.paramsSchema),
 		userController.getApplicatorById,
 	);
-
+	router.route('/dashboard/user-by-state').get(verifyToken , userController.getUsersByState);
+	
 export default router;

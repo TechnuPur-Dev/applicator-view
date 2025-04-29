@@ -336,6 +336,18 @@ const getJobBytokenThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+const getAllAcreSprayed = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user
+	const days = req?.query?.days as string;  // expecting last 30 or 7 days
+	const userData = await jobService.getAllAcreSprayed(user,days);
+	res.status(httpStatus.OK).json(userData);
+});
+const getWeeklyRevenue = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user
+	const days = req?.query?.days as string;  // expecting last 30 or 7 days
+	const userData = await jobService.getWeeklyRevenue(user,days);
+	res.status(httpStatus.OK).json(userData);
+});
 
 const getCalendarApplications = catchAsync(
 	async (req: Request, res: Response) => {
@@ -397,6 +409,8 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
+	getAllAcreSprayed,
+	getWeeklyRevenue,
 	getCalendarApplications,
 	getApplicationsByRange,
 };

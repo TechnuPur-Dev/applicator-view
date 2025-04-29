@@ -104,6 +104,16 @@ const respondInviteToken: Schema = Joi.object({
 			.min(0), // Allows empty array
 	}).required(),
 });
+const userRoleSchema: Schema = Joi.object({
+	params: Joi.object({
+		role: Joi.string()
+		.valid('APPLICATOR', 'GROWER')
+		.required(), // Adjust roles as needed
+	
+	})
+		// .or('id', 'growerId', 'applicatorId') // At least one must be present
+		.required(),
+});
 export default {
 	createGrowerSchema,
 	paramsSchema,
@@ -115,4 +125,5 @@ export default {
 	paramsSchemaForType,
 	verifyInviteToken,
 	respondInviteToken,
+	userRoleSchema
 };

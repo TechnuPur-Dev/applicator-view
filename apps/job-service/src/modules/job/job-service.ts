@@ -18,6 +18,8 @@ import { sendPushNotifications } from '../../../../../shared/helpers/push-notifi
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { generateToken } from '../../../../user-service/src/helper/invite-token';
+import { gte } from 'lodash';
+import { number } from 'joi';
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
 	if (user.role === 'APPLICATOR') {
@@ -1370,7 +1372,15 @@ const getJobs = async (
 			),
 		};
 	});
-	const totalResults = jobs.length;
+	console.log(jobs.length,'length')
+	const totalResults = await prisma.job.count({
+		where: {
+			growerId,
+			source:type === 'ALL'? undefined  : type as JobSource
+		},
+	})
+	
+	// const totalResults = jobs.length;
 	const totalPages = Math.ceil(totalResults / limit);
 	return {
 		result: formattedJobs,
@@ -4751,6 +4761,117 @@ const getJobBytokenThroughEmail = async (token: string) => {
 
 	return formattedJob;
 };
+const getAllAcreSprayed = async (user: User, days: string) => {
+	const { id, role } = user;
+	const startDate = new Date();
+	const filterDays = days ? parseInt(days) : 30; // Default 30 days
+	startDate.setDate(startDate.getDate() - filterDays);
+
+	const months = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec',
+	];
+
+	let jobs;
+
+	if (role === 'APPLICATOR') {
+		jobs = await prisma.job.findMany({
+			where: {
+				updatedAt: { gte: startDate },
+				applicatorId: id,
+				status: { in: ['SPRAYED', 'INVOICED', 'PAID'] },
+			},
+			select: {
+				updatedAt: true,
+				status: true,
+			},
+		});
+		return jobs;
+	} else if (role === 'GROWER') {
+		jobs = await prisma.job.findMany({
+			where: {
+				updatedAt: { gte: startDate },
+				growerId: id,
+				status: { in: ['SPRAYED', 'INVOICED', 'PAID'] },
+			},
+			select: {
+				updatedAt: true,
+				status: true,
+			},
+		});
+	} else {
+		throw new Error('Invalid user role'); // to avoid undefined jobs
+	}
+	// MonthWise grouping
+	const monthData: Record<string, number> = {};
+
+	jobs.forEach((job) => {
+		const month = months[new Date(job.updatedAt).getMonth()]; //updated date k according month get krna jab job sprayed hoi
+		console.log(month, 'month');
+		monthData[month] = (monthData[month] || 0) + 1;
+	});
+	const result = months.map((month) => ({
+		month,
+		totalAcresSprayed: monthData[month] || 0,
+	}));
+
+	return {
+		data: result,
+	};
+};
+const getWeeklyRevenue = async (user: User, days: string) => {
+	const { id, role } = user;
+
+	const startDate = new Date();
+	const filterDays = days ? parseInt(days) : 30; // Default 30 days
+	startDate.setDate(startDate.getDate() - filterDays);
+	console.log(startDate, 'startDate');
+	// const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	const whereCondition: any = {
+		updatedAt: {
+			gte: startDate,
+		},
+		status: {
+			in: ['INVOICED', 'PAID'],
+		},
+	};
+
+	if (role === 'APPLICATOR') {
+		whereCondition.applicatorId = id;
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = id;
+	} else if (role === 'WORKER') {
+		whereCondition.fieldWorkerId = id;
+	}
+
+	const jobs = await prisma.job.findMany({
+		where: whereCondition,
+		select: {
+			id: true,
+			title: true,
+			type: true,
+			status: true,
+			updatedAt: true,
+			Invoice: {
+				select: {
+					totalAmount: true,
+				},
+			},
+		},
+	});
+
+	return jobs;
+};
 
 const getCalendarApplications = async (userId: number, month?: string) => {
 	const now = new Date(); // 🕐 Current time
@@ -4994,6 +5115,8 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
+	getAllAcreSprayed,
+	getWeeklyRevenue,
 	getCalendarApplications,
 	getApplicationsByRange,
 };

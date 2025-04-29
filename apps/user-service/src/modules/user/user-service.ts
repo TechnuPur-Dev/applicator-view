@@ -23,7 +23,7 @@ import {
 	city,
 } from '../../../../../shared/types/global';
 import { generateToken, verifyInvite } from '../../helper/invite-token';
-import { InviteStatus } from '@prisma/client';
+import { InviteStatus, UserRole } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -631,7 +631,30 @@ const getAllApplicatorsByGrower = async (
 					: undefined,
 		};
 	});
-
+	const totalResults = await prisma.applicatorGrower.count({
+		where: {
+			growerId,
+			AND: [
+				{
+					OR: [
+						{
+							inviteInitiator: 'GROWER',
+							inviteStatus: 'PENDING',
+						},
+						{
+							inviteStatus: {
+								in: [
+									'ACCEPTED',
+									'REJECTED',
+									'DELETED_BY_APPLICATOR',
+								],
+							},
+						},
+					],
+				},
+			],
+		},
+	})
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
@@ -639,7 +662,7 @@ const getAllApplicatorsByGrower = async (
 		page,
 		limit,
 		totalPages,
-		totalResults: updatedApplicators?.length,
+		totalResults
 	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {
@@ -2837,6 +2860,100 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 		};
 	}
 };
+
+const getUsersByState = async (user: User) => { 
+	const { id, role } = user;
+  // const startDate = new Date();
+	// const filterDays = days ? parseInt(days) : 30; // default 30 days
+	// startDate.setDate(startDate.getDate() - filterDays);
+	// console.log(startDate,days,"days")
+	let users;
+  
+	if (role === 'APPLICATOR') {
+	  // Applicator get connected grower
+	  users = await prisma.applicatorGrower.findMany({
+		where: {
+		  applicatorId: id,
+		  grower: {
+			role: 'GROWER',
+		  },
+		},
+		select: {
+		  grower: {
+			select: {
+			  state: true,
+			}
+		  }
+		}
+	  });
+	} else if (role === 'GROWER') {
+	  // Grower gets connected applicator 
+	  users = await prisma.applicatorGrower.findMany({
+		where: {
+		  growerId: id,
+		  applicator: {
+			role: 'APPLICATOR',
+		  },
+		},
+		select: {
+		  applicator: {
+			select: {
+			  state: true,
+			}
+		  }
+		}
+	  });
+	}else if (role === 'WORKER') {
+		// Applicator get connected grower
+		users = await prisma.applicatorWorker.findMany({
+		  where: {
+			workerId: id,
+			applicator: {
+			  role: 'APPLICATOR',
+			},
+		  },
+		  select: {
+			applicator: {
+			  select: {
+				state: true,
+			  }
+			}
+		  }
+		});
+	  } else {
+	  throw new Error('Invalid user role');
+	}
+  
+	// State count karenge
+	const stateCount: Record<string, number> = {};
+  
+	users.forEach((item:any) => {
+	  let stateName: string | undefined;
+	  if (role === 'APPLICATOR') {
+		stateName =  item.grower?.state === 'string' ? item.grower.state : item.grower?.state?.name;
+	  } else if (role === 'GROWER') {
+		stateName = typeof item.applicator?.state === 'string' ? item.applicator.state : item.applicator?.state?.name;
+	  } else if (role === 'WORKER') {
+		stateName = typeof item.applicator?.state === 'string' ? item.applicator.state : item.applicator?.state?.name;
+	  }
+  
+	  stateName = stateName || 'Unknown';
+  
+	  stateCount[stateName] = (stateCount[stateName] || 0) + 1;
+	});
+  
+	const totalUsers = users.length;
+  
+	const data = Object.entries(stateCount).map(([state, count]) => ({
+	  state,
+	  userPercent: totalUsers ? +((count / totalUsers) * 100).toFixed(2) : 0,
+	}));
+  
+	return {
+	  data,
+	};
+  };
+  
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -2861,4 +2978,5 @@ export default {
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
+	getUsersByState
 };

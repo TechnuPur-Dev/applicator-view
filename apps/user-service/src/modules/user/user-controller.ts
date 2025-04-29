@@ -199,6 +199,13 @@ const getApplicatorById = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.getApplicatorById(user, applicatorId);
 	res.status(httpStatus.OK).json(result);
 });
+const getUsersByState = catchAsync(async (req: Request, res: Response) => {
+	// const days = req?.query?.days as string;  // expecting last 30 or 7 days
+	const user = req.user
+	const userData = await userService.getUsersByState(user);
+	res.status(httpStatus.OK).json(userData);
+});
+
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -223,4 +230,5 @@ export default {
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
+	getUsersByState
 };

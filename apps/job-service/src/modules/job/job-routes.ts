@@ -247,6 +247,10 @@ router
 		validateSchema(jobValidation.inviteTokenSchema),
 		jobController.getJobBytokenThroughEmail,
 	);
+
+	router.route('/dashboard/acres-sprayed').get(verifyToken , jobController.getAllAcreSprayed);
+	router.route('/dashboard/totalRevenue').get(verifyToken , jobController.getWeeklyRevenue);
+
 router
 	.route('/calendar/upcomping-applications')
 	.get(
@@ -261,4 +265,5 @@ router
 		validateSchema(jobValidation.upcomingApplicationsRangeSchema),
 		jobController.getApplicationsByRange,
 	);
+
 export default router;
