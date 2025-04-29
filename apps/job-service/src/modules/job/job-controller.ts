@@ -336,6 +336,27 @@ const getJobBytokenThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+
+const getCalendarApplications = catchAsync(
+	async (req: Request, res: Response) => {
+		const userId = req.payload.id;
+		const month = req.query.month as string;
+		const result = await jobService.getCalendarApplications(userId, month);
+		res.status(httpStatus.OK).json(result);
+	},
+);
+const getApplicationsByRange = catchAsync(
+	async (req: Request, res: Response) => {
+		const userId = req.payload.id;
+		const { startDate, endDate } = req.query;
+		const result = await jobService.getApplicationsByRange(
+			userId,
+			startDate as string,
+			endDate as string,
+		);
+		res.status(httpStatus.OK).json(result);
+	},
+);
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -376,4 +397,6 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
+	getCalendarApplications,
+	getApplicationsByRange,
 };

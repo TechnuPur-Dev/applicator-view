@@ -1,4 +1,4 @@
-import httpStatus from 'http-status';
+import httpStatus, { CONFLICT } from 'http-status';
 import {
 	BidStatus,
 	JobSource,
@@ -4752,6 +4752,208 @@ const getJobBytokenThroughEmail = async (token: string) => {
 	return formattedJob;
 };
 
+const getCalendarApplications = async (userId: number, month?: string) => {
+	const now = new Date(); // 🕐 Current time
+
+	// 1. Calculate date range for selected month
+	const startDate = new Date(`${month}-01`);
+	const endDate = new Date(startDate);
+	endDate.setMonth(endDate.getMonth() + 1); // Move to the 1st of next month
+
+	// 2. Fetch only upcoming jobs for this month
+	const jobs = await prisma.job.findMany({
+		where: {
+			applicatorId: userId,
+			startDate: {
+				gte: startDate,
+				lt: endDate,
+			},
+			AND: {
+				startDate: {
+					gte: now,
+				},
+			},
+		},
+		orderBy: {
+			startDate: 'asc',
+		},
+		select: {
+			id: true,
+			startDate: true,
+			farm: {
+				select: {
+					name: true,
+				},
+			},
+			fields: {
+				select: {
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	// 3. Group Jobs by Date
+	const grouped: Record<string, any[]> = {};
+
+	jobs.forEach((job) => {
+		if (!job.startDate) return;
+
+		const dateKey = job.startDate.toISOString().split('T')[0];
+
+		if (!grouped[dateKey]) {
+			grouped[dateKey] = [];
+		}
+
+		const fields = job.fields.map((f) => ({
+			fieldName: f.field?.name || '',
+			crop: f.field?.crop || 'unknown',
+			acres: f.field?.acres?.toNumber?.() || Number(f.field?.acres) || 0,
+		}));
+
+		grouped[dateKey].push({
+			id: job.id,
+			farmName: job.farm?.name || '',
+			fields,
+		});
+	});
+
+	// 4. Prepare the grouped jobs response (with per-date summary)
+	const upcomingApplications = Object.entries(grouped).map(([date, jobs]) => {
+		// Build crop summary for this date
+		const cropSummary: Record<string, { totalAcres: number }> = {};
+
+		jobs.forEach((job) => {
+			job.fields.forEach((field: any) => {
+				const crop = field.crop || 'unknown';
+				const acres = field.acres || 0;
+
+				if (!cropSummary[crop]) {
+					cropSummary[crop] = {
+						totalAcres: 0,
+					};
+				}
+				cropSummary[crop].totalAcres += acres;
+			});
+		});
+
+		// Format and sort the summary
+		const cropsSummary = Object.entries(cropSummary)
+			.map(([crop, data]) => ({
+				crop,
+				totalAcres: parseFloat(data.totalAcres.toFixed(2)),
+			}))
+			.sort((a, b) => b.totalAcres - a.totalAcres);
+
+		return {
+			date,
+			numberOfJobs: jobs.length,
+			jobs,
+			summary: cropsSummary, // 🆕 Added per date
+		};
+	});
+
+	// 5. Final return
+	return upcomingApplications; // 🔥 Each day now has its own summary
+};
+const getApplicationsByRange = async (
+	userId: number,
+	startDate?: string,
+	endDate?: string,
+) => {
+	if (!startDate || !endDate) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'startDate and endDate are required',
+		);
+	}
+
+	const start = new Date(startDate);
+	const end = new Date(endDate);
+
+	if (start > end) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'startDate must be before or equal to endDate',
+		);
+	}
+
+	const jobs = await prisma.job.findMany({
+		where: {
+			applicatorId: userId,
+			startDate: {
+				gte: start,
+				lte: end,
+			},
+		},
+		orderBy: {
+			startDate: 'asc',
+		},
+		select: {
+			id: true,
+			startDate: true,
+			farm: {
+				select: {
+					name: true,
+				},
+			},
+			fields: {
+				select: {
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	// Group jobs by startDate
+	const grouped: Record<string, any[]> = {};
+
+	jobs.forEach((job) => {
+		if (!job.startDate) return;
+
+		const dateKey = job.startDate.toISOString().split('T')[0];
+
+		if (!grouped[dateKey]) {
+			grouped[dateKey] = [];
+		}
+
+		const fields = job.fields.map((f) => ({
+			fieldName: f.field?.name || '',
+			crop: f.field?.crop || 'unknown',
+			acres: Number(f.field?.acres) || 0,
+		}));
+
+		grouped[dateKey].push({
+			id: job.id,
+			farmName: job.farm?.name || '',
+			fields,
+		});
+	});
+
+	// Build final response array
+	const applications = Object.entries(grouped).map(([date, jobs]) => {
+		return {
+			date,
+			numberOfJobs: jobs.length,
+			jobs,
+		};
+	});
+
+	return applications.sort((a, b) => a.date.localeCompare(b.date));
+};
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -4792,4 +4994,6 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
+	getCalendarApplications,
+	getApplicationsByRange,
 };

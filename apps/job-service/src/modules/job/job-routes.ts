@@ -247,4 +247,18 @@ router
 		validateSchema(jobValidation.inviteTokenSchema),
 		jobController.getJobBytokenThroughEmail,
 	);
+router
+	.route('/calendar/upcomping-applications')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.calendarApplicationsSchema),
+		jobController.getCalendarApplications,
+	);
+router
+	.route('/calendar/upcomping-applications/range')
+	.get(
+		verifyToken,
+		validateSchema(jobValidation.upcomingApplicationsRangeSchema),
+		jobController.getApplicationsByRange,
+	);
 export default router;
