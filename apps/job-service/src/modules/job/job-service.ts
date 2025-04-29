@@ -2364,8 +2364,10 @@ const updatePendingJobStatus = async (
 						data.status === 'READY_TO_SPRAY'
 							? 'JOB_ACCEPTED'
 							: data.status === 'IN_PROGRESS'
-								? 'JOB_ACCEPTED'
-								: 'JOB_REJECTED',
+								? 'PILOT_JOB_ACCEPTED'
+								: role === 'WORKER'
+									? 'PILOT_JOB_REJECTED'
+									: 'JOB_REJECTED',
 				},
 			});
 
@@ -4439,6 +4441,7 @@ const placeBidForJob = async (
 			data: {
 				userId: jobExists?.growerId, // Notify the appropriate user
 				jobId: jobId,
+				bidId: newBid.id,
 				type: 'BID_PLACED',
 			},
 		});

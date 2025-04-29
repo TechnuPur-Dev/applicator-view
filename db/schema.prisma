@@ -256,6 +256,7 @@ model Bid {
   job          Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
   bidFees      BidApplicationFee[]
   bidProducts  BidProduct[]
+  Notification Notification[]
 
   @@unique([jobId, applicatorId])
 }
@@ -425,6 +426,8 @@ model Notification {
   invite   ApplicatorGrower? @relation(fields: [inviteId], references: [id], onDelete: Cascade)
   ticketId Int?
   ticket   SupportTicket?    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  bidId    Int?
+  bid      Bid?              @relation(fields: [bidId], references: [id], onDelete: Cascade)
 
   type   NotificationType
   isRead Boolean          @default(false)
@@ -554,6 +557,8 @@ enum NotificationType {
   JOB_ASSIGNED
   JOB_ACCEPTED
   JOB_REJECTED
+  PILOT_JOB_ACCEPTED
+  PILOT_JOB_REJECTED
   JOB_REQUEST
   JOB_COMPLETED
   BID_PLACED
