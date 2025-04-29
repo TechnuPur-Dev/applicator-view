@@ -631,7 +631,30 @@ const getAllApplicatorsByGrower = async (
 					: undefined,
 		};
 	});
-
+	const totalResults = await prisma.applicatorGrower.count({
+		where: {
+			growerId,
+			AND: [
+				{
+					OR: [
+						{
+							inviteInitiator: 'GROWER',
+							inviteStatus: 'PENDING',
+						},
+						{
+							inviteStatus: {
+								in: [
+									'ACCEPTED',
+									'REJECTED',
+									'DELETED_BY_APPLICATOR',
+								],
+							},
+						},
+					],
+				},
+			],
+		},
+	})
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
@@ -639,7 +662,7 @@ const getAllApplicatorsByGrower = async (
 		page,
 		limit,
 		totalPages,
-		totalResults: updatedApplicators?.length,
+		totalResults
 	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {

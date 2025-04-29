@@ -248,5 +248,5 @@ router
 		jobController.getJobBytokenThroughEmail,
 	);
 	router.route('/dashboard/acres-sprayed').get(verifyToken , jobController.getAllAcreSprayed);
-
+	router.route('/dashboard/totalRevenue').get(verifyToken , jobController.getWeeklyRevenue);
 export default router;
