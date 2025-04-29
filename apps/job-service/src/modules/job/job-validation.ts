@@ -232,6 +232,35 @@ const acceptJobSchema = Joi.object({
 			}),
 	}).required(),
 });
+const calendarApplicationsSchema: Schema = Joi.object({
+	query: Joi.object({
+		month: Joi.string()
+			.pattern(/^\d{4}-(0[1-9]|1[0-2])$/)
+			.required()
+			.messages({
+				'string.empty': 'month is required.',
+				'string.pattern.base': 'month must be in YYYY-MM format.',
+			}),
+	}).optional(),
+});
+const upcomingApplicationsRangeSchema = Joi.object({
+	query: Joi.object({
+		startDate: Joi.string()
+			.isoDate()
+			.required()
+			.label('startDate')
+			.messages({
+				'any.required': 'Start date is required.',
+				'string.isoDate':
+					'Start date must be a valid ISO date (YYYY-MM-DD).',
+			}),
+
+		endDate: Joi.string().isoDate().required().label('endDate').messages({
+			'any.required': 'End date is required.',
+			'string.isoDate': 'End date must be a valid ISO date (YYYY-MM-DD).',
+		}),
+	}).required(),
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -245,4 +274,6 @@ export default {
 	updateBidStatusSchema,
 	acceptJobSchema,
 	inviteTokenSchema,
+	calendarApplicationsSchema,
+	upcomingApplicationsRangeSchema,
 };
