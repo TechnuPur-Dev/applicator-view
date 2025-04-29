@@ -374,6 +374,7 @@ const sendInviteToWorker = async (
 				code: data.code,
 			},
 			select: {
+				id:true,
 				worker: {
 					select: { email: true },
 				},
