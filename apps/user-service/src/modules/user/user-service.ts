@@ -654,7 +654,7 @@ const getAllApplicatorsByGrower = async (
 				},
 			],
 		},
-	})
+	});
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
@@ -662,7 +662,7 @@ const getAllApplicatorsByGrower = async (
 		page,
 		limit,
 		totalPages,
-		totalResults
+		totalResults,
 	};
 };
 const updateInviteStatus = async (user: User, data: UpdateStatus) => {
@@ -690,7 +690,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 			await prisma.notification.create({
 				data: {
 					userId: targetUserId, // Notify the appropriate user
-					inviteId:invite.id,
+					inviteId: invite.id,
 					type:
 						status === 'ACCEPTED'
 							? 'ACCEPT_INVITE'
@@ -755,7 +755,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 				await prisma.notification.create({
 					data: {
 						userId: targetUserId, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -774,7 +774,7 @@ const updateInviteStatus = async (user: User, data: UpdateStatus) => {
 				await prisma.notification.create({
 					data: {
 						userId: targetUserId, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2484,7 +2484,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite.applicator.id, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -2520,7 +2520,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.applicator?.id, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2558,7 +2558,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.grower?.id, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -2617,7 +2617,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.grower?.id, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2661,7 +2661,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite.applicator.id, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'ACCEPT_INVITE',
 					},
 				});
@@ -2695,7 +2695,7 @@ const acceptOrRejectInviteThroughEmail = async (
 				await prisma.notification.create({
 					data: {
 						userId: invite?.applicator?.id, // Notify the appropriate user
-						inviteId:invite.id,
+						inviteId: invite.id,
 						type: 'REJECT_INVITE',
 					},
 				});
@@ -2861,99 +2861,109 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 	}
 };
 
-const getUsersByState = async (user: User) => { 
+const getUsersByState = async (user: User) => {
 	const { id, role } = user;
-  // const startDate = new Date();
+	// const startDate = new Date();
 	// const filterDays = days ? parseInt(days) : 30; // default 30 days
 	// startDate.setDate(startDate.getDate() - filterDays);
 	// console.log(startDate,days,"days")
 	let users;
-  
+
 	if (role === 'APPLICATOR') {
-	  // Applicator get connected grower
-	  users = await prisma.applicatorGrower.findMany({
-		where: {
-		  applicatorId: id,
-		  grower: {
-			role: 'GROWER',
-		  },
-		},
-		select: {
-		  grower: {
+		// Applicator get connected grower
+		users = await prisma.applicatorGrower.findMany({
+			where: {
+				applicatorId: id,
+				grower: {
+					role: 'GROWER',
+				},
+				inviteStatus: 'ACCEPTED',
+			},
 			select: {
-			  state: true,
-			}
-		  }
-		}
-	  });
+				grower: {
+					select: {
+						state: true,
+					},
+				},
+			},
+		});
 	} else if (role === 'GROWER') {
-	  // Grower gets connected applicator 
-	  users = await prisma.applicatorGrower.findMany({
-		where: {
-		  growerId: id,
-		  applicator: {
-			role: 'APPLICATOR',
-		  },
-		},
-		select: {
-		  applicator: {
+		// Grower gets connected applicator
+		users = await prisma.applicatorGrower.findMany({
+			where: {
+				growerId: id,
+				applicator: {
+					role: 'APPLICATOR',
+				},
+				inviteStatus: 'ACCEPTED',
+			},
 			select: {
-			  state: true,
-			}
-		  }
-		}
-	  });
-	}else if (role === 'WORKER') {
+				applicator: {
+					select: {
+						state: true,
+					},
+				},
+			},
+		});
+	} else if (role === 'WORKER') {
 		// Applicator get connected grower
 		users = await prisma.applicatorWorker.findMany({
-		  where: {
-			workerId: id,
-			applicator: {
-			  role: 'APPLICATOR',
+			where: {
+				workerId: id,
+				applicator: {
+					role: 'APPLICATOR',
+				},
+				inviteStatus: 'ACCEPTED',
 			},
-		  },
-		  select: {
-			applicator: {
-			  select: {
-				state: true,
-			  }
-			}
-		  }
+			select: {
+				applicator: {
+					select: {
+						state: true,
+					},
+				},
+			},
 		});
-	  } else {
-	  throw new Error('Invalid user role');
+	} else {
+		throw new Error('Invalid user role');
 	}
-  
+
 	// State count karenge
 	const stateCount: Record<string, number> = {};
-  
-	users.forEach((item:any) => {
-	  let stateName: string | undefined;
-	  if (role === 'APPLICATOR') {
-		stateName =  item.grower?.state === 'string' ? item.grower.state : item.grower?.state?.name;
-	  } else if (role === 'GROWER') {
-		stateName = typeof item.applicator?.state === 'string' ? item.applicator.state : item.applicator?.state?.name;
-	  } else if (role === 'WORKER') {
-		stateName = typeof item.applicator?.state === 'string' ? item.applicator.state : item.applicator?.state?.name;
-	  }
-  
-	  stateName = stateName || 'Unknown';
-  
-	  stateCount[stateName] = (stateCount[stateName] || 0) + 1;
+
+	users.forEach((item: any) => {
+		let stateName: string | undefined;
+		if (role === 'APPLICATOR') {
+			stateName =
+				item.grower?.state === 'string'
+					? item.grower.state
+					: item.grower?.state?.name;
+		} else if (role === 'GROWER') {
+			stateName =
+				typeof item.applicator?.state === 'string'
+					? item.applicator.state
+					: item.applicator?.state?.name;
+		} else if (role === 'WORKER') {
+			stateName =
+				typeof item.applicator?.state === 'string'
+					? item.applicator.state
+					: item.applicator?.state?.name;
+		}
+
+		stateName = stateName || 'Unknown';
+
+		stateCount[stateName] = (stateCount[stateName] || 0) + 1;
 	});
-  
+
 	const totalUsers = users.length;
-  
+
 	const data = Object.entries(stateCount).map(([state, count]) => ({
-	  state,
-	  userPercent: totalUsers ? +((count / totalUsers) * 100).toFixed(2) : 0,
+		state,
+		userPercent: totalUsers ? +((count / totalUsers) * 100).toFixed(2) : 0,
 	}));
-  
-	return {
-	  data,
-	};
-  };
-  
+
+	return data;
+};
+
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -2978,5 +2988,5 @@ export default {
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
-	getUsersByState
+	getUsersByState,
 };
