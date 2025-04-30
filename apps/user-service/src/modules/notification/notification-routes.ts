@@ -6,6 +6,6 @@ const router: Router = express.Router();
 
 router
 	.route('/get-all')
-	.get(verifyToken, notificationController.getAllNotificationByUserId); //get notification bu current user Id
+	.get(verifyToken, notificationController.getAllNotificationsByUserId); //get notification bu current user Id
 
 export default router;

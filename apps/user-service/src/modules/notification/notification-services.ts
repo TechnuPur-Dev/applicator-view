@@ -3,7 +3,7 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 
-const getAllNotificationByUserId = async (
+const getAllNotificationsByUserId = async (
 	user: User,
 	options: PaginateOptions,
 ) => {
@@ -19,6 +19,10 @@ const getAllNotificationByUserId = async (
 			? parseInt(options.page, 10)
 			: 1;
 	const skip = (page - 1) * limit;
+	await prisma.user.update({
+		where: { id: userId },
+		data: { lastViewedAt: new Date() },
+	});
 
 	const [notifications, totalResults] = await Promise.all([
 		prisma.notification.findMany({
@@ -79,13 +83,13 @@ const getAllNotificationByUserId = async (
 			['ACCOUNT_INVITATION', 'ACCEPT_INVITE', 'REJECT_INVITE'].includes(
 				type,
 			) &&
-			invite
+			(invite || workerInvite)
 		) {
 			const commonFields = {
-				inviteId: invite.id,
-				inviteInitiator: invite.inviteInitiator,
+				inviteId: invite?.id,
+				inviteInitiator: invite?.inviteInitiator,
 			};
-			if (invite.inviteInitiator === 'APPLICATOR') {
+			if (invite?.inviteInitiator === 'APPLICATOR') {
 				filteredInvite =
 					type === 'ACCOUNT_INVITATION'
 						? {
@@ -101,7 +105,7 @@ const getAllNotificationByUserId = async (
 								growerLastName: invite.growerLastName,
 								status: invite.inviteStatus,
 							};
-			} else if (invite.inviteInitiator === 'GROWER') {
+			} else if (invite?.inviteInitiator === 'GROWER') {
 				filteredInvite =
 					type === 'ACCOUNT_INVITATION'
 						? {
@@ -148,7 +152,8 @@ const getAllNotificationByUserId = async (
 			if (userId === job.applicatorId && (grower || fieldWorker)) {
 				if (
 					notif.type === 'PILOT_JOB_ACCEPTED' ||
-					notif.type === 'PILOT_JOB_REJECTED'
+					notif.type === 'PILOT_JOB_REJECTED' ||
+					notif.type === 'JOB_COMPLETED'
 				) {
 					filteredJob = {
 						id: job.id,
@@ -206,6 +211,7 @@ const getAllNotificationByUserId = async (
 			job: filteredJob,
 			ticket: filteredTicket,
 			bid: undefined,
+			workerInvite: undefined,
 		};
 	});
 
@@ -219,5 +225,5 @@ const getAllNotificationByUserId = async (
 };
 
 export default {
-	getAllNotificationByUserId,
+	getAllNotificationsByUserId,
 };

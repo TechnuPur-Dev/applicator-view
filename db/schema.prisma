@@ -42,6 +42,7 @@ model User {
   updatedAt              DateTime                @updatedAt
   stateId                Int?
   joiningDate            DateTime?
+  lastViewedAt           DateTime? // To handle notifications count
   applicators            ApplicatorGrower[]      @relation("Applicators")
   growers                ApplicatorGrower[]      @relation("Growers")
   applicatorUser         ApplicatorUser[]        @relation("ApplicatorToUsers")

@@ -1275,7 +1275,7 @@ const getJobs = async (
 			'Access denied, only growers can view jobs',
 		);
 	}
-	let jobs = await prisma.job.findMany({
+	const jobs = await prisma.job.findMany({
 		where: {
 			growerId,
 			source: type === 'ALL' ? undefined : (type as JobSource),
