@@ -46,7 +46,7 @@ const defaultRoutes = [
 		route: geoData,
 	},
 	{
-		path: '/notification', // Path for the geo-data routes
+		path: '/notifications', // Path for the geo-data routes
 		route: userNotification,
 	},
 	{
