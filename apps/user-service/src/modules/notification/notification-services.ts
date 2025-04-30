@@ -93,34 +93,34 @@ const getAllNotificationsByUserId = async (
 				filteredInvite =
 					type === 'ACCOUNT_INVITATION'
 						? {
-							...commonFields,
-							applicatorId: invite.applicatorId,
-							applicatorFirstName: invite.applicatorFirstName,
-							applicatorLastName: invite.applicatorLastName,
-						}
+								...commonFields,
+								applicatorId: invite.applicatorId,
+								applicatorFirstName: invite.applicatorFirstName,
+								applicatorLastName: invite.applicatorLastName,
+							}
 						: {
-							inviteId: invite.id,
-							growerId: invite.growerId,
-							growerFirstName: invite.growerFirstName,
-							growerLastName: invite.growerLastName,
-							status: invite.inviteStatus,
-						};
+								inviteId: invite.id,
+								growerId: invite.growerId,
+								growerFirstName: invite.growerFirstName,
+								growerLastName: invite.growerLastName,
+								status: invite.inviteStatus,
+							};
 			} else if (invite?.inviteInitiator === 'GROWER') {
 				filteredInvite =
 					type === 'ACCOUNT_INVITATION'
 						? {
-							...commonFields,
-							growerId: invite.growerId,
-							growerFirstName: invite.growerFirstName,
-							growerLastName: invite.growerLastName,
-						}
+								...commonFields,
+								growerId: invite.growerId,
+								growerFirstName: invite.growerFirstName,
+								growerLastName: invite.growerLastName,
+							}
 						: {
-							inviteId: invite.id,
-							applicatorId: invite.applicatorId,
-							applicatorFirstName: invite.applicatorFirstName,
-							applicatorLastName: invite.applicatorLastName,
-							status: invite.inviteStatus,
-						};
+								inviteId: invite.id,
+								applicatorId: invite.applicatorId,
+								applicatorFirstName: invite.applicatorFirstName,
+								applicatorLastName: invite.applicatorLastName,
+								status: invite.inviteStatus,
+							};
 			} else if (workerInvite) {
 				filteredInvite = {
 					inviteId: workerInvite.id,
@@ -223,9 +223,7 @@ const getAllNotificationsByUserId = async (
 		totalResults,
 	};
 };
-const newNotificationsCount = async (
-	user: User,
-) => {
+const newNotificationsCount = async (user: User) => {
 	const userData = await prisma.user.findUnique({
 		where: { id: user.id },
 		select: { lastViewedAt: true },
@@ -239,28 +237,16 @@ const newNotificationsCount = async (
 		},
 	});
 	return {
-		newNotificationsCount: count
-	}
+		newNotificationsCount: count,
+	};
 };
 const updateNotification = async (
 	user: User,
 	data: {
-		notificationId: number
-	}
+		notificationId: number;
+	},
 ) => {
 	if (data?.notificationId) {
-		const notifExist = await prisma.notification.findUnique({
-			where: {
-				id: data.notificationId,
-			}
-		})
-		if (!notifExist) {
-			throw new ApiError(
-				httpStatus.NOT_FOUND,
-				'No notifications found for this user',
-			);
-		}
-
 		// Mark single notification as read
 		await prisma.notification.update({
 			where: { id: data.notificationId },
@@ -277,11 +263,11 @@ const updateNotification = async (
 		});
 	}
 	return {
-		message: "Notification(s) marked as read successfully."
-	}
+		message: 'Notification(s) marked as read successfully.',
+	};
 };
 export default {
 	getAllNotificationsByUserId,
 	newNotificationsCount,
-	updateNotification
+	updateNotification,
 };
