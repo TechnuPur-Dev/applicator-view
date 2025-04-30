@@ -337,32 +337,32 @@ const getJobBytokenThroughEmail = catchAsync(
 	},
 );
 const getAllAcreSprayed = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user
-	const days = req?.query?.days as string;  // expecting last 30 or 7 days
-	const userData = await jobService.getAllAcreSprayed(user,days);
+	const user = req.user;
+	const days = req?.query?.days as string; // expecting last 30 or 7 days
+	const userData = await jobService.getAllAcreSprayed(user, days);
 	res.status(httpStatus.OK).json(userData);
 });
 const getWeeklyRevenue = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user
-	const days = req?.query?.days as string;  // expecting last 30 or 7 days
-	const userData = await jobService.getWeeklyRevenue(user,days);
+	const user = req.user;
+	const days = req?.query?.days as string; // expecting last 30 or 7 days
+	const userData = await jobService.getWeeklyRevenue(user, days);
 	res.status(httpStatus.OK).json(userData);
 });
 
 const getCalendarApplications = catchAsync(
 	async (req: Request, res: Response) => {
-		const userId = req.payload.id;
+		const user = req.user;
 		const month = req.query.month as string;
-		const result = await jobService.getCalendarApplications(userId, month);
+		const result = await jobService.getCalendarApplications(user, month);
 		res.status(httpStatus.OK).json(result);
 	},
 );
 const getApplicationsByRange = catchAsync(
 	async (req: Request, res: Response) => {
-		const userId = req.payload.id;
+		const user = req.user;
 		const { startDate, endDate } = req.query;
 		const result = await jobService.getApplicationsByRange(
-			userId,
+			user,
 			startDate as string,
 			endDate as string,
 		);

@@ -4873,18 +4873,32 @@ const getWeeklyRevenue = async (user: User, days: string) => {
 	return jobs;
 };
 
-const getCalendarApplications = async (userId: number, month?: string) => {
+const getCalendarApplications = async (user: User, month?: string) => {
+	const { id: userId, role } = user;
+	if (role !== 'APPLICATOR' && role !== 'WORKER') {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'You are not authorized to access this resource.',
+		);
+	}
 	const now = new Date(); // 🕐 Current time
-
 	// 1. Calculate date range for selected month
 	const startDate = new Date(`${month}-01`);
 	const endDate = new Date(startDate);
 	endDate.setMonth(endDate.getMonth() + 1); // Move to the 1st of next month
 
+	// Determine the ID filter based on role
+	const roleFilter =
+		role === 'APPLICATOR'
+			? { applicatorId: userId }
+			: role === 'WORKER'
+				? { fieldWorkerId: userId }
+				: {};
+
 	// 2. Fetch only upcoming jobs for this month
 	const jobs = await prisma.job.findMany({
 		where: {
-			applicatorId: userId,
+			...roleFilter,
 			startDate: {
 				gte: startDate,
 				lt: endDate,
@@ -4985,10 +4999,17 @@ const getCalendarApplications = async (userId: number, month?: string) => {
 	return upcomingApplications; // 🔥 Each day now has its own summary
 };
 const getApplicationsByRange = async (
-	userId: number,
+	user: User,
 	startDate?: string,
 	endDate?: string,
 ) => {
+	const { id: userId, role } = user;
+	if (role !== 'APPLICATOR' && role !== 'WORKER') {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'You are not authorized to access this resource.',
+		);
+	}
 	if (!startDate || !endDate) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
@@ -4996,6 +5017,13 @@ const getApplicationsByRange = async (
 		);
 	}
 
+	// Determine the ID filter based on role
+	const roleFilter =
+		role === 'APPLICATOR'
+			? { applicatorId: userId }
+			: role === 'WORKER'
+				? { fieldWorkerId: userId }
+				: {};
 	const start = new Date(startDate);
 	const end = new Date(endDate);
 
@@ -5008,7 +5036,7 @@ const getApplicationsByRange = async (
 
 	const jobs = await prisma.job.findMany({
 		where: {
-			applicatorId: userId,
+			...roleFilter,
 			startDate: {
 				gte: start,
 				lte: end,
