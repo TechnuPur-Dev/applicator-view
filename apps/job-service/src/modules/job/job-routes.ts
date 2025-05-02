@@ -248,8 +248,8 @@ router
 		jobController.getJobBytokenThroughEmail,
 	);
 
-	router.route('/dashboard/acres-sprayed').get(verifyToken , jobController.getAllAcreSprayed);
-	router.route('/dashboard/totalRevenue').get(verifyToken , jobController.getWeeklyRevenue);
+	router.route('/dashboard/acres-sprayed').get(verifyToken , jobController.getMonthlyAcresSprayed);
+	router.route('/dashboard/financial-summary').get(verifyToken , jobController.getFinancialSummary);
 
 router
 	.route('/calendar/upcomping-applications')

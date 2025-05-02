@@ -924,6 +924,7 @@ const updateJobByApplicator = async (
 				data: {
 					...data,
 					status: requestedStatus,
+					paidAt: requestedStatus === 'PAID' ? new Date() : undefined, // ✅ conditional update
 				},
 				include: {
 					products: {
@@ -4761,13 +4762,42 @@ const getJobBytokenThroughEmail = async (token: string) => {
 
 	return formattedJob;
 };
-const getAllAcreSprayed = async (user: User, days: string) => {
-	const { id, role } = user;
-	const startDate = new Date();
-	const filterDays = days ? parseInt(days) : 30; // Default 30 days
-	startDate.setDate(startDate.getDate() - filterDays);
+const getMonthlyAcresSprayed = async (user: User, year: number) => {
+	const { id: userId, role } = user;
 
-	const months = [
+	// Role-based filter
+	const filter =
+		role === 'APPLICATOR'
+			? { applicatorId: userId }
+			: role === 'WORKER'
+				? { fieldWorkerId: userId }
+				: role === 'GROWER'
+					? { growerId: userId }
+					: {};
+
+	const jobs = await prisma.job.findMany({
+		where: {
+			...filter,
+			status: {
+				in: ['SPRAYED', 'INVOICED', 'PAID'], // only jobs that were completed
+			},
+			startDate: {
+				gte: new Date(`${year}-01-01`),
+				lte: new Date(`${year}-12-31`),
+			},
+		},
+		select: {
+			startDate: true,
+			fields: {
+				select: {
+					actualAcres: true,
+				},
+			},
+		},
+	});
+
+	// Initialize monthly buckets
+	const monthLabels = [
 		'Jan',
 		'Feb',
 		'Mar',
@@ -4781,96 +4811,136 @@ const getAllAcreSprayed = async (user: User, days: string) => {
 		'Nov',
 		'Dec',
 	];
+	const acresByMonth: Record<string, number> = Object.fromEntries(
+		monthLabels.map((label) => [label, 0]),
+	);
 
-	let jobs;
+	for (const job of jobs) {
+		const monthIndex = job?.startDate?.getMonth();
 
-	if (role === 'APPLICATOR') {
-		jobs = await prisma.job.findMany({
-			where: {
-				updatedAt: { gte: startDate },
-				applicatorId: id,
-				status: { in: ['SPRAYED', 'INVOICED', 'PAID'] },
-			},
-			select: {
-				updatedAt: true,
-				status: true,
-			},
-		});
-		return jobs;
-	} else if (role === 'GROWER') {
-		jobs = await prisma.job.findMany({
-			where: {
-				updatedAt: { gte: startDate },
-				growerId: id,
-				status: { in: ['SPRAYED', 'INVOICED', 'PAID'] },
-			},
-			select: {
-				updatedAt: true,
-				status: true,
-			},
-		});
-	} else {
-		throw new Error('Invalid user role'); // to avoid undefined jobs
+		if (
+			typeof monthIndex === 'number' &&
+			monthIndex >= 0 &&
+			monthIndex <= 11
+		) {
+			const label = monthLabels[monthIndex];
+
+			const totalAcresForJob = job.fields.reduce((sum, field) => {
+				return sum + Number(field.actualAcres ?? 0);
+			}, 0);
+
+			acresByMonth[label] = parseFloat(
+				(acresByMonth[label] + totalAcresForJob).toFixed(2),
+			);
+		}
 	}
-	// MonthWise grouping
-	const monthData: Record<string, number> = {};
 
-	jobs.forEach((job) => {
-		const month = months[new Date(job.updatedAt).getMonth()]; //updated date k according month get krna jab job sprayed hoi
-		console.log(month, 'month');
-		monthData[month] = (monthData[month] || 0) + 1;
-	});
-	const result = months.map((month) => ({
+	return monthLabels.map((month) => ({
 		month,
-		totalAcresSprayed: monthData[month] || 0,
+		acres: acresByMonth[month],
+	}));
+};
+
+const getFinancialSummary = async (user: User, range: string) => {
+	const { id: userId, role } = user;
+
+	const now = new Date();
+	now.setHours(0, 0, 0, 0); // Normalize to start of today
+
+	const daysBack = range === '7d' ? 7 : 30;
+
+	const currentPeriodStart = new Date(now);
+	currentPeriodStart.setDate(now.getDate() - daysBack);
+
+	const previousPeriodStart = new Date(currentPeriodStart);
+	previousPeriodStart.setDate(previousPeriodStart.getDate() - daysBack);
+
+	// Role-based filter
+	const filter =
+		role === 'APPLICATOR'
+			? { applicatorId: userId }
+			: role === 'WORKER'
+				? { fieldWorkerId: userId }
+				: role === 'GROWER'
+					? { growerId: userId }
+					: {};
+
+	// Fetch current period jobs
+	const currentJobs = await prisma.job.findMany({
+		where: {
+			...filter,
+			paidAt: { gte: currentPeriodStart, lt: now },
+			status: 'PAID',
+		},
+		select: {
+			createdAt: true,
+			Invoice: {
+				select: { totalAmount: true },
+			},
+		},
+	});
+
+	// Fetch previous period jobs
+	const previousJobs = await prisma.job.findMany({
+		where: {
+			...filter,
+			paidAt: { gte: previousPeriodStart, lt: currentPeriodStart },
+			status: 'PAID',
+		},
+		select: {
+			Invoice: {
+				select: { totalAmount: true },
+			},
+		},
+	});
+
+	// Initialize date map
+	const amountByDate: Record<string, number> = {};
+	for (let i = 0; i < daysBack; i++) {
+		const date = new Date(currentPeriodStart);
+		date.setDate(date.getDate() + i);
+		const label = date.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+		}); // e.g. Apr 30
+		amountByDate[label] = 0;
+	}
+
+	let totalCurrent = 0;
+	for (const job of currentJobs) {
+		const label = job.createdAt.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+		});
+		const amount = job.Invoice?.totalAmount ?? 0;
+		if (label in amountByDate) {
+			amountByDate[label] += Number(amount);
+			totalCurrent += Number(amount);
+		}
+	}
+
+	const totalPrevious = previousJobs.reduce(
+		(sum, job) => sum + Number(job.Invoice?.totalAmount ?? 0),
+		0,
+	);
+
+	// Calculate growth
+	let growth = 0;
+	if (totalPrevious > 0) {
+		growth = ((totalCurrent - totalPrevious) / totalPrevious) * 100;
+	}
+
+	// Prepare result
+	const data = Object.entries(amountByDate).map(([day, amount]) => ({
+		day,
+		amount,
 	}));
 
 	return {
-		data: result,
+		label: role === 'GROWER' ? 'Expenditure' : 'Revenue',
+		growth: parseFloat(growth.toFixed(2)),
+		data,
 	};
-};
-const getWeeklyRevenue = async (user: User, days: string) => {
-	const { id, role } = user;
-
-	const startDate = new Date();
-	const filterDays = days ? parseInt(days) : 30; // Default 30 days
-	startDate.setDate(startDate.getDate() - filterDays);
-	console.log(startDate, 'startDate');
-	// const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-	const whereCondition: any = {
-		updatedAt: {
-			gte: startDate,
-		},
-		status: {
-			in: ['INVOICED', 'PAID'],
-		},
-	};
-
-	if (role === 'APPLICATOR') {
-		whereCondition.applicatorId = id;
-	} else if (role === 'GROWER') {
-		whereCondition.growerId = id;
-	} else if (role === 'WORKER') {
-		whereCondition.fieldWorkerId = id;
-	}
-
-	const jobs = await prisma.job.findMany({
-		where: whereCondition,
-		select: {
-			id: true,
-			title: true,
-			type: true,
-			status: true,
-			updatedAt: true,
-			Invoice: {
-				select: {
-					totalAmount: true,
-				},
-			},
-		},
-	});
-
-	return jobs;
 };
 
 const getCalendarApplications = async (user: User, month?: string) => {
@@ -5144,8 +5214,8 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
-	getAllAcreSprayed,
-	getWeeklyRevenue,
+	getMonthlyAcresSprayed,
+	getFinancialSummary,
 	getCalendarApplications,
 	getApplicationsByRange,
 };

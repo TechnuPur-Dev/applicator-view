@@ -336,16 +336,23 @@ const getJobBytokenThroughEmail = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
-const getAllAcreSprayed = catchAsync(async (req: Request, res: Response) => {
+const getMonthlyAcresSprayed = catchAsync(
+	async (req: Request, res: Response) => {
+		const user = req.user;
+		const yearParam = req.query.year;
+		const year =
+			typeof yearParam === 'string' ? parseInt(yearParam, 10) : undefined;
+		if (!year || isNaN(year)) {
+			throw new Error('Invalid year parameter');
+		}
+		const userData = await jobService.getMonthlyAcresSprayed(user, year);
+		res.status(httpStatus.OK).json(userData);
+	},
+);
+const getFinancialSummary = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const days = req?.query?.days as string; // expecting last 30 or 7 days
-	const userData = await jobService.getAllAcreSprayed(user, days);
-	res.status(httpStatus.OK).json(userData);
-});
-const getWeeklyRevenue = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user;
-	const days = req?.query?.days as string; // expecting last 30 or 7 days
-	const userData = await jobService.getWeeklyRevenue(user, days);
+	const userData = await jobService.getFinancialSummary(user, days);
 	res.status(httpStatus.OK).json(userData);
 });
 
@@ -409,8 +416,8 @@ export default {
 	getAllBidsByJobId,
 	updateBidJobStatus,
 	getJobBytokenThroughEmail,
-	getAllAcreSprayed,
-	getWeeklyRevenue,
+	getMonthlyAcresSprayed,
+	getFinancialSummary,
 	getCalendarApplications,
 	getApplicationsByRange,
 };
