@@ -8,7 +8,7 @@ import pick from '../../../../../shared/utils/pick';
 
 // Controller to get userList
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['search','limit', 'page']);
 
 	const userData = await adminService.getAllUsers(options);
 	res.status(httpStatus.OK).json(userData);
