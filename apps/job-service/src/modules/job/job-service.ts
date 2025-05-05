@@ -2620,6 +2620,7 @@ const upcomingApplications = async (
 	const allJobsApplications = await prisma.job.findMany({
 		where: {
 			applicatorId: userId,
+			status: 'READY_TO_SPRAY',
 			...monthFilter, // if user wants to get selected month upcoming jobs
 		},
 		select: {
@@ -4969,6 +4970,7 @@ const getCalendarApplications = async (user: User, month?: string) => {
 	const jobs = await prisma.job.findMany({
 		where: {
 			...roleFilter,
+			status: 'READY_TO_SPRAY',
 			startDate: {
 				gte: startDate,
 				lt: endDate,
@@ -5107,6 +5109,7 @@ const getApplicationsByRange = async (
 	const jobs = await prisma.job.findMany({
 		where: {
 			...roleFilter,
+			status: 'READY_TO_SPRAY',
 			startDate: {
 				gte: start,
 				lte: end,

@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
+import { generateColorMapFromPercent } from '../../../../../shared/utils/generate-color-map';
 import {
 	UpdateUser,
 	UpdateStatus,
@@ -23,7 +24,7 @@ import {
 	city,
 } from '../../../../../shared/types/global';
 import { generateToken, verifyInvite } from '../../helper/invite-token';
-import { InviteStatus, UserRole } from '@prisma/client';
+import { InviteStatus } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -2861,23 +2862,23 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 	}
 };
 
+interface UserStateData {
+	state: string;
+	userPercent: number;
+	color?: string;
+}
+
 const getUsersByState = async (user: User) => {
 	const { id, role } = user;
-	// const startDate = new Date();
-	// const filterDays = days ? parseInt(days) : 30; // default 30 days
-	// startDate.setDate(startDate.getDate() - filterDays);
-	// console.log(startDate,days,"days")
-	let users;
+
+	let users: any[] = [];
 
 	if (role === 'APPLICATOR') {
-		// Applicator get connected grower
 		users = await prisma.applicatorGrower.findMany({
 			where: {
 				applicatorId: id,
-				grower: {
-					role: 'GROWER',
-				},
 				inviteStatus: 'ACCEPTED',
+				grower: { role: 'GROWER' },
 			},
 			select: {
 				grower: {
@@ -2888,14 +2889,11 @@ const getUsersByState = async (user: User) => {
 			},
 		});
 	} else if (role === 'GROWER') {
-		// Grower gets connected applicator
 		users = await prisma.applicatorGrower.findMany({
 			where: {
 				growerId: id,
-				applicator: {
-					role: 'APPLICATOR',
-				},
 				inviteStatus: 'ACCEPTED',
+				applicator: { role: 'APPLICATOR' },
 			},
 			select: {
 				applicator: {
@@ -2906,14 +2904,11 @@ const getUsersByState = async (user: User) => {
 			},
 		});
 	} else if (role === 'WORKER') {
-		// Applicator get connected grower
 		users = await prisma.applicatorWorker.findMany({
 			where: {
 				workerId: id,
-				applicator: {
-					role: 'APPLICATOR',
-				},
 				inviteStatus: 'ACCEPTED',
+				applicator: { role: 'APPLICATOR' },
 			},
 			select: {
 				applicator: {
@@ -2927,41 +2922,47 @@ const getUsersByState = async (user: User) => {
 		throw new Error('Invalid user role');
 	}
 
-	// State count karenge
+	// Count users by state
 	const stateCount: Record<string, number> = {};
 
-	users.forEach((item: any) => {
-		let stateName: string | undefined;
+	for (const item of users) {
+		let stateObj;
+
 		if (role === 'APPLICATOR') {
-			stateName =
-				item.grower?.state === 'string'
-					? item.grower.state
-					: item.grower?.state?.name;
-		} else if (role === 'GROWER') {
-			stateName =
-				typeof item.applicator?.state === 'string'
-					? item.applicator.state
-					: item.applicator?.state?.name;
-		} else if (role === 'WORKER') {
-			stateName =
-				typeof item.applicator?.state === 'string'
-					? item.applicator.state
-					: item.applicator?.state?.name;
+			stateObj = item?.grower?.state;
+		} else {
+			stateObj = item?.applicator?.state;
 		}
 
-		stateName = stateName || 'Unknown';
+		const stateName =
+			typeof stateObj === 'string'
+				? stateObj
+				: stateObj?.name || 'Unknown';
 
 		stateCount[stateName] = (stateCount[stateName] || 0) + 1;
-	});
+	}
 
 	const totalUsers = users.length;
 
-	const data = Object.entries(stateCount).map(([state, count]) => ({
-		state,
-		userPercent: totalUsers ? +((count / totalUsers) * 100).toFixed(2) : 0,
+	const data: UserStateData[] = Object.entries(stateCount).map(
+		([state, count]) => ({
+			state,
+			userPercent: totalUsers
+				? +((count / totalUsers) * 100).toFixed(2)
+				: 0,
+		}),
+	);
+
+	// Generate consistent colors based on sorted percentages
+	const colorMap = generateColorMapFromPercent(data);
+
+	// Add colors to data
+	const finalData = data.map((entry) => ({
+		...entry,
+		color: colorMap[entry.state] || '#ccc',
 	}));
 
-	return data;
+	return finalData;
 };
 
 export default {
