@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
+import { generateColorMapFromPercent } from '../../../../../shared/utils/generate-color-map';
 import {
 	UpdateUser,
 	UpdateStatus,
@@ -23,7 +24,7 @@ import {
 	city,
 } from '../../../../../shared/types/global';
 import { generateToken, verifyInvite } from '../../helper/invite-token';
-import { InviteStatus, UserRole } from '@prisma/client';
+import { InviteStatus } from '@prisma/client';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
@@ -2326,16 +2327,17 @@ const getWeather = async (user: User, options: city) => {
 		select: { township: true },
 	});
 
-	// Get latitude & longitude from OpenWeather Geocoding API
+	// Get latitude & longitude
 	const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${options.city ? options.city : userData?.township}&limit=1&appid=${OPEN_WEATHER_API_KEY}`;
 	const geoResponse = await axios.get(geoUrl);
-	const { lat, lon } = geoResponse.data[0]; // Extract latitude & longitude
+	const { lat, lon } = geoResponse.data[0];
 
-	// Fetch 5-day weather forecast because 7 day weather forcast with per hour is paid(one call api )
+	// Fetch 5-day weather forecast
 	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${options.city ? options.city : userData?.township}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
 	const weatherResponse = await axios.get(weatherUrl);
 	const weatherData = weatherResponse.data.list;
-	// Fetch Air Quality Index data
+
+	// Fetch AQI data
 	const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution/forecast?lat=${lat}&lon=${lon}&appid=${OPEN_WEATHER_API_KEY}`;
 	const aqiResponse = await axios.get(aqiUrl);
 	const aqiData = aqiResponse.data.list;
@@ -2344,10 +2346,8 @@ const getWeather = async (user: User, options: city) => {
 	const groupedWeather: Record<string, any> = {};
 
 	weatherData.forEach((item: any) => {
-		const date = item.dt_txt.split(' ')[0]; // Extract date (YYYY-MM-DD)
-		const time24 = item.dt_txt.split(' ')[1].slice(0, 5); // Extract time (HH:mm)
-
-		// Convert time to 12-hour format
+		const date = item.dt_txt.split(' ')[0];
+		const time24 = item.dt_txt.split(' ')[1].slice(0, 5);
 		const [hour, minute] = time24.split(':');
 		const hour12 = parseInt(hour) % 12 || 12;
 		const ampm = parseInt(hour) >= 12 ? 'PM' : 'AM';
@@ -2359,15 +2359,16 @@ const getWeather = async (user: User, options: city) => {
 					weekday: 'long',
 				}),
 				date: item.dt_txt,
-				minTemp: item.main.temp, // Initialize minTemp with first value
-				maxTemp: item.main.temp, // Initialize maxTemp with first value
+				minTemp: item.main.temp,
+				maxTemp: item.main.temp,
 				description: item.weather[0].description,
+				icon: item.weather[0].icon, // ✅ Daily icon added here
 				hourly: [],
-				aqi: null, // AQI will be added later
+				aqi: null,
 				city: options.city || userData?.township,
 			};
 		}
-		// Update min and max temperature for the day it is basically the range of temperator according to designe
+
 		groupedWeather[date].minTemp = Math.min(
 			groupedWeather[date].minTemp,
 			item.main.temp,
@@ -2376,29 +2377,29 @@ const getWeather = async (user: User, options: city) => {
 			groupedWeather[date].maxTemp,
 			item.main.temp,
 		);
-		// Add hourly weather data
+
 		if (parseInt(hour) % 1 === 0) {
 			groupedWeather[date].hourly.push({
 				time: time12,
 				temperature: item.main.temp,
 				description: item.weather[0].description,
+				icon: item.weather[0].icon, // ✅ Hourly icon added here
 			});
 		}
 	});
 
-	// Match AQI data with respective dates
+	// Match AQI data
 	aqiData.forEach((aqiItem: any) => {
 		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split('T')[0];
 		if (groupedWeather[aqiDate]) {
-			groupedWeather[aqiDate].aqi = aqiItem.main.aqi * 10; // Scale AQI
+			groupedWeather[aqiDate].aqi = aqiItem.main.aqi * 10;
 		}
 	});
 
-	// Convert object to array
 	const formattedWeather = Object.values(groupedWeather);
-
 	return { weather: formattedWeather };
 };
+
 
 const acceptOrRejectInviteThroughEmail = async (
 	token: string,
@@ -2861,23 +2862,23 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 	}
 };
 
+interface UserStateData {
+	state: string;
+	userPercent: number;
+	color?: string;
+}
+
 const getUsersByState = async (user: User) => {
 	const { id, role } = user;
-	// const startDate = new Date();
-	// const filterDays = days ? parseInt(days) : 30; // default 30 days
-	// startDate.setDate(startDate.getDate() - filterDays);
-	// console.log(startDate,days,"days")
-	let users;
+
+	let users: any[] = [];
 
 	if (role === 'APPLICATOR') {
-		// Applicator get connected grower
 		users = await prisma.applicatorGrower.findMany({
 			where: {
 				applicatorId: id,
-				grower: {
-					role: 'GROWER',
-				},
 				inviteStatus: 'ACCEPTED',
+				grower: { role: 'GROWER' },
 			},
 			select: {
 				grower: {
@@ -2888,14 +2889,11 @@ const getUsersByState = async (user: User) => {
 			},
 		});
 	} else if (role === 'GROWER') {
-		// Grower gets connected applicator
 		users = await prisma.applicatorGrower.findMany({
 			where: {
 				growerId: id,
-				applicator: {
-					role: 'APPLICATOR',
-				},
 				inviteStatus: 'ACCEPTED',
+				applicator: { role: 'APPLICATOR' },
 			},
 			select: {
 				applicator: {
@@ -2906,14 +2904,11 @@ const getUsersByState = async (user: User) => {
 			},
 		});
 	} else if (role === 'WORKER') {
-		// Applicator get connected grower
 		users = await prisma.applicatorWorker.findMany({
 			where: {
 				workerId: id,
-				applicator: {
-					role: 'APPLICATOR',
-				},
 				inviteStatus: 'ACCEPTED',
+				applicator: { role: 'APPLICATOR' },
 			},
 			select: {
 				applicator: {
@@ -2927,41 +2922,47 @@ const getUsersByState = async (user: User) => {
 		throw new Error('Invalid user role');
 	}
 
-	// State count karenge
+	// Count users by state
 	const stateCount: Record<string, number> = {};
 
-	users.forEach((item: any) => {
-		let stateName: string | undefined;
+	for (const item of users) {
+		let stateObj;
+
 		if (role === 'APPLICATOR') {
-			stateName =
-				item.grower?.state === 'string'
-					? item.grower.state
-					: item.grower?.state?.name;
-		} else if (role === 'GROWER') {
-			stateName =
-				typeof item.applicator?.state === 'string'
-					? item.applicator.state
-					: item.applicator?.state?.name;
-		} else if (role === 'WORKER') {
-			stateName =
-				typeof item.applicator?.state === 'string'
-					? item.applicator.state
-					: item.applicator?.state?.name;
+			stateObj = item?.grower?.state;
+		} else {
+			stateObj = item?.applicator?.state;
 		}
 
-		stateName = stateName || 'Unknown';
+		const stateName =
+			typeof stateObj === 'string'
+				? stateObj
+				: stateObj?.name || 'Unknown';
 
 		stateCount[stateName] = (stateCount[stateName] || 0) + 1;
-	});
+	}
 
 	const totalUsers = users.length;
 
-	const data = Object.entries(stateCount).map(([state, count]) => ({
-		state,
-		userPercent: totalUsers ? +((count / totalUsers) * 100).toFixed(2) : 0,
+	const data: UserStateData[] = Object.entries(stateCount).map(
+		([state, count]) => ({
+			state,
+			userPercent: totalUsers
+				? +((count / totalUsers) * 100).toFixed(2)
+				: 0,
+		}),
+	);
+
+	// Generate consistent colors based on sorted percentages
+	const colorMap = generateColorMapFromPercent(data);
+
+	// Add colors to data
+	const finalData = data.map((entry) => ({
+		...entry,
+		color: colorMap[entry.state] || '#ccc',
 	}));
 
-	return data;
+	return finalData;
 };
 
 export default {
