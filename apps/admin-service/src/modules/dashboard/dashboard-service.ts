@@ -1,6 +1,6 @@
 // import httpStatus from 'http-status';
 // import { Decimal } from '@prisma/client/runtime/library';
-import { Prisma,UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 // import axios from 'axios';
@@ -119,44 +119,87 @@ const getBarChartData = async (role?: UserRole| 'ALL') => {
 	  data: days,
 	};
   };
-const getLineChartData = async (role?: UserRole| 'ALL') => {
-	const nowDate = new Date();
-	nowDate.setHours(0, 0, 0, 0); // start of today
-  
-	const current7Days = [];
-	const days = [];
-	const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
-	// Current 7 Days: Day-wise Breakdown
-	for (let i = 6; i >= 0; i--) {
-	  const dayDate = new Date(nowDate); // current date 
-	  dayDate.setDate(nowDate.getDate() - i); //get prevoius  date i.e if i is 2 then we get 2 days before date
-  
-	  const start = new Date(dayDate);//i.e get start and end time of 2 days before date
-	  start.setHours(0, 0, 0, 0);
-  
-	  const end = new Date(dayDate);
-	  end.setHours(23, 59, 59, 999);
-  
-	  const count = await prisma.user.count({ //count the user who comes on that particular date 
-		where: {
-		  createdAt: { gte: start, lte: end },
-		  ...(role === 'ALL' ? {} : { role: role || 'APPLICATOR' }),
-		  
-		},
-	  });
-  
-	  current7Days.push(count);
-	  days.push({
-		day: weekDays[dayDate.getDay()],
-		value: count,
-	  });
-	}
+const getLineChartData = async (role?: UserRole | 'ALL') => {
+	const now = new Date();
+	const currentYear = now.getFullYear();
+	const lastYear = currentYear - 1; // take last year from current year
+
+	const months = [
+		'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+		'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+	];
+
+	const generateYearlyData = async (year: number) => {
+		const data = [];
+
+		for (let month = 0; month < 12; month++) {
+			const start = new Date(year, month, 1);
+			const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+			const count = await prisma.user.count({
+				where: {
+					createdAt: { gte: start, lte: end },
+					...(role === 'ALL' ? {} : { role: role || 'APPLICATOR' }),
+				},
+			});
+
+			data.push({
+				month: months[month],
+				value: count,
+			});
+		}
+
+		return data;
+	};
+
+	const currentYearData = await generateYearlyData(currentYear);
+	const lastYearData = await generateYearlyData(lastYear);
 
 	return {
-	  data: days,
+		currentYear: currentYearData,
+		lastYear: lastYearData,
 	};
-  };
+};
+
+  
+// const getLineChartData = async (role?: UserRole| 'ALL') => {
+// 	const nowDate = new Date();
+// 	nowDate.setHours(0, 0, 0, 0); // start of today
+  
+// 	const current7Days = [];
+// 	const days = [];
+// 	const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+// 	// Current 7 Days: Day-wise Breakdown
+// 	for (let i = 6; i >= 0; i--) {
+// 	  const dayDate = new Date(nowDate); // current date 
+// 	  dayDate.setDate(nowDate.getDate() - i); //get prevoius  date i.e if i is 2 then we get 2 days before date
+  
+// 	  const start = new Date(dayDate);//i.e get start and end time of 2 days before date
+// 	  start.setHours(0, 0, 0, 0);
+  
+// 	  const end = new Date(dayDate);
+// 	  end.setHours(23, 59, 59, 999);
+  
+// 	  const count = await prisma.user.count({ //count the user who comes on that particular date 
+// 		where: {
+// 		  createdAt: { gte: start, lte: end },
+// 		  ...(role === 'ALL' ? {} : { role: role || 'APPLICATOR' }),
+		  
+// 		},
+// 	  });
+  
+// 	  current7Days.push(count);
+// 	  days.push({
+// 		day: weekDays[dayDate.getDay()],
+// 		value: count,
+// 	  });
+// 	}
+
+// 	return {
+// 	  data: days,
+// 	};
+//   };
  const getDonutChartData = async (role?: UserRole | 'ALL') => {
 	const users = await prisma.user.findMany({
 	  where: {

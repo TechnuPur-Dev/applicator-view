@@ -1,6 +1,6 @@
 // import httpStatus from 'http-status';
 // import { Decimal } from '@prisma/client/runtime/library';
-import { Prisma, } from '@prisma/client';
+import { Prisma, UserRole, } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 // import axios from 'axios';
@@ -26,7 +26,9 @@ import ApiError from '../../../../../shared/utils/api-error';
 
 
 // get user List
-const getAllUsers = async (options: PaginateOptions) => {
+const getAllUsers = async (options: PaginateOptions& {
+	searchValue?: string;
+}) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -38,7 +40,38 @@ const getAllUsers = async (options: PaginateOptions) => {
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
+	const validRoles: UserRole[] = [ 'APPLICATOR','GROWER','WORKER','APPLICATOR_USER'];
+		// Search condition
+		const whereClause: Prisma.UserWhereInput = { 
+			role:{in:['APPLICATOR','GROWER','WORKER','APPLICATOR_USER']}
+		};
+		if (options.searchValue) {
+			whereClause.OR = [
+				{
+					email: {
+						contains: options.searchValue,
+						mode: 'insensitive',
+					},
+				},
+				{
+					fullName: {
+						contains: options.searchValue,
+						mode: 'insensitive',
+					},
+				},
+				...(validRoles.includes(options.searchValue.toUpperCase() as UserRole)
+				? [
+						{
+							role: {
+								equals: options.searchValue.toUpperCase() as UserRole,
+							},
+						},
+				  ]
+				: []),
+			];
+		}
 	const users = await prisma.user.findMany({
+		where:whereClause,
 		skip,
 		take: limit,
 		orderBy: {
@@ -48,7 +81,9 @@ const getAllUsers = async (options: PaginateOptions) => {
 			password:true
 		}
 	}); // Fetch all users
-	const totalResults = await prisma.user.count();
+	const totalResults = await prisma.user.count({
+		where:whereClause,
+	});
 
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -87,7 +122,7 @@ const getApplicatorUsers = async (options: PaginateOptions & {
 			mode: 'insensitive',
 		};
 	}
-
+console.log(whereClause,'whereClause')
 	const users = await prisma.user.findMany({
 		where: whereClause,
 		skip,
