@@ -14,7 +14,7 @@ router.route('/all-applicators').get(verifyToken, adminController.getApplicatorU
 router.route('/all-growers').get(verifyToken, adminController.getGrowerUsers);
 router.route('/all-pilots').get(verifyToken, adminController.getPilotUsers);
 router.route('/get-userById/:userId').get(verifyToken,validateSchema(adminValidation.paramsSchema), adminController.getUserById);
-router.route('/delete-account/:userId').get(verifyToken,validateSchema(adminValidation.paramsSchema), adminController.deleteUser);
+router.route('/delete-account/:userId').delete(verifyToken,validateSchema(adminValidation.paramsSchema), adminController.deleteUser);
 
 
 
