@@ -2400,7 +2400,6 @@ const getWeather = async (user: User, options: city) => {
 	return { weather: formattedWeather };
 };
 
-
 const acceptOrRejectInviteThroughEmail = async (
 	token: string,
 	inviteStatus: InviteStatus,
@@ -2719,6 +2718,14 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 			},
 			select: {
 				inviteStatus: true,
+				pilotPestLicenseNumber: true,
+				businessLicenseNumber: true,
+				pilotLicenseNumber: true,
+				planeOrUnitNumber: true,
+				percentageFee: true,
+				dollarPerAcre: true,
+				autoAcceptJobs: true,
+				canViewPricingDetails: true,
 				applicator: {
 					include: {
 						state: {
@@ -2741,6 +2748,14 @@ const getApplicatorById = async (user: User, applicatorId: number) => {
 
 		return {
 			inviteStatus: applicator.inviteStatus,
+			pilotPestLicenseNumber: applicator.pilotPestLicenseNumber,
+			businessLicenseNumber: applicator.businessLicenseNumber,
+			pilotLicenseNumber: applicator.pilotLicenseNumber,
+			planeOrUnitNumber: applicator.planeOrUnitNumber,
+			percentageFee: applicator.percentageFee,
+			dollarPerAcre: applicator.dollarPerAcre,
+			autoAcceptJobs: applicator.autoAcceptJobs,
+			canViewPricingDetails: applicator.canViewPricingDetails,
 			...applicator.applicator,
 			state: applicator.applicator?.state?.name ?? null,
 		};

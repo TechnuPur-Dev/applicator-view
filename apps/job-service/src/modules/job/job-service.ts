@@ -9,6 +9,10 @@ import {
 } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
+import {
+	calculateMaxY,
+	calculateInterval,
+} from '../../../../../shared/utils/line-chart';
 import { CreateJob } from './job-types';
 import { v4 as uuidv4 } from 'uuid';
 import config from '../../../../../shared/config/env-config';
@@ -4836,10 +4840,14 @@ const getMonthlyAcresSprayed = async (user: User, year: number) => {
 		}
 	}
 
-	return monthLabels.map((month) => ({
-		month,
-		acres: acresByMonth[month],
-	}));
+	return {
+		data: monthLabels.map((month) => ({
+			month,
+			acres: acresByMonth[month],
+		})),
+		maxY: calculateMaxY(Object.values(acresByMonth)),
+		yAxisInterval: calculateInterval(Object.values(acresByMonth)),
+	};
 };
 
 const getFinancialSummary = async (user: User, range: string) => {
@@ -4874,7 +4882,7 @@ const getFinancialSummary = async (user: User, range: string) => {
 			status: 'PAID',
 		},
 		select: {
-			createdAt: true,
+			paidAt: true,
 			Invoice: {
 				select: { totalAmount: true },
 			},
@@ -4909,12 +4917,13 @@ const getFinancialSummary = async (user: User, range: string) => {
 
 	let totalCurrent = 0;
 	for (const job of currentJobs) {
-		const label = job.createdAt.toLocaleDateString('en-US', {
+		const label = job.paidAt?.toLocaleDateString('en-US', {
 			month: 'short',
 			day: 'numeric',
 		});
 		const amount = job.Invoice?.totalAmount ?? 0;
-		if (label in amountByDate) {
+
+		if (label && label in amountByDate) {
 			amountByDate[label] += Number(amount);
 			totalCurrent += Number(amount);
 		}
