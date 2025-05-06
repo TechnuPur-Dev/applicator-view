@@ -66,14 +66,14 @@ const getAllNotificationsByUserId = async (
 		prisma.notification.count({ where: { userId } }),
 	]);
 
-	if (!notifications.length) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'No notifications found for this user.',
-		);
-	}
+	// if (!notifications.length) {
+	// 	throw new ApiError(
+	// 		httpStatus.NOT_FOUND,
+	// 		'No notifications found for this user.',
+	// 	);
+	// }
 
-	console.log(notifications);
+	// console.log(notifications);
 
 	const formattedNotifications = notifications.map((notif) => {
 		const { invite, job, ticket, type, workerInvite } = notif;

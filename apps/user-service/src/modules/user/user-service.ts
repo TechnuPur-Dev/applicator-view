@@ -798,7 +798,10 @@ const deleteGrower = async (growerId: number, applicatorId: number) => {
 			},
 		});
 
-		if (existingRecord?.inviteStatus === 'DELETED_BY_GROWER') {
+		if (
+			existingRecord?.inviteStatus === 'DELETED_BY_GROWER' ||
+			existingRecord?.inviteStatus === 'PENDING'
+		) {
 			// If already deleted by both, perform a hard delete
 			await tx.applicatorGrower.delete({
 				where: { id: existingRecord.id },
@@ -856,7 +859,10 @@ const deleteApplicator = async (growerId: number, applicatorId: number) => {
 			},
 		});
 
-		if (existingRecord?.inviteStatus === 'DELETED_BY_APPLICATOR') {
+		if (
+			existingRecord?.inviteStatus === 'DELETED_BY_APPLICATOR' ||
+			existingRecord?.inviteStatus === 'PENDING'
+		) {
 			// If already deleted by both, perform a hard delete
 			await tx.applicatorGrower.delete({
 				where: { id: existingRecord.id },
