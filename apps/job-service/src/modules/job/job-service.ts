@@ -2647,6 +2647,9 @@ const upcomingApplications = async (
 				},
 			},
 		},
+		orderBy: {
+			startDate: 'asc',
+		},
 	});
 	// Final response format
 	const formattedJobs = allJobsApplications.map((job) => ({
@@ -2655,8 +2658,8 @@ const upcomingApplications = async (
 		startDate: job.startDate || new Date(),
 		fields: job.fields.map((fieldJob) => ({
 			acres: fieldJob.field.acres,
-			name: fieldJob.field.name, // Crop ki jagah Job Title return karna
-			crop: fieldJob.field.crop, // Crop ki jagah Job Title return karna
+			name: fieldJob.field.name,
+			crop: fieldJob.field.crop,
 		})),
 	}));
 	const upcomingJobApplication = formattedJobs.filter(
@@ -4984,11 +4987,11 @@ const getCalendarApplications = async (user: User, month?: string) => {
 				gte: startDate,
 				lt: endDate,
 			},
-			AND: {
-				startDate: {
-					gte: now,
-				},
-			},
+			// AND: {
+			// 	startDate: {
+			// 		gte: now,
+			// 	},
+			// },
 		},
 		orderBy: {
 			startDate: 'asc',

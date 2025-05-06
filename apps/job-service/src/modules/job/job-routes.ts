@@ -150,7 +150,7 @@ router
 		jobController.addOpenForBiddingJob,
 	);
 router
-	.route('/upcomping-applications')
+	.route('/upcoming-applications')
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.monthParamsSchema),
@@ -252,14 +252,14 @@ router
 	router.route('/dashboard/financial-summary').get(verifyToken , jobController.getFinancialSummary);
 
 router
-	.route('/calendar/upcomping-applications')
+	.route('/calendar/upcoming-applications')
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.calendarApplicationsSchema),
 		jobController.getCalendarApplications,
 	);
 router
-	.route('/calendar/upcomping-applications/range')
+	.route('/calendar/upcoming-applications/range')
 	.get(
 		verifyToken,
 		validateSchema(jobValidation.upcomingApplicationsRangeSchema),
