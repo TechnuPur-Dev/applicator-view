@@ -3,6 +3,8 @@ import validateSchema from '../../../../../shared/middlewares/validation-middlew
 import authValidation from './auth-validation';
 import authController from './auth-controller';
 import { normalizeApplicatorUser } from '../../../../../shared/middlewares/normalize-user-middleware';
+import { verifyToken } from '../../../../../shared/middlewares/auth-middleware'; // Uncomment and add correct path for TypeScript support if needed
+
 const router: Router = express.Router();
 
 // Define routes
@@ -27,7 +29,7 @@ router
 router
 	.route('/login')
 	.post(validateSchema(authValidation.loginSchema), authController.loginUser);
-	router
+router
 	.route('/resend-otp')
 	.post(
 		validateSchema(authValidation.verifyEmailAndSendOTPSchema),
@@ -42,4 +44,11 @@ router
 		authController.acceptInviteAndSignUp,
 	);
 
+router
+	.route('/update-password')
+	.put(
+		verifyToken,
+		validateSchema(authValidation.updatePasswordSchema),
+		authController.updatePassword,
+	);
 export default router;

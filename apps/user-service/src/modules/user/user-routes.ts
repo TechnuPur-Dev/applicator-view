@@ -1,5 +1,4 @@
 import express, { Router } from 'express';
-
 import userController from './user-controller';
 import upload from '../../../../../shared/middlewares/multer-middleware';
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware'; // Uncomment and add correct path for TypeScript support if needed

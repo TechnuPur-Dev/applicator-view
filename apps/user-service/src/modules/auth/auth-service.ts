@@ -17,6 +17,7 @@ import {
 } from './auth-types';
 import { generateOTP } from '../../utils/generate-otp';
 import { verifyInvite } from '../../helper/invite-token';
+import { User } from '../../../../../shared/types/global';
 
 // Service for verifying phone and sending OTP
 const registerUser = async (data: RegisterUser) => {
@@ -646,6 +647,41 @@ const acceptInviteAndSignUp = async (
 	};
 };
 
+const updatePassword = async (
+	user: User,
+	currentPassword: string,
+	newPassword: string,
+) => {
+	// Validate user existence and current password
+	const existingUser = await prisma.user.findUnique({
+		where: { id: user.id },
+	});
+	if (!existingUser || !existingUser.password) {
+		throw new Error('User not found');
+	}
+
+	const isMatch = await comparePassword(
+		currentPassword,
+		existingUser.password,
+	);
+	if (!isMatch) {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'Current password is incorrect.',
+		);
+	}
+
+	const hashedPassword = await hashPassword(newPassword);
+
+	await prisma.user.update({
+		where: { id: user.id },
+		data: { password: hashedPassword },
+	});
+
+	return {
+		message: 'Password updated successfully.',
+	};
+};
 export default {
 	registerUser,
 	loginUser,
@@ -653,4 +689,5 @@ export default {
 	verifyOTPAndRegisterEmail,
 	resendOTP,
 	acceptInviteAndSignUp,
+	updatePassword,
 };

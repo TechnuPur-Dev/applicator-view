@@ -2618,6 +2618,11 @@ const upcomingApplications = async (
 					gte: startOfMonth,
 					lte: endOfMonth,
 				},
+				AND: {
+					startDate: {
+						gte: currentDate,
+					},
+				},
 			};
 		}
 	}
@@ -4987,11 +4992,11 @@ const getCalendarApplications = async (user: User, month?: string) => {
 				gte: startDate,
 				lt: endDate,
 			},
-			// AND: {
-			// 	startDate: {
-			// 		gte: now,
-			// 	},
-			// },
+			AND: {
+				startDate: {
+					gte: now,
+				},
+			},
 		},
 		orderBy: {
 			startDate: 'asc',

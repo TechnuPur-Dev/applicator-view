@@ -101,10 +101,30 @@ const acceptInviteAndSignUp: Schema = Joi.object({
 	}).required(),
 });
 
+const updatePasswordSchema = Joi.object({
+	body: Joi.object({
+		currentPassword: Joi.string().min(8).required().messages({
+			'string.empty': 'Current password is required',
+			'string.min': 'Current password must be at least 8 characters',
+		}),
+
+		newPassword: passwordSchema
+			.required()
+			.invalid(Joi.ref('currentPassword'))
+			.messages({
+				'string.empty': 'New password is required',
+				'string.min': 'New password must be at least 8 characters',
+				'any.invalid':
+					'New password must be different from current password',
+			}),
+	}).required(),
+});
+
 export default {
 	registerUserSchema,
 	verifyEmailAndSendOTPSchema,
 	verifyOTPAndRegisterEmailSchema,
 	loginSchema,
 	acceptInviteAndSignUp,
+	updatePasswordSchema,
 };

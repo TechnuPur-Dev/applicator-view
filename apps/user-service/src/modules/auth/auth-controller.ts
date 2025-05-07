@@ -49,6 +49,16 @@ const acceptInviteAndSignUp = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+const updatePassword = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const { currentPassword, newPassword } = req.body;
+	const result = await authService.updatePassword(
+		user,
+		currentPassword,
+		newPassword,
+	);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	registerUser,
 	verifyEmailAndSendOTP,
@@ -56,4 +66,5 @@ export default {
 	loginUser,
 	resendOTP,
 	acceptInviteAndSignUp,
+	updatePassword,
 };
