@@ -88,6 +88,7 @@ const getAllNotificationsByUserId = async (
 			const commonFields = {
 				inviteId: invite?.id,
 				inviteInitiator: invite?.inviteInitiator,
+				status: invite?.inviteStatus,
 			};
 			if (invite?.inviteInitiator === 'APPLICATOR') {
 				filteredInvite =
