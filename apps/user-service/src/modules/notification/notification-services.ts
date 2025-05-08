@@ -1,6 +1,6 @@
-import httpStatus from 'http-status';
+// import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import ApiError from '../../../../../shared/utils/api-error';
+// import ApiError from '../../../../../shared/utils/api-error';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 
 const getAllNotificationsByUserId = async (

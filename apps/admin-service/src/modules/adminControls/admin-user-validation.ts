@@ -1,10 +1,8 @@
-import Joi, {  Schema } from 'joi';
-import {
-	phoneNumberSchema,
-} from '../../../../../shared/utils/joi-common-validations';
+import Joi, { Schema } from 'joi';
+import { phoneNumberSchema } from '../../../../../shared/utils/joi-common-validations';
 
 const createData: Schema = Joi.object({
-    body:Joi.object({
+	body: Joi.object({
 		firstName: Joi.string().min(1).max(50).required(), // First name with minimum and maximum length
 		lastName: Joi.string().min(1).max(50).required(), // Last name with minimum and maximum length
 		email: Joi.string().email().required(), // Valid email address
@@ -20,29 +18,25 @@ const createData: Schema = Joi.object({
 		bio: Joi.string().max(500).optional().allow(''), // Short biography
 		additionalInfo: Joi.string().max(500).optional().allow(''), // Additional information as a flexible object
 	}).required(),
-})
+});
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
 		userId: Joi.number().integer().positive(),
-	
 	})
 		// .or('id', 'growerId', 'applicatorId') // At least one must be present
 		.required(),
 });
-const UpdateStatus: Schema = Joi.object({
+const updateStatus: Schema = Joi.object({
 	body: Joi.object({
 		userId: Joi.number().integer().positive(),
-		status:Joi.boolean().required(),
-	
+		status: Joi.boolean().required(),
 	})
 		// .or('id', 'growerId', 'applicatorId') // At least one must be present
 		.required(),
 });
-
 
 export default {
 	paramsSchema,
 	createData,
-	UpdateStatus
-	
+	updateStatus,
 };

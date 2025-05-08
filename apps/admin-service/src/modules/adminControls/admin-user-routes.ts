@@ -10,9 +10,26 @@ const router: Router = express.Router();
 
 router.route('/create').post(verifyToken, adminUserController.createUser);
 router.route('/all-users').get(verifyToken, adminUserController.getAllUsers);
-router.route('/userById/:userId').get(verifyToken,validateSchema(adminUserValidation.paramsSchema), adminUserController.getUserById);
-router.route('/delete/:userId').delete(verifyToken,validateSchema(adminUserValidation.paramsSchema), adminUserController.deleteUser);
-router.route('/disable').put(verifyToken,validateSchema(adminUserValidation.UpdateStatus), adminUserController.disableUser);
-
+router
+	.route('/userById/:userId')
+	.get(
+		verifyToken,
+		validateSchema(adminUserValidation.paramsSchema),
+		adminUserController.getUserById,
+	);
+router
+	.route('/delete/:userId')
+	.delete(
+		verifyToken,
+		validateSchema(adminUserValidation.paramsSchema),
+		adminUserController.deleteUser,
+	);
+router
+	.route('/status/toggle')
+	.put(
+		verifyToken,
+		validateSchema(adminUserValidation.updateStatus),
+		adminUserController.disableUser,
+	);
 
 export default router;
