@@ -56,6 +56,12 @@ const getAllNotificationsByUserId = async (
 								lastName: true,
 							},
 						},
+						worker: {
+							select: {
+								firstName: true,
+								lastName: true,
+							},
+						},
 					},
 				},
 			},
@@ -123,13 +129,24 @@ const getAllNotificationsByUserId = async (
 								status: invite.inviteStatus,
 							};
 			} else if (workerInvite) {
-				filteredInvite = {
-					inviteId: workerInvite.id,
-					applicatorId: workerInvite.applicatorId,
-					applicatorFirstName: workerInvite.applicator.firstName,
-					applicatorLastName: workerInvite.applicator.lastName,
-					status: workerInvite.inviteStatus,
-				};
+				filteredInvite =
+					notif.type === 'ACCOUNT_INVITATION'
+						? {
+								inviteId: workerInvite.id,
+								applicatorId: workerInvite.applicatorId,
+								applicatorFirstName:
+									workerInvite.applicator.firstName,
+								applicatorLastName:
+									workerInvite.applicator.lastName,
+								status: workerInvite.inviteStatus,
+							}
+						: {
+								inviteId: workerInvite.id,
+								workerId: workerInvite.workerId,
+								workerFirstName: workerInvite.worker.firstName,
+								workerLastName: workerInvite.worker.lastName,
+								status: workerInvite.inviteStatus,
+							};
 			}
 		}
 
@@ -234,6 +251,9 @@ const newNotificationsCount = async (user: User) => {
 			userId: user.id,
 			createdAt: {
 				gt: userData?.lastViewedAt || new Date(0), // Defaults to epoch if null
+			},
+			type: {
+				not: 'PAYMENT_RECEIVED',
 			},
 		},
 	});
