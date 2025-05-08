@@ -1,4 +1,4 @@
-// import httpStatus from 'http-status';
+import httpStatus from 'http-status';
 // import { Decimal } from '@prisma/client/runtime/library';
 // import { Prisma, } from '@prisma/client';
 // import sharp from 'sharp';
@@ -27,7 +27,7 @@ import { UserData } from './admin-user-types';
 
 
 // get user List
-const createUser = async (userId:number,data:UserData) => {
+const createUser = async (data:UserData) => {
 	const { firstName, lastName,email } = data;
 	const userExist = await prisma.user.findUnique({
 		where:{
@@ -46,6 +46,7 @@ const createUser = async (userId:number,data:UserData) => {
 			email:email,
 			fullName: `${firstName} ${lastName}`,
 			role: 'SUPER_ADMIN_USER',
+
 		},
 		omit: {
 			profileImage:true,
@@ -80,10 +81,16 @@ const getAllUsers = async (options: PaginateOptions) => {
 			id: 'desc',
 		},
 		omit:{
-			password:true
+			password:true,
+			joiningDate:true,
+			lastViewedAt:true
 		}
 	}); // Fetch all users
-	const totalResults = await prisma.user.count();
+	const totalResults = await prisma.user.count({
+		where:{
+			role:'SUPER_ADMIN_USER'
+		}
+	});
 
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -117,7 +124,18 @@ if(!userDetail){
 	};
 };
 const deleteUser = async (userId:number) => {
-	
+	const userExist = await prisma.user.findUnique({
+		where:{
+			id:userId,
+			role:'SUPER_ADMIN_USER'
+		}
+	})
+	if(!userExist){
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'Admin user with this Id not found.',
+		);
+	}
 	 await prisma.user.delete({
 		where: {
            id:userId
@@ -128,10 +146,42 @@ const deleteUser = async (userId:number) => {
 	});
 
 	return {
-		result: 'user account deleted successfully'
+		result: 'Admin user deleted successfully'
 		,
 	};
 };
+const disableUser = async (
+	data:{
+	userId:number,
+	status:boolean
+})=>{
+	console.log(data,'userId')
+	const {userId , status} = data
+	const userExist = await prisma.user.findUnique({
+		where:{
+			id:userId,
+			role:'SUPER_ADMIN_USER'
+		}
+	})
+	console.log(userExist,'userExist')
+	if(!userExist){
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'Admin user with this Id not found.',
+		);
+	}
+	 await prisma.user.update({
+		where:{
+			id:userId
+		},
+		data:{
+			isActive:status
+		}
+	})
+	return{
+		message:status ? 'user enable successfully' : 'user disable successfully'
+	}
+}
 
 
 
@@ -139,6 +189,7 @@ export default {
 	createUser,
 	getAllUsers,
 	getUserById,
-	deleteUser
+	deleteUser,
+	disableUser
 	
 };
