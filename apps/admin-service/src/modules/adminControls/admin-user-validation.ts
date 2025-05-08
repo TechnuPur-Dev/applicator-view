@@ -1,4 +1,4 @@
-import Joi, { Schema } from 'joi';
+import Joi, {  Schema } from 'joi';
 import {
 	phoneNumberSchema,
 } from '../../../../../shared/utils/joi-common-validations';
@@ -29,10 +29,20 @@ const paramsSchema: Schema = Joi.object({
 		// .or('id', 'growerId', 'applicatorId') // At least one must be present
 		.required(),
 });
+const UpdateStatus: Schema = Joi.object({
+	body: Joi.object({
+		userId: Joi.number().integer().positive(),
+		status:Joi.boolean().required(),
+	
+	})
+		// .or('id', 'growerId', 'applicatorId') // At least one must be present
+		.required(),
+});
 
 
 export default {
 	paramsSchema,
-	createData
+	createData,
+	UpdateStatus
 	
 };

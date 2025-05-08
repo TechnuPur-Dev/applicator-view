@@ -43,7 +43,7 @@ const getAllUsers = async (options: PaginateOptions& {
 	const validRoles: UserRole[] = [ 'APPLICATOR','GROWER','WORKER','APPLICATOR_USER'];
 		// Search condition
 		const whereClause: Prisma.UserWhereInput = { 
-			role:{in:['APPLICATOR','GROWER','WORKER','APPLICATOR_USER']}
+			role:{in:['APPLICATOR','GROWER','WORKER','APPLICATOR_USER',]}
 		};
 		if (options.searchValue) {
 			whereClause.OR = [

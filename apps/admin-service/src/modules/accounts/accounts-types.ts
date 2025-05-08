@@ -1,4 +1,4 @@
-import { $Enums, UserRole } from '@prisma/client';
+import {  UserRole } from '@prisma/client';
 // import { InviteStatus, ProfileStatus } from '@prisma/client';
 // import { User } from '../../../../../shared/types/global';
 
@@ -22,7 +22,7 @@ interface UpdateUser {
 	zipCode?: string;
 	bio?: string;
 	additionalInfo?: string;
-	profileStatus?: ProfileStatus;
+	// profileStatus?: ProfileStatus;
 }
 
 interface UpdateArchiveStatus {

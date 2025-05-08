@@ -1,7 +1,8 @@
 import express, { Router } from 'express';
 
-import admin from './admin/admin-routes';
+import accounts from './accounts/accounts-routes';
 import dasboard from './dashboard/dashboard-routes'
+import adminUser from './adminControls/admin-user-routes'
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -10,12 +11,16 @@ const router: Router = express.Router();
 const defaultRoutes = [
 	
 	{
-		path: '/admin', // Path for the user routes
-		route: admin,
+		path: '/accounts', // Path for the user routes
+		route: accounts,
 	},
 	{
 		path: '/admin/dashboard', // Path for the user routes
 		route: dasboard,
+	},
+	{
+		path: '/admin', // Path for the user routes
+		route: adminUser,
 	},
 
 
