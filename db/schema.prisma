@@ -43,6 +43,7 @@ model User {
   stateId                Int?
   joiningDate            DateTime?
   lastViewedAt           DateTime? // To handle notifications count
+  isActive               Boolean                 @default(true)
   applicators            ApplicatorGrower[]      @relation("Applicators")
   growers                ApplicatorGrower[]      @relation("Growers")
   applicatorUser         ApplicatorUser[]        @relation("ApplicatorToUsers")
