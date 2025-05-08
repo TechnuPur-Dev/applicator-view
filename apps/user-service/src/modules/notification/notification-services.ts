@@ -86,9 +86,13 @@ const getAllNotificationsByUserId = async (
 		let filteredInvite, filteredJob, filteredTicket;
 
 		if (
-			['ACCOUNT_INVITATION', 'ACCEPT_INVITE', 'REJECT_INVITE'].includes(
-				type,
-			) &&
+			[
+				'ACCOUNT_INVITATION',
+				'ACCEPT_INVITE',
+				'REJECT_INVITE',
+				'PILOT_ACCEPT_INVITE',
+				'PILOT_REJECT_INVITE',
+			].includes(type) &&
 			(invite || workerInvite)
 		) {
 			const commonFields = {
