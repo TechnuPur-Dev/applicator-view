@@ -117,10 +117,26 @@ const getApplicatorUsers = async (options: PaginateOptions & {
 
 	// Apply email search if given
 	if (options.searchValue) {
-		whereClause.email = {
-			contains: options.searchValue,
-			mode: 'insensitive',
-		};
+		// whereClause.email = {
+		// 	contains: options.searchValue,
+		// 	mode: 'insensitive',
+		// };
+		whereClause.OR = [
+			{
+				email: {
+					contains: options.searchValue,
+					mode: 'insensitive',
+				},
+			},
+			{
+				fullName: {
+					contains: options.searchValue,
+					mode: 'insensitive',
+				},
+			},
+		
+			
+		];
 	}
 console.log(whereClause,'whereClause')
 	const users = await prisma.user.findMany({
@@ -178,10 +194,26 @@ const getGrowerUsers = async (options: PaginateOptions & {
 
 	// Apply email search if given
 	if (options.searchValue) {
-		whereClause.email = {
-			contains: options.searchValue,
-			mode: 'insensitive',
-		};
+		// whereClause.email = {
+		// 	contains: options.searchValue,
+		// 	mode: 'insensitive',
+		// };
+		whereClause.OR = [
+			{
+				email: {
+					contains: options.searchValue,
+					mode: 'insensitive',
+				},
+			},
+			{
+				fullName: {
+					contains: options.searchValue,
+					mode: 'insensitive',
+				},
+			},
+		
+			
+		];
 	}
 
 	const users = await prisma.user.findMany({
@@ -238,10 +270,26 @@ const getPilotUsers = async (options: PaginateOptions & {
 
 	// Apply email search if given
 	if (options.searchValue) {
-		whereClause.email = {
-			contains: options.searchValue,
-			mode: 'insensitive',
-		};
+		// whereClause.email = {
+		// 	contains: options.searchValue,
+		// 	mode: 'insensitive',
+		// };
+		whereClause.OR = [
+			{
+				email: {
+					contains: options.searchValue,
+					mode: 'insensitive',
+				},
+			},
+			{
+				fullName: {
+					contains: options.searchValue,
+					mode: 'insensitive',
+				},
+			},
+		
+			
+		];
 	}
 
 	const users = await prisma.user.findMany({

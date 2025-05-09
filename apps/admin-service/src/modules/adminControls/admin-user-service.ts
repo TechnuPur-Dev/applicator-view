@@ -15,7 +15,7 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 // import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 // import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 // import { sendEmail } from '../../../../../shared/helpers/node-mailer';
-// import { hashPassword } from '../../helper/bcrypt';
+import { hashPassword } from '../../helper/bcrypt';
 import {
 	PaginateOptions,
 
@@ -40,10 +40,17 @@ const createUser = async (data: UserData) => {
 			'user with this email already exist.',
 		);
 	}
+	let { password } = data;
+	if (password) {
+		const hashedPassword = await hashPassword(password);
+		password = hashedPassword;
+	}
+
 	const user = await prisma.user.create({
 		data: {
 			...data,
 			email: email,
+			password:password,
 			fullName: `${firstName} ${lastName}`,
 			role: 'SUPER_ADMIN_USER',
 
