@@ -1,6 +1,6 @@
 // import httpStatus from 'http-status';
 // import { Decimal } from '@prisma/client/runtime/library';
-import { Prisma, UserRole, } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 // import sharp from 'sharp';
 // import { v4 as uuidv4 } from 'uuid';
 // import axios from 'axios';
@@ -16,19 +16,17 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 // import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 // import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 // import { hashPassword } from '../../helper/bcrypt';
-import {
-	PaginateOptions,
-	
-} from '../../../../../shared/types/global';
+import { PaginateOptions } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
 // import { generateToken, verifyInvite } from '../../helper/invite-token';
 // import { InviteStatus } from '@prisma/client';
 
-
 // get user List
-const getAllUsers = async (options: PaginateOptions& {
-	searchValue?: string;
-}) => {
+const getAllUsers = async (
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -40,49 +38,56 @@ const getAllUsers = async (options: PaginateOptions& {
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-	const validRoles: UserRole[] = [ 'APPLICATOR','GROWER','WORKER','APPLICATOR_USER'];
-		// Search condition
-		const whereClause: Prisma.UserWhereInput = { 
-			role:{in:['APPLICATOR','GROWER','WORKER','APPLICATOR_USER',]}
-		};
-		if (options.searchValue) {
-			whereClause.OR = [
-				{
-					email: {
-						contains: options.searchValue,
-						mode: 'insensitive',
-					},
+	const validRoles: UserRole[] = [
+		'APPLICATOR',
+		'GROWER',
+		'WORKER',
+		'APPLICATOR_USER',
+	];
+	// Search condition
+	const whereClause: Prisma.UserWhereInput = {
+		role: { in: ['APPLICATOR', 'GROWER', 'WORKER', 'APPLICATOR_USER'] },
+	};
+	if (options.searchValue) {
+		whereClause.OR = [
+			{
+				email: {
+					contains: options.searchValue,
+					mode: 'insensitive',
 				},
-				{
-					fullName: {
-						contains: options.searchValue,
-						mode: 'insensitive',
-					},
+			},
+			{
+				fullName: {
+					contains: options.searchValue,
+					mode: 'insensitive',
 				},
-				...(validRoles.includes(options.searchValue.toUpperCase() as UserRole)
+			},
+			...(validRoles.includes(
+				options.searchValue.toUpperCase() as UserRole,
+			)
 				? [
 						{
 							role: {
 								equals: options.searchValue.toUpperCase() as UserRole,
 							},
 						},
-				  ]
+					]
 				: []),
-			];
-		}
+		];
+	}
 	const users = await prisma.user.findMany({
-		where:whereClause,
+		where: whereClause,
 		skip,
 		take: limit,
 		orderBy: {
 			id: 'desc',
 		},
-		omit:{
-			password:true
-		}
+		omit: {
+			password: true,
+		},
 	}); // Fetch all users
 	const totalResults = await prisma.user.count({
-		where:whereClause,
+		where: whereClause,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -95,9 +100,11 @@ const getAllUsers = async (options: PaginateOptions& {
 		totalResults,
 	};
 };
-const getApplicatorUsers = async (options: PaginateOptions & {
-	searchValue?: string;
-}) => {
+const getApplicatorUsers = async (
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -111,7 +118,7 @@ const getApplicatorUsers = async (options: PaginateOptions & {
 	const skip = (page - 1) * limit;
 
 	// Search condition
-	const whereClause: Prisma.UserWhereInput = { 
+	const whereClause: Prisma.UserWhereInput = {
 		role: 'APPLICATOR', // Filter only applicators
 	};
 
@@ -122,7 +129,7 @@ const getApplicatorUsers = async (options: PaginateOptions & {
 			mode: 'insensitive',
 		};
 	}
-console.log(whereClause,'whereClause')
+	console.log(whereClause, 'whereClause');
 	const users = await prisma.user.findMany({
 		where: whereClause,
 		skip,
@@ -134,13 +141,12 @@ console.log(whereClause,'whereClause')
 			id: true,
 			firstName: true,
 			lastName: true,
-			fullName:true,
-			phoneNumber:true,
+			fullName: true,
+			phoneNumber: true,
 			email: true,
-			address1:true,
-			address2:true,
-			role:true
-			
+			address1: true,
+			address2: true,
+			role: true,
 		},
 	});
 
@@ -156,9 +162,11 @@ console.log(whereClause,'whereClause')
 		totalResults,
 	};
 };
-const getGrowerUsers = async (options: PaginateOptions & {
-	searchValue?: string;
-}) => {
+const getGrowerUsers = async (
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -172,7 +180,7 @@ const getGrowerUsers = async (options: PaginateOptions & {
 	const skip = (page - 1) * limit;
 
 	// Search condition
-	const whereClause: Prisma.UserWhereInput = { 
+	const whereClause: Prisma.UserWhereInput = {
 		role: 'GROWER', // Filter only applicators
 	};
 
@@ -195,12 +203,12 @@ const getGrowerUsers = async (options: PaginateOptions & {
 			id: true,
 			firstName: true,
 			lastName: true,
-			fullName:true,
-			phoneNumber:true,
+			fullName: true,
+			phoneNumber: true,
 			email: true,
-			address1:true,
-			address2:true,
-			role:true
+			address1: true,
+			address2: true,
+			role: true,
 		},
 	});
 
@@ -216,9 +224,11 @@ const getGrowerUsers = async (options: PaginateOptions & {
 		totalResults,
 	};
 };
-const getPilotUsers = async (options: PaginateOptions & {
-	searchValue?: string;
-}) => {
+const getPilotUsers = async (
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -232,7 +242,7 @@ const getPilotUsers = async (options: PaginateOptions & {
 	const skip = (page - 1) * limit;
 
 	// Search condition
-	const whereClause: Prisma.UserWhereInput = { 
+	const whereClause: Prisma.UserWhereInput = {
 		role: 'WORKER', // Filter only applicators
 	};
 
@@ -255,12 +265,12 @@ const getPilotUsers = async (options: PaginateOptions & {
 			id: true,
 			firstName: true,
 			lastName: true,
-			fullName:true,
-			phoneNumber:true,
+			fullName: true,
+			phoneNumber: true,
 			email: true,
-			address1:true,
-			address2:true,
-			role:true
+			address1: true,
+			address2: true,
+			role: true,
 		},
 	});
 
@@ -277,52 +287,42 @@ const getPilotUsers = async (options: PaginateOptions & {
 	};
 };
 
-const getUserById = async (userId:number) => {
-	
+const getUserById = async (userId: number) => {
 	const userDetail = await prisma.user.findUnique({
 		where: {
-           id:userId
+			id: userId,
 		},
-	  omit:{
-		password:true
-	  }
+		omit: {
+			password: true,
+		},
 	});
-if(!userDetail){
-	throw new ApiError(
-		httpStatus.NOT_FOUND,
-		'user not found',
-	);
-}
+	if (!userDetail) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'user not found');
+	}
 	return {
 		result: userDetail,
 	};
 };
-const deleteUser = async (userId:number) => {
-	
-	 await prisma.user.delete({
+const deleteUser = async (userId: number) => {
+	await prisma.user.delete({
 		where: {
-           id:userId
+			id: userId,
 		},
-	  omit:{
-		password:true
-	  }
+		omit: {
+			password: true,
+		},
 	});
 
 	return {
-		result: 'user account deleted successfully'
-		,
+		result: 'user account deleted successfully',
 	};
 };
 
-
-
 export default {
-
 	getAllUsers,
 	getApplicatorUsers,
 	getGrowerUsers,
 	getPilotUsers,
 	getUserById,
-	deleteUser
-	
+	deleteUser,
 };
