@@ -1,6 +1,6 @@
-import httpStatus from 'http-status';
+// import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import ApiError from '../../../../../shared/utils/api-error';
+// import ApiError from '../../../../../shared/utils/api-error';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 
 const getAllNotificationsByUserId = async (
@@ -56,6 +56,12 @@ const getAllNotificationsByUserId = async (
 								lastName: true,
 							},
 						},
+						worker: {
+							select: {
+								firstName: true,
+								lastName: true,
+							},
+						},
 					},
 				},
 			},
@@ -80,9 +86,13 @@ const getAllNotificationsByUserId = async (
 		let filteredInvite, filteredJob, filteredTicket;
 
 		if (
-			['ACCOUNT_INVITATION', 'ACCEPT_INVITE', 'REJECT_INVITE'].includes(
-				type,
-			) &&
+			[
+				'ACCOUNT_INVITATION',
+				'ACCEPT_INVITE',
+				'REJECT_INVITE',
+				'PILOT_ACCEPT_INVITE',
+				'PILOT_REJECT_INVITE',
+			].includes(type) &&
 			(invite || workerInvite)
 		) {
 			const commonFields = {
@@ -123,13 +133,24 @@ const getAllNotificationsByUserId = async (
 								status: invite.inviteStatus,
 							};
 			} else if (workerInvite) {
-				filteredInvite = {
-					inviteId: workerInvite.id,
-					applicatorId: workerInvite.applicatorId,
-					applicatorFirstName: workerInvite.applicator.firstName,
-					applicatorLastName: workerInvite.applicator.lastName,
-					status: workerInvite.inviteStatus,
-				};
+				filteredInvite =
+					notif.type === 'ACCOUNT_INVITATION'
+						? {
+								inviteId: workerInvite.id,
+								applicatorId: workerInvite.applicatorId,
+								applicatorFirstName:
+									workerInvite.applicator.firstName,
+								applicatorLastName:
+									workerInvite.applicator.lastName,
+								status: workerInvite.inviteStatus,
+							}
+						: {
+								inviteId: workerInvite.id,
+								workerId: workerInvite.workerId,
+								workerFirstName: workerInvite.worker.firstName,
+								workerLastName: workerInvite.worker.lastName,
+								status: workerInvite.inviteStatus,
+							};
 			}
 		}
 
@@ -234,6 +255,9 @@ const newNotificationsCount = async (user: User) => {
 			userId: user.id,
 			createdAt: {
 				gt: userData?.lastViewedAt || new Date(0), // Defaults to epoch if null
+			},
+			type: {
+				not: 'PAYMENT_RECEIVED',
 			},
 		},
 	});
