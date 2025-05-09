@@ -171,6 +171,11 @@ const getAllNotificationsByUserId = async (
 			job
 		) {
 			const { grower, applicator, fieldWorker } = job;
+			const commonFields = {
+				id: job?.id,
+				title: job?.title,
+				status: job?.status,
+			};
 			if (userId === job.applicatorId && (grower || fieldWorker)) {
 				if (
 					notif.type === 'PILOT_JOB_ACCEPTED' ||
@@ -178,16 +183,14 @@ const getAllNotificationsByUserId = async (
 					notif.type === 'JOB_COMPLETED'
 				) {
 					filteredJob = {
-						id: job.id,
-						title: job.title,
+						...commonFields,
 						workerId: fieldWorker?.id,
 						workerFirstName: fieldWorker?.firstName,
 						workerLastName: fieldWorker?.lastName,
 					};
 				} else {
 					filteredJob = {
-						id: job.id,
-						title: job.title,
+						...commonFields,
 						growerId: grower?.id,
 						growerFirstName: grower?.firstName,
 						growerLastName: grower?.lastName,
@@ -199,17 +202,15 @@ const getAllNotificationsByUserId = async (
 			) {
 				if (notif.type === 'BID_PLACED') {
 					filteredJob = {
-						id: job.id,
+						...commonFields,
 						bidId: notif.bidId,
-						title: job.title,
 						applicatorId: notif?.bid?.applicator?.id,
 						applicatorFirstName: notif?.bid?.applicator?.firstName,
 						applicatorLastName: notif?.bid?.applicator?.lastName,
 					};
 				} else {
 					filteredJob = {
-						id: job.id,
-						title: job.title,
+						...commonFields,
 						applicatorId: applicator?.id,
 						applicatorFirstName: applicator?.firstName,
 						applicatorLastName: applicator?.lastName,
