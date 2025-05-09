@@ -1,11 +1,12 @@
 import Joi, { Schema } from 'joi';
-import { phoneNumberSchema } from '../../../../../shared/utils/joi-common-validations';
+import { phoneNumberSchema,passwordSchema } from '../../../../../shared/utils/joi-common-validations';
 
 const createData: Schema = Joi.object({
 	body: Joi.object({
 		firstName: Joi.string().min(1).max(50).required(), // First name with minimum and maximum length
 		lastName: Joi.string().min(1).max(50).required(), // Last name with minimum and maximum length
 		email: Joi.string().email().required(), // Valid email address
+		password: passwordSchema.required(), // Password with length constraints
 		phoneNumber: phoneNumberSchema.required(), // International phone number format
 		address1: Joi.string().max(100).required(), // Address line 1
 		address2: Joi.string().max(100).optional().allow(''), // Address line 2
