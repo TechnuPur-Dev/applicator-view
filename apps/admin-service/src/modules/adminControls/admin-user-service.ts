@@ -18,7 +18,7 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 // import { hashPassword } from '../../helper/bcrypt';
 import {
 	PaginateOptions,
-	
+
 } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UserData } from './admin-user-types';
@@ -27,14 +27,14 @@ import { UserData } from './admin-user-types';
 
 
 // get user List
-const createUser = async (data:UserData) => {
-	const { firstName, lastName,email } = data;
+const createUser = async (data: UserData) => {
+	const { firstName, lastName, email } = data;
 	const userExist = await prisma.user.findUnique({
-		where:{
-			email:email,
+		where: {
+			email: email,
 		}
 	})
-	if(userExist){
+	if (userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
 			'user with this email already exist.',
@@ -43,20 +43,31 @@ const createUser = async (data:UserData) => {
 	const user = await prisma.user.create({
 		data: {
 			...data,
-			email:email,
+			email: email,
 			fullName: `${firstName} ${lastName}`,
 			role: 'SUPER_ADMIN_USER',
 
 		},
+		include: {
+			state: true
+		},
 		omit: {
-			profileImage:true,
+			profileImage: true,
 			password: true,
-			businessName:true,
-			experience:true
+			businessName: true,
+			experience: true,
+			joiningDate:true,
+			lastViewedAt:true
 		},
 	});
+	const formattedResponse = {
+		...user,
+		state:undefined,
+		stateId: user.state?.id,
+		stateName: user.state?.name
+	}
 	return {
-		result: user,
+		result: formattedResponse,
 	};
 };
 const getAllUsers = async (options: PaginateOptions) => {
@@ -72,30 +83,41 @@ const getAllUsers = async (options: PaginateOptions) => {
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 	const users = await prisma.user.findMany({
-		where:{
-			role:'SUPER_ADMIN_USER'
+		where: {
+			role: 'SUPER_ADMIN_USER'
+		},
+		include: {
+			state: true
 		},
 		skip,
 		take: limit,
 		orderBy: {
 			id: 'desc',
 		},
-		omit:{
-			password:true,
-			joiningDate:true,
-			lastViewedAt:true
+		omit: {
+			password: true,
+			joiningDate: true,
+			lastViewedAt: true
 		}
 	}); // Fetch all users
 	const totalResults = await prisma.user.count({
-		where:{
-			role:'SUPER_ADMIN_USER'
+		where: {
+			role: 'SUPER_ADMIN_USER'
 		}
 	});
+	const formattedResponse = users.map((item) => { // flate response
+		return {
+			...item,
+			state:undefined,
+			stateId: item.state?.id,
+			stateName: item.state?.name
+		}
 
+	})
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		result: users,
+		result: formattedResponse,
 		page,
 		limit,
 		totalPages,
@@ -103,46 +125,57 @@ const getAllUsers = async (options: PaginateOptions) => {
 	};
 };
 
-const getUserById = async (userId:number) => {
-	
+const getUserById = async (userId: number) => {
+
 	const userDetail = await prisma.user.findUnique({
 		where: {
-           id:userId
+			id: userId
 		},
-	  omit:{
-		password:true
-	  }
+		include: {
+			state: true
+		},
+		omit: {
+			password: true,
+			joiningDate:true,
+			lastViewedAt:true
+		}
 	});
-if(!userDetail){
-	throw new ApiError(
-		httpStatus.NOT_FOUND,
-		'user not found',
-	);
-}
+	if (!userDetail) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'user not found',
+		);
+	}
+	const formattedResponse = {
+		...userDetail,
+		state:undefined,
+		stateId: userDetail.state?.id,
+		stateName: userDetail.state?.name
+	}
 	return {
-		result: userDetail,
+		result: formattedResponse,
 	};
 };
-const deleteUser = async (userId:number) => {
+const deleteUser = async (userId: number) => {
 	const userExist = await prisma.user.findUnique({
-		where:{
-			id:userId,
-			role:'SUPER_ADMIN_USER'
+		where: {
+			id: userId,
+			role: 'SUPER_ADMIN_USER'
 		}
 	})
-	if(!userExist){
+	if (!userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
 			'Admin user with this Id not found.',
 		);
 	}
-	 await prisma.user.delete({
+	await prisma.user.delete({
 		where: {
-           id:userId
+			id: userId
 		},
-	  omit:{
-		password:true
-	  }
+		omit: {
+			password: true
+		}
 	});
 
 	return {
@@ -151,35 +184,35 @@ const deleteUser = async (userId:number) => {
 	};
 };
 const disableUser = async (
-	data:{
-	userId:number,
-	status:boolean
-})=>{
-	console.log(data,'userId')
-	const {userId , status} = data
+	data: {
+		userId: number,
+		status: boolean
+	}) => {
+	console.log(data, 'userId')
+	const { userId, status } = data
 	const userExist = await prisma.user.findUnique({
-		where:{
-			id:userId,
-			role:'SUPER_ADMIN_USER'
+		where: {
+			id: userId,
+			role: 'SUPER_ADMIN_USER'
 		}
 	})
-	console.log(userExist,'userExist')
-	if(!userExist){
+	console.log(userExist, 'userExist')
+	if (!userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
 			'Admin user with this Id not found.',
 		);
 	}
-	 await prisma.user.update({
-		where:{
-			id:userId
+	await prisma.user.update({
+		where: {
+			id: userId
 		},
-		data:{
-			isActive:status
+		data: {
+			isActive: status
 		}
 	})
-	return{
-		message:status ? 'user enable successfully' : 'user disable successfully'
+	return {
+		message: status ? 'user enable successfully' : 'user disable successfully'
 	}
 }
 
@@ -191,5 +224,5 @@ export default {
 	getUserById,
 	deleteUser,
 	disableUser
-	
+
 };
