@@ -16,11 +16,15 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 // import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 // import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 // import { hashPassword } from '../../helper/bcrypt';
-import { PaginateOptions } from '../../../../../shared/types/global';
+import {
+	PaginateOptions,
+
+} from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UserData } from './admin-user-types';
 // import { generateToken, verifyInvite } from '../../helper/invite-token';
 // import { InviteStatus } from '@prisma/client';
+
 
 // get user List
 const createUser = async (data: UserData) => {
@@ -28,8 +32,8 @@ const createUser = async (data: UserData) => {
 	const userExist = await prisma.user.findUnique({
 		where: {
 			email: email,
-		},
-	});
+		}
+	})
 	if (userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
@@ -42,15 +46,29 @@ const createUser = async (data: UserData) => {
 			email: email,
 			fullName: `${firstName} ${lastName}`,
 			role: 'SUPER_ADMIN_USER',
+
+		},
+		include: {
+			state: true
 		},
 		omit: {
 			profileImage: true,
 			password: true,
 			businessName: true,
 			experience: true,
+			joiningDate:true,
+			lastViewedAt:true
 		},
 	});
-	return user;
+	const formattedResponse = {
+		...user,
+		state:undefined,
+		stateId: user.state?.id,
+		stateName: user.state?.name
+	}
+	return {
+		result: formattedResponse,
+	};
 };
 const getAllUsers = async (options: PaginateOptions) => {
 	const limit =
@@ -66,7 +84,10 @@ const getAllUsers = async (options: PaginateOptions) => {
 	const skip = (page - 1) * limit;
 	const users = await prisma.user.findMany({
 		where: {
-			role: 'SUPER_ADMIN_USER',
+			role: 'SUPER_ADMIN_USER'
+		},
+		include: {
+			state: true
 		},
 		skip,
 		take: limit,
@@ -76,19 +97,27 @@ const getAllUsers = async (options: PaginateOptions) => {
 		omit: {
 			password: true,
 			joiningDate: true,
-			lastViewedAt: true,
-		},
+			lastViewedAt: true
+		}
 	}); // Fetch all users
 	const totalResults = await prisma.user.count({
 		where: {
-			role: 'SUPER_ADMIN_USER',
-		},
+			role: 'SUPER_ADMIN_USER'
+		}
 	});
+	const formattedResponse = users.map((item) => { // flate response
+		return {
+			...item,
+			state:undefined,
+			stateId: item.state?.id,
+			stateName: item.state?.name
+		}
 
+	})
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
 	return {
-		result: users,
+		result: formattedResponse,
 		page,
 		limit,
 		totalPages,
@@ -97,28 +126,43 @@ const getAllUsers = async (options: PaginateOptions) => {
 };
 
 const getUserById = async (userId: number) => {
+
 	const userDetail = await prisma.user.findUnique({
 		where: {
-			id: userId,
+			id: userId
+		},
+		include: {
+			state: true
 		},
 		omit: {
 			password: true,
-		},
+			joiningDate:true,
+			lastViewedAt:true
+		}
 	});
 	if (!userDetail) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'user not found');
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'user not found',
+		);
+	}
+	const formattedResponse = {
+		...userDetail,
+		state:undefined,
+		stateId: userDetail.state?.id,
+		stateName: userDetail.state?.name
 	}
 	return {
-		result: userDetail,
+		result: formattedResponse,
 	};
 };
 const deleteUser = async (userId: number) => {
 	const userExist = await prisma.user.findUnique({
 		where: {
 			id: userId,
-			role: 'SUPER_ADMIN_USER',
-		},
-	});
+			role: 'SUPER_ADMIN_USER'
+		}
+	})
 	if (!userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
@@ -127,27 +171,32 @@ const deleteUser = async (userId: number) => {
 	}
 	await prisma.user.delete({
 		where: {
-			id: userId,
+			id: userId
 		},
 		omit: {
-			password: true,
-		},
+			password: true
+		}
 	});
 
 	return {
-		result: 'Admin user deleted successfully',
+		result: 'Admin user deleted successfully'
+		,
 	};
 };
-const disableUser = async (data: { userId: number; status: boolean }) => {
-	console.log(data, 'userId');
-	const { userId, status } = data;
+const disableUser = async (
+	data: {
+		userId: number,
+		status: boolean
+	}) => {
+	console.log(data, 'userId')
+	const { userId, status } = data
 	const userExist = await prisma.user.findUnique({
 		where: {
 			id: userId,
-			role: 'SUPER_ADMIN_USER',
-		},
-	});
-	console.log(userExist, 'userExist');
+			role: 'SUPER_ADMIN_USER'
+		}
+	})
+	console.log(userExist, 'userExist')
 	if (!userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
@@ -156,23 +205,24 @@ const disableUser = async (data: { userId: number; status: boolean }) => {
 	}
 	await prisma.user.update({
 		where: {
-			id: userId,
+			id: userId
 		},
 		data: {
-			isActive: status,
-		},
-	});
+			isActive: status
+		}
+	})
 	return {
-		message: status
-			? 'user enable successfully'
-			: 'user disable successfully',
-	};
-};
+		message: status ? 'user enable successfully' : 'user disable successfully'
+	}
+}
+
+
 
 export default {
 	createUser,
 	getAllUsers,
 	getUserById,
 	deleteUser,
-	disableUser,
+	disableUser
+
 };
