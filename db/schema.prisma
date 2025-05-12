@@ -69,6 +69,8 @@ model User {
   tableViews             TableView[]
   state                  State?                  @relation(fields: [stateId], references: [id])
   warrantyRegistrations  WarrantyRegistration[]
+  AdminPermission        AdminPermission[]
+  ActivityLog            ActivityLog[]
 }
 
 model ApplicatorWorker {
@@ -491,9 +493,14 @@ model ApplicatorUser {
 }
 
 model Permission {
-  id                        Int                        @id @default(autoincrement())
-  name                      PermissionType
-  applicatorUserPermissions ApplicatorUserPermission[]
+  id        Int             @id @default(autoincrement())
+  name      String          @unique
+  scope     PermissionScope @default(ADMIN) // Formerly `type`
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  adminPermissions AdminPermission[]
+  userPermissions  ApplicatorUserPermission[]
 }
 
 model ApplicatorUserPermission {
@@ -527,6 +534,52 @@ model Invoice {
   issuedAt    DateTime  @default(now())
   paidAt      DateTime?
   job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model AdminPermission {
+  id           Int          @default(autoincrement())
+  adminId      Int
+  permissionId Int
+  accessLevel  accessLevel?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  admin        User         @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([id, adminId, permissionId])
+}
+
+model ActivityLog {
+  id         Int            @id @default(autoincrement())
+  adminId    Int
+  action     ActivityAction
+  entityType String
+  entityId   Int?
+  details    String?
+  metadata   Json? // <-- stores deleted record data
+  timestamp  DateTime       @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+}
+
+enum ActivityAction {
+  LOGIN
+  CREATE
+  VIEW
+  UPDATE
+  DELETE
+  ACTIVATE
+  DEACTIVATE
+}
+
+enum PermissionScope {
+  ADMIN
+  USER
+}
+
+enum accessLevel {
+  read
+  write
 }
 
 enum BidStatus {

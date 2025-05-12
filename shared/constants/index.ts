@@ -1,5 +1,46 @@
 import apiConfig from '../config/env-config';
 
-export const GOOGLE_CLOUD_CREDENTIALS = JSON.parse(
-  Buffer.from(apiConfig.googleCloudCredentials, 'base64').toString('utf-8')
+const GOOGLE_CLOUD_CREDENTIALS = JSON.parse(
+	Buffer.from(apiConfig.googleCloudCredentials, 'base64').toString('utf-8'),
 );
+
+const PERMISSIONS = {
+	admin: ['DASHBOARD', 'ACCOUNTS', 'ADMIN_CONTROLS', 'PERMISSIONS'],
+	user: [
+		'DASHBOARD',
+		'JOBS',
+		'MY_JOBS',
+		'BIDDING_JOBS',
+		'PENDING_APPROVALS',
+		'REJECTED_JOBS',
+		'GROWERS',
+		'MY_GROWERS',
+		'PENDING_INVITES',
+		'EQUIPMENT',
+		'WARRANTY_REGISTRATION',
+		'SUPPORT_TICKETS',
+		'FORUM',
+		'REPORTS',
+		'PILOTS_OPERATORS',
+		'MY_PILOTS_OPERATORS',
+		'PILOT_PENDING_INVITES',
+		'SETTINGS',
+		'PRODUCTS',
+		'INTEGRATIONS',
+		'USER_ADMIN',
+	],
+};
+enum EntityType {
+	USER = 'USER',
+	ADMIN = 'ADMIN',
+	// DASHBOARD,
+	// ALL_USERS,
+	// APPLICATORS,
+	// GROWERS,
+	// PILOTS,
+	// ADMIN_CONTROLS,
+	// PERMISSION,
+	// ACTIVITY_LOG,
+}
+
+export { GOOGLE_CLOUD_CREDENTIALS, PERMISSIONS, EntityType };

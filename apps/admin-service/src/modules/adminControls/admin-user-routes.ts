@@ -31,5 +31,8 @@ router
 		validateSchema(adminUserValidation.updateStatus),
 		adminUserController.disableUser,
 	);
+router
+	.route('/admin-activities')
+	.get(verifyToken, adminUserController.getAdminActivities);
 
 export default router;

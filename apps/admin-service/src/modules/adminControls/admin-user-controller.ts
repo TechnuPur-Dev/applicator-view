@@ -6,9 +6,9 @@ import pick from '../../../../../shared/utils/pick';
 
 // Controller to get userList
 const createUser = catchAsync(async (req: Request, res: Response) => {
-	// const currentUser = req.payload.id;
+	const adminId = req.payload.id;
 	const data = req.body;
-	const userData = await adminService.createUser(data);
+	const userData = await adminService.createUser(adminId, data);
 	res.status(httpStatus.OK).json(userData);
 });
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
@@ -32,10 +32,16 @@ const disableUser = catchAsync(async (req: Request, res: Response) => {
 	const userData = await adminService.disableUser(data);
 	res.status(httpStatus.OK).json(userData);
 });
+const getAdminActivities = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page']);
+	const userData = await adminService.getAdminActivities(options);
+	res.status(httpStatus.OK).json(userData);
+});
 export default {
 	getAllUsers,
 	getUserById,
 	deleteUser,
 	createUser,
 	disableUser,
+	getAdminActivities,
 };

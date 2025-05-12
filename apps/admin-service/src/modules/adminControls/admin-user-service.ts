@@ -1,76 +1,65 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
-// import { Decimal } from '@prisma/client/runtime/library';
-// import { Prisma, } from '@prisma/client';
-// import sharp from 'sharp';
-// import { v4 as uuidv4 } from 'uuid';
-// import axios from 'axios';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-// import {
-// 	UpdateUser,
-// 	UpdateStatus,
-// 	UpdateArchiveStatus,
-// 	ResponseData,
-// } from './user-types';
-// import config from '../../../../../shared/config/env-config';
-// import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
-// import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
-// import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
-import {
-	PaginateOptions,
-
-} from '../../../../../shared/types/global';
+import { PaginateOptions } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UserData } from './admin-user-types';
-// import { generateToken, verifyInvite } from '../../helper/invite-token';
-// import { InviteStatus } from '@prisma/client';
+import { EntityType } from '../../../../../shared/constants';
 
 // get user List
-const createUser = async (data: UserData) => {
+const createUser = async (adminId: number, data: UserData) => {
 	const { firstName, lastName, email } = data;
 	const userExist = await prisma.user.findUnique({
-		where: {
-			email: email,
-		},
+		where: { email },
 	});
+
 	if (userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
-			'user with this email already exist.',
+			'User with this email already exists.',
 		);
 	}
+
 	let { password } = data;
 	if (password) {
-		const hashedPassword = await hashPassword(password);
-		password = hashedPassword;
+		password = await hashPassword(password);
 	}
 
-	const user = await prisma.user.create({
-		data: {
-			...data,
-			email: email,
-			password:password,
-			fullName: `${firstName} ${lastName}`,
-			role: 'SUPER_ADMIN_USER',
-		},
-		include: {
-			state: true,
-		},
-		omit: {
-			profileImage: true,
-			password: true,
-			businessName: true,
-			experience: true,
-			joiningDate: true,
-			lastViewedAt: true,
-		},
+	const result = await prisma.$transaction(async (tx) => {
+		const user = await tx.user.create({
+			data: {
+				...data,
+				email,
+				password,
+				fullName: `${firstName} ${lastName}`,
+				role: 'SUPER_ADMIN_USER',
+			},
+			include: {
+				state: true,
+			},
+		});
+
+		await tx.activityLog.create({
+			data: {
+				adminId,
+				action: 'CREATE',
+				entityType: EntityType.ADMIN,
+				entityId: user.id,
+				details: `Created admin with email ${user.email}`,
+			},
+		});
+
+		return user;
 	});
+
 	const formattedResponse = {
-		...user,
+		...result,
 		state: undefined,
-		stateId: user.state?.id,
-		stateName: user.state?.name,
+		stateId: result.state?.id,
+		stateName: result.state?.name,
 	};
+
 	return formattedResponse;
 };
 const getAllUsers = async (options: PaginateOptions) => {
@@ -209,6 +198,119 @@ const disableUser = async (data: { userId: number; status: boolean }) => {
 			: 'User deactivated successfully',
 	};
 };
+const getAdminActivities = async (options: PaginateOptions) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	const skip = (page - 1) * limit;
+
+	const [logs, totalResults] = await prisma.$transaction([
+		prisma.activityLog.findMany({
+			orderBy: { timestamp: 'desc' },
+			skip,
+			take: limit,
+			include: {
+				admin: {
+					select: {
+						id: true,
+						fullName: true,
+						email: true,
+						role: true,
+					},
+				},
+			},
+		}),
+		prisma.activityLog.count(),
+	]);
+
+	const groupedIds: Record<EntityType, number[]> = {
+		[EntityType.USER]: [],
+		[EntityType.ADMIN]: [],
+	};
+
+	for (const log of logs) {
+		const type = log.entityType as EntityType;
+		if (log.entityId && groupedIds[type]) {
+			groupedIds[type].push(log.entityId);
+		}
+	}
+
+	const userMap = new Map<number, any>();
+	const adminMap = new Map<number, any>();
+
+	if (groupedIds[EntityType.USER].length > 0) {
+		const users = await prisma.user.findMany({
+			where: { id: { in: groupedIds[EntityType.USER] } },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				role: true,
+			},
+		});
+		users.forEach((user) => userMap.set(user.id, user));
+	}
+
+	if (groupedIds[EntityType.ADMIN].length > 0) {
+		const admins = await prisma.user.findMany({
+			where: { id: { in: groupedIds[EntityType.ADMIN] } },
+			select: {
+				id: true,
+				fullName: true,
+				email: true,
+				role: true,
+			},
+		});
+		admins.forEach((admin) => adminMap.set(admin.id, admin));
+	}
+
+	const enrichedLogs = logs.map((log) => {
+		let targetEntity = null;
+
+		if (log.entityType === EntityType.USER) {
+			targetEntity = userMap.get(log.entityId ?? 0);
+		} else if (log.entityType === EntityType.ADMIN) {
+			targetEntity = adminMap.get(log.entityId ?? 0);
+		}
+
+		return {
+			activityId: log.id,
+			action: log.action,
+			details: log.details,
+			timestamp: log.timestamp,
+			performedBy: {
+				id: log.admin.id,
+				name: log.admin.fullName,
+				email: log.admin.email,
+				role: log.admin.role,
+			},
+			target: log.entityId
+				? {
+						type: log.entityType,
+						id: log.entityId,
+						...(targetEntity || {}),
+					}
+				: null,
+		};
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+
+	return {
+		data: enrichedLogs,
+		pagination: {
+			page,
+			limit,
+			totalPages,
+			totalResults,
+		},
+	};
+};
 
 export default {
 	createUser,
@@ -216,4 +318,5 @@ export default {
 	getUserById,
 	deleteUser,
 	disableUser,
+	getAdminActivities,
 };

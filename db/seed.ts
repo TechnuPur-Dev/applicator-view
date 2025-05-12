@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { hashPassword,  } from '../apps/user-service/src/helper/bcrypt';
-
-
+import { hashPassword } from '../apps/user-service/src/helper/bcrypt';
+import { PERMISSIONS } from '../shared/constants/index';
 
 const prisma = new PrismaClient();
 
@@ -9,31 +8,37 @@ async function main() {
 	const email = 'superadmin@acre.com';
 	const existingUser = await prisma.user.findUnique({ where: { email } });
 
-	if (existingUser) {
-		console.log('Super admin already exists.');
-		return;
+	if (!existingUser) {
+		const hashedPassword = await hashPassword('P@ss@cre');
+		await prisma.user.create({
+			data: {
+				firstName: 'Super',
+				lastName: 'Admin',
+				fullName: 'Super Admin',
+				email,
+				phoneNumber: '1234567890',
+				password: hashedPassword,
+				role: 'SUPER_ADMIN', // Make sure this exists in your UserRole enum
+				profileStatus: 'COMPLETE', // Or INCOMPLETE if that's the default
+				createdAt: new Date(),
+				joiningDate: new Date(),
+				address1: '123 Admin Blvd',
+				zipCode: '99999',
+			},
+		});
+		console.log('✅ Super admin created.');
 	}
-
-    const hashedPassword = await hashPassword('P@ss@cre');
-
-	await prisma.user.create({
-		data: {
-			firstName: 'Super',
-			lastName: 'Admin',
-			fullName: 'Super Admin',
-			email,
-			phoneNumber: '1234567890',
-			password: hashedPassword,
-			role: 'SUPER_ADMIN', // Make sure this exists in your UserRole enum
-			profileStatus: 'COMPLETE', // Or INCOMPLETE if that's the default
-			createdAt: new Date(),
-			joiningDate: new Date(),
-			address1: '123 Admin Blvd',
-			zipCode: '99999',
-		},
+	console.log('Super admin already exists.');
+	PERMISSIONS.admin.map(async (name) => {
+		await prisma.permission.upsert({
+			where: { name },
+			update: {},
+			create: { name },
+		});
 	});
 
-	console.log('✅ Super admin created.');
+	console.log('Permissions seeded.');
+	return;
 }
 
 main()
