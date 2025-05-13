@@ -26,7 +26,6 @@ import { generateToken } from '../../../../user-service/src/helper/invite-token'
 import { convertKmlToGeoJson } from '../../util/kml-to-geoJson';
 import { generateMapImage } from '../../util/map-image-generator';
 import { uploadToAzureBlob } from '../../util/azure-uploader';
-import flightLogs from '../../../../../logs.geojson';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -5207,8 +5206,7 @@ const uploadFlightLog = async (
 	const geojson = await convertKmlToGeoJson(file.buffer);
 
 	// Step 2: Generate flight map image
-	// const imageBuffer = await generateMapImage(geojson);
-	const imageBuffer = await generateMapImage(flightLogs);
+	const imageBuffer = await generateMapImage(geojson);
 
 	// Step 3: Upload image to Azure Blob
 	const blobPath = `flight-maps/${jobId}_${Date.now()}.png`;
