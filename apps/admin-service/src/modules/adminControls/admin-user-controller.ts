@@ -19,17 +19,20 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
 const getUserById = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.params.userId;
-	const userData = await adminService.getUserById(id);
+	const adminId = req.payload.id;
+	const userData = await adminService.getUserById(id,adminId);
 	res.status(httpStatus.OK).json(userData);
 });
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
 	const id = +req.params.userId;
-	const result = await adminService.deleteUser(id);
+	const adminId = req.payload.id;
+	const result = await adminService.deleteUser(id,adminId);
 	res.status(httpStatus.OK).json(result);
 });
 const disableUser = catchAsync(async (req: Request, res: Response) => {
 	const data = req.body;
-	const userData = await adminService.disableUser(data);
+	const adminId = req.payload.id;
+	const userData = await adminService.disableUser(data,adminId);
 	res.status(httpStatus.OK).json(userData);
 });
 const getAdminActivities = catchAsync(async (req: Request, res: Response) => {

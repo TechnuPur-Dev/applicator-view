@@ -5,6 +5,7 @@ import { Prisma, UserRole } from '@prisma/client';
 // import { v4 as uuidv4 } from 'uuid';
 // import axios from 'axios';
 import { prisma } from '../../../../../shared/libs/prisma-client';
+import { EntityType } from '../../../../../shared/constants';
 // import {
 // 	UpdateUser,
 // 	UpdateStatus,
@@ -335,7 +336,7 @@ const getPilotUsers = async (
 	};
 };
 
-const getUserById = async (userId: number) => {
+const getUserById = async (userId: number,adminId:number) => {
 	const userDetail = await prisma.user.findUnique({
 		where: {
 			id: userId,
@@ -347,6 +348,15 @@ const getUserById = async (userId: number) => {
 	if (!userDetail) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'user not found');
 	}
+		await prisma.activityLog.create({
+			data: {
+				adminId,
+				action: 'VIEW',
+				entityType: EntityType.ADMIN,
+				entityId: userId,
+				details: `View the admin with this emaill ${userDetail.email}`,
+			},
+		});
 	return {
 		result: userDetail,
 	};
