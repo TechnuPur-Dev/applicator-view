@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import {
 	BidStatus,
@@ -22,6 +23,10 @@ import { sendPushNotifications } from '../../../../../shared/helpers/push-notifi
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { generateToken } from '../../../../user-service/src/helper/invite-token';
+import { convertKmlToGeoJson } from '../../util/kml-to-geoJson';
+import { generateMapImage } from '../../util/map-image-generator';
+import { uploadToAzureBlob } from '../../util/azure-uploader';
+import flightLogs from '../../../../../logs.geojson';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -5193,6 +5198,138 @@ const getApplicationsByRange = async (
 
 	return applications.sort((a, b) => a.date.localeCompare(b.date));
 };
+const uploadFlightLog = async (
+	userId: number,
+	jobId: number,
+	file: Express.Multer.File,
+) => {
+	// Step 1: Convert KML → GeoJSON
+	const geojson = await convertKmlToGeoJson(file.buffer);
+
+	// Step 2: Generate flight map image
+	// const imageBuffer = await generateMapImage(geojson);
+	const imageBuffer = await generateMapImage(flightLogs);
+
+	// Step 3: Upload image to Azure Blob
+	const blobPath = `flight-maps/${jobId}_${Date.now()}.png`;
+	const mapImageUrl = await uploadToAzureBlob(imageBuffer, blobPath);
+
+	// Step 4: Create record in DB
+	const flightLog = await prisma.droneFlightLog.create({
+		data: {
+			jobId,
+			uploadedById: userId,
+			geojsonData: geojson,
+			mapImageUrl,
+			startTime: new Date(), // optionally parse from GeoJSON if available
+			endTime: new Date(),
+		},
+	});
+
+	return {
+		message: 'Flight log uploaded successfully',
+		flightLog,
+	};
+};
+
+const getFaaReports = async (user: User, options: PaginateOptions) => {
+	const { id, role } = user;
+	// Set pagination
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	const skip = (page - 1) * limit;
+
+	const whereCondition: Prisma.JobWhereInput = {
+		status: { in: ['SPRAYED', 'INVOICED', 'PAID'] as JobStatus[] },
+	};
+
+	if (role === 'APPLICATOR') {
+		whereCondition.applicatorId = id;
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = id;
+	}
+	const jobInvoices = await prisma.job.findMany({
+		where: whereCondition,
+		select: {
+			id: true,
+			title: true,
+			type: true,
+			source: true,
+			status: true,
+			DroneFlightLog: {
+				omit: {
+					id: true,
+					jobId: true,
+					geojsonData: true,
+					uploadedById: true,
+				},
+			},
+			applicator: {
+				select: {
+					email: true,
+					businessName: true,
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+					email: true,
+				},
+			},
+			// grower: {
+			// 	select: {
+			// 		firstName: true,
+			// 		lastName: true,
+			// 		fullName: true,
+			// 	},
+			// },
+			// Invoice: {
+			// 	select: {
+			// 		id: true,
+			// 		totalAmount: true,
+			// 		issuedAt: true,
+			// 		paidAt: true,
+			// 	},
+			// },
+		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+
+	const flattened = jobInvoices.map((job) => {
+		const { ...jobData } = job;
+		return {
+			// invoiceId: Invoice ? Invoice.id : null,
+			// invoiceDate: Invoice ? Invoice.issuedAt : null,
+			// amount: Invoice ? Invoice.totalAmount : null,
+			...jobData,
+		};
+	});
+
+	// Calculate total acres for each job
+	const totalResults = await prisma.job.count({
+		where: whereCondition,
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: flattened,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+};
 
 export default {
 	createJob,
@@ -5238,4 +5375,6 @@ export default {
 	getFinancialSummary,
 	getCalendarApplications,
 	getApplicationsByRange,
+	uploadFlightLog,
+	getFaaReports,
 };

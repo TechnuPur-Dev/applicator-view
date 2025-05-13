@@ -376,6 +376,32 @@ const getApplicationsByRange = catchAsync(
 		res.status(httpStatus.OK).json(result);
 	},
 );
+const uploadFlightLog = catchAsync(async (req: Request, res: Response) => {
+	const userId = req.payload.id;
+	const jobId = +req.params.id;
+	const files = req.files;
+
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+
+	const file = files[0];
+
+	if (!file) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+
+	const result = await jobService.uploadFlightLog(userId, jobId, file);
+	res.status(httpStatus.OK).json(result);
+});
+
+const getFaaReports = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const options = pick(req.query, ['limit', 'page']);
+	const result = await jobService.getFaaReports(currentUser, options);
+	res.status(httpStatus.OK).json(result);
+});
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -420,4 +446,6 @@ export default {
 	getFinancialSummary,
 	getCalendarApplications,
 	getApplicationsByRange,
+	uploadFlightLog,
+	getFaaReports,
 };
