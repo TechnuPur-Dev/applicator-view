@@ -1,17 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { hashPassword,comparePassword } from '../../helper/bcrypt';
+import { hashPassword, comparePassword } from '../../helper/bcrypt';
 import { PaginateOptions } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
-import { UserData,LoginUser } from './admin-user-types';
+import { UserData, LoginUser } from './admin-user-types';
 import { EntityType } from '../../../../../shared/constants';
-import { mailHtmlTemplate, sendEmail } from '../../../../../shared/helpers/node-mailer';
+import {
+	mailHtmlTemplate,
+	sendEmail,
+} from '../../../../../shared/helpers/node-mailer';
 import { signAccessToken } from '../../../../../shared/helpers/jwt-token';
 // get user List
 const createUser = async (adminId: number, data: UserData) => {
 	const { firstName, lastName, email, permissions, ...restData } = data;
-	console.log(data, 'data')
+	console.log(data, 'data');
 	const userExist = await prisma.user.findUnique({
 		where: { email },
 	});
@@ -27,7 +30,7 @@ const createUser = async (adminId: number, data: UserData) => {
 	if (password) {
 		password = await hashPassword(password);
 	}
-	// identify permissions exist or not 
+	// identify permissions exist or not
 	const permissionIds = permissions.map(({ permissionId }) => permissionId);
 	const permissionCount = await prisma.permission.count({
 		where: { id: { in: permissionIds } },
@@ -47,20 +50,22 @@ const createUser = async (adminId: number, data: UserData) => {
 				fullName: `${firstName} ${lastName}`,
 				role: 'SUPER_ADMIN_USER',
 				AdminPermission: {
-					create: permissions.map(({ adminId, permissionId, accessLevel }) => ({
-						adminId,
-						permissionId,
-						accessLevel,
-					})),
+					create: permissions.map(
+						({ adminId, permissionId, accessLevel }) => ({
+							adminId,
+							permissionId,
+							accessLevel,
+						}),
+					),
 				},
 			},
 			include: {
 				state: {
-					select:{
-						name:true
-					}
+					select: {
+						name: true,
+					},
 				},
-				AdminPermission: true
+				AdminPermission: true,
 			},
 		});
 
@@ -70,13 +75,13 @@ const createUser = async (adminId: number, data: UserData) => {
 				action: 'CREATE',
 				entityType: EntityType.ADMIN,
 				entityId: user.id,
-				details: `Created admin with email ${user.email}`,
+				details: `Created an admin with ${user.email} email.`,
 			},
 		});
 
 		return user;
 	});
-	// send email to the admin user to invite 
+	// send email to the admin user to invite
 	const inviteLink = `https://applicator-admin.netlify.app/#/login`;
 	const subject = 'Welcome to Acre Connect!';
 	const message = `<p>Hi ${data.firstName} ${data.lastName},</p><br><br>
@@ -182,12 +187,12 @@ const getUserById = async (userId: number, adminId: number) => {
 				adminId,
 				action: 'VIEW',
 				entityType: EntityType.ADMIN,
-				entityId: userId,
-				details: `View the admin with this email ${userDetail.email}`,
+				entityId: userDetail.id,
+				details: `Viewd the admin with ${userDetail.email} email. `,
 			},
 		});
-		return userDetail
-	})
+		return userDetail;
+	});
 	const formattedResponse = {
 		...result,
 		state: undefined,
@@ -198,7 +203,6 @@ const getUserById = async (userId: number, adminId: number) => {
 	return formattedResponse;
 };
 const deleteUser = async (userId: number, adminId: number) => {
-
 	const userExist = await prisma.user.findUnique({
 		where: {
 			id: userId,
@@ -226,15 +230,18 @@ const deleteUser = async (userId: number, adminId: number) => {
 				action: 'DELETE',
 				entityType: EntityType.ADMIN,
 				entityId: userId,
-				details: `Delete the admin with this email ${userExist.email}`,
+				details: `Deleted the admin with ${userExist.email} email.`,
 			},
 		});
-	})
+	});
 	return {
 		result: 'Admin user deleted successfully',
 	};
 };
-const disableUser = async (data: { userId: number; status: boolean }, adminId: number) => {
+const disableUser = async (
+	data: { userId: number; status: boolean },
+	adminId: number,
+) => {
 	console.log(data, 'userId');
 	const { userId, status } = data;
 	const userExist = await prisma.user.findUnique({
@@ -264,10 +271,12 @@ const disableUser = async (data: { userId: number; status: boolean }, adminId: n
 				action: status ? 'ACTIVATE' : 'DEACTIVATE',
 				entityType: EntityType.ADMIN,
 				entityId: userId,
-				details: status ? `Activate the admin with this email ${userExist.email}` : `Deactivate the admin with this email ${userExist.email}`,
+				details: status
+					? `Activated the admin with ${userExist.email} email.`
+					: `Deactivated the admin with  ${userExist.email} email.`,
 			},
 		});
-	})
+	});
 	return {
 		message: status
 			? 'User activated successfully'
@@ -367,10 +376,10 @@ const getAdminActivities = async (options: PaginateOptions) => {
 			},
 			target: log.entityId
 				? {
-					type: log.entityType,
-					id: log.entityId,
-					...(targetEntity || {}),
-				}
+						type: log.entityType,
+						id: log.entityId,
+						...(targetEntity || {}),
+					}
 				: null,
 		};
 	});
@@ -388,7 +397,7 @@ const getAdminActivities = async (options: PaginateOptions) => {
 	};
 };
 const loginAdminUser = async (data: LoginUser) => {
-	const { email,password, deviceToken } = data;
+	const { email, password, deviceToken } = data;
 
 	const user = await prisma.user.findFirst({
 		where: {
@@ -396,10 +405,7 @@ const loginAdminUser = async (data: LoginUser) => {
 				equals: email,
 				mode: 'insensitive',
 			},
-			OR: [
-				{ role: 'SUPER_ADMIN' },
-				{ role: 'SUPER_ADMIN_USER' }
-			],
+			OR: [{ role: 'SUPER_ADMIN' }, { role: 'SUPER_ADMIN_USER' }],
 		},
 		include: {
 			state: {
@@ -413,23 +419,20 @@ const loginAdminUser = async (data: LoginUser) => {
 				},
 			},
 		},
-		omit:{
-			businessName:true,
-			experience:true,
-		}
+		omit: {
+			businessName: true,
+			experience: true,
+		},
 	});
-console.log(user,'user')
+	console.log(user, 'user');
 	if (!user) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'User not found.'
-		);
+		throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
 	}
 
 	if (!user.password) {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
-			"User's password is missing from database."
+			"User's password is missing from database.",
 		);
 	}
 
@@ -459,23 +462,24 @@ console.log(user,'user')
 
 	const accessToken = await signAccessToken(user.id);
 
-		const { AdminPermission, state, ...userWithoutPassword } = user; 
+	const { AdminPermission, state, ...userWithoutPassword } = user;
 
 	// Prepare permissions if SUPER_ADMIN_USER
-	const permissions = user.role === 'SUPER_ADMIN_USER'
-		? AdminPermission.map(p => ({
-			id: p.permissionId,
-			name: p.permission.name,
-			accessLevel: p.accessLevel
-		}))
-		: undefined;
+	const permissions =
+		user.role === 'SUPER_ADMIN_USER'
+			? AdminPermission.map((p) => ({
+					id: p.permissionId,
+					name: p.permission.name,
+					accessLevel: p.accessLevel,
+				}))
+			: undefined;
 
 	return {
 		user: {
 			...userWithoutPassword,
 			state: state?.name,
-			password:undefined,
-			...(permissions ? { permissions } : {})
+			password: undefined,
+			...(permissions ? { permissions } : {}),
 		},
 		accessToken,
 	};
@@ -488,5 +492,5 @@ export default {
 	deleteUser,
 	disableUser,
 	getAdminActivities,
-	loginAdminUser
+	loginAdminUser,
 };
