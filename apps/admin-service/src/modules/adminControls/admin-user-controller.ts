@@ -40,6 +40,16 @@ const getAdminActivities = catchAsync(async (req: Request, res: Response) => {
 	const userData = await adminService.getAdminActivities(options);
 	res.status(httpStatus.OK).json(userData);
 });
+const loginAdminUser = catchAsync(async (req: Request, res: Response) => {
+	 console.log(req.body,"req.body")
+	const { email, password, deviceToken } = req.body; // Destructure body
+	const result = await adminService.loginAdminUser({
+		email,
+		password,
+		deviceToken,
+	});
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	getAllUsers,
 	getUserById,
@@ -47,4 +57,5 @@ export default {
 	createUser,
 	disableUser,
 	getAdminActivities,
+	loginAdminUser
 };

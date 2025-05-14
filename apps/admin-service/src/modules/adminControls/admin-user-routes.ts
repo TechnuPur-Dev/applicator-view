@@ -34,5 +34,7 @@ router
 router
 	.route('/admin-activities')
 	.get(verifyToken, adminUserController.getAdminActivities);
-
+router
+	.route('/login')
+	.post(validateSchema(adminUserValidation.loginSchema), adminUserController.loginAdminUser);
 export default router;
