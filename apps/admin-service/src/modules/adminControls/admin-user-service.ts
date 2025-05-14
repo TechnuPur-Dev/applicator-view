@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { hashPassword } from '../../helper/bcrypt';
+import { hashPassword,comparePassword } from '../../helper/bcrypt';
 import { PaginateOptions } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
-import { UserData } from './admin-user-types';
+import { UserData,LoginUser } from './admin-user-types';
 import { EntityType } from '../../../../../shared/constants';
 import { mailHtmlTemplate, sendEmail } from '../../../../../shared/helpers/node-mailer';
+import { signAccessToken } from '../../../../../shared/helpers/jwt-token';
 // get user List
 const createUser = async (adminId: number, data: UserData) => {
-	const { firstName, lastName, email } = data;
+	const { firstName, lastName, email, permissions, ...restData } = data;
+	console.log(data, 'data')
 	const userExist = await prisma.user.findUnique({
 		where: { email },
 	});
@@ -25,18 +27,40 @@ const createUser = async (adminId: number, data: UserData) => {
 	if (password) {
 		password = await hashPassword(password);
 	}
-
+	// identify permissions exist or not 
+	const permissionIds = permissions.map(({ permissionId }) => permissionId);
+	const permissionCount = await prisma.permission.count({
+		where: { id: { in: permissionIds } },
+	});
+	if (permissionCount !== permissionIds.length) {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'You select an invalid permissionIds.',
+		);
+	}
 	const result = await prisma.$transaction(async (tx) => {
 		const user = await tx.user.create({
 			data: {
-				...data,
+				...restData, // does NOT include stateId now
 				email,
 				password,
 				fullName: `${firstName} ${lastName}`,
 				role: 'SUPER_ADMIN_USER',
+				AdminPermission: {
+					create: permissions.map(({ adminId, permissionId, accessLevel }) => ({
+						adminId,
+						permissionId,
+						accessLevel,
+					})),
+				},
 			},
 			include: {
-				state: true,
+				state: {
+					select:{
+						name:true
+					}
+				},
+				AdminPermission: true
 			},
 		});
 
@@ -53,30 +77,30 @@ const createUser = async (adminId: number, data: UserData) => {
 		return user;
 	});
 	// send email to the admin user to invite 
-		const inviteLink = `https://applicator-admin.netlify.app/#/login`;
-		const subject = 'Welcome to Acre Connect!';
-		const message = `<p>Hi ${data.firstName} ${data.lastName},</p><br><br>
+	const inviteLink = `https://applicator-admin.netlify.app/#/login`;
+	const subject = 'Welcome to Acre Connect!';
+	const message = `<p>Hi ${data.firstName} ${data.lastName},</p><br><br>
 	  <p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
 	  Click the link below to Login.<br><br>
 	  <a href="${inviteLink}">${inviteLink}</a><br><br>
 	  If you did not expect this email, please ignore this.
 	`;
 
-		const html = await mailHtmlTemplate(subject, message);
+	const html = await mailHtmlTemplate(subject, message);
 
-		await sendEmail({
-			emailTo: data.email,
-			subject,
-			text: 'Welcome to Acre Connect!',
-			html,
-		});
+	await sendEmail({
+		emailTo: data.email,
+		subject,
+		text: 'Welcome to Acre Connect!',
+		html,
+	});
 	const formattedResponse = {
 		...result,
 		state: undefined,
-		stateId: result.state?.id,
+		stateId: result.stateId,
 		stateName: result.state?.name,
 	};
-    
+
 	return formattedResponse;
 };
 const getAllUsers = async (options: PaginateOptions) => {
@@ -363,6 +387,99 @@ const getAdminActivities = async (options: PaginateOptions) => {
 		},
 	};
 };
+const loginAdminUser = async (data: LoginUser) => {
+	const { email,password, deviceToken } = data;
+
+	const user = await prisma.user.findFirst({
+		where: {
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
+			OR: [
+				{ role: 'SUPER_ADMIN' },
+				{ role: 'SUPER_ADMIN_USER' }
+			],
+		},
+		include: {
+			state: {
+				select: {
+					name: true,
+				},
+			},
+			AdminPermission: {
+				include: {
+					permission: true,
+				},
+			},
+		},
+		omit:{
+			businessName:true,
+			experience:true,
+		}
+	});
+console.log(user,'user')
+	if (!user) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'User not found.'
+		);
+	}
+
+	if (!user.password) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			"User's password is missing from database."
+		);
+	}
+
+	const isPasswordValid = await comparePassword(password, user.password);
+
+	if (!isPasswordValid) {
+		throw new ApiError(httpStatus.UNAUTHORIZED, 'Password is incorrect.');
+	}
+
+	// Save or update device token
+	if (deviceToken) {
+		const existingDeviceToken = await prisma.deviceToken.findFirst({
+			where: { userId: user.id },
+		});
+
+		if (existingDeviceToken) {
+			await prisma.deviceToken.update({
+				where: { id: existingDeviceToken.id },
+				data: { token: deviceToken },
+			});
+		} else {
+			await prisma.deviceToken.create({
+				data: { userId: user.id, token: deviceToken },
+			});
+		}
+	}
+
+	const accessToken = await signAccessToken(user.id);
+
+		const { AdminPermission, state, ...userWithoutPassword } = user; 
+
+	// Prepare permissions if SUPER_ADMIN_USER
+	const permissions = user.role === 'SUPER_ADMIN_USER'
+		? AdminPermission.map(p => ({
+			id: p.permissionId,
+			name: p.permission.name,
+			accessLevel: p.accessLevel
+		}))
+		: undefined;
+
+	return {
+		user: {
+			...userWithoutPassword,
+			state: state?.name,
+			password:undefined,
+			...(permissions ? { permissions } : {})
+		},
+		accessToken,
+	};
+};
 
 export default {
 	createUser,
@@ -371,4 +488,5 @@ export default {
 	deleteUser,
 	disableUser,
 	getAdminActivities,
+	loginAdminUser
 };
