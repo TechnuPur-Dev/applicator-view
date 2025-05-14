@@ -240,7 +240,11 @@ const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 });
 const getRejectedJobs = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, 
+		['limit',
+	     'page', 
+		 'label',
+		'searchValue',]);
 	const result = await jobService.getRejectedJobs(user, options);
 	res.status(httpStatus.OK).json(result);
 });
