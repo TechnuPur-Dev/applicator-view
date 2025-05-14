@@ -6,7 +6,7 @@ import { PaginateOptions } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
 import { UserData } from './admin-user-types';
 import { EntityType } from '../../../../../shared/constants';
-
+import { mailHtmlTemplate, sendEmail } from '../../../../../shared/helpers/node-mailer';
 // get user List
 const createUser = async (adminId: number, data: UserData) => {
 	const { firstName, lastName, email } = data;
@@ -52,14 +52,31 @@ const createUser = async (adminId: number, data: UserData) => {
 
 		return user;
 	});
+	// send email to the admin user to invite 
+		const inviteLink = `https://applicator-admin.netlify.app/#/login`;
+		const subject = 'Welcome to Acre Connect!';
+		const message = `<p>Hi ${data.firstName} ${data.lastName},</p><br><br>
+	  <p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
+	  Click the link below to Login.<br><br>
+	  <a href="${inviteLink}">${inviteLink}</a><br><br>
+	  If you did not expect this email, please ignore this.
+	`;
 
+		const html = await mailHtmlTemplate(subject, message);
+
+		await sendEmail({
+			emailTo: data.email,
+			subject,
+			text: 'Welcome to Acre Connect!',
+			html,
+		});
 	const formattedResponse = {
 		...result,
 		state: undefined,
 		stateId: result.state?.id,
 		stateName: result.state?.name,
 	};
-
+    
 	return formattedResponse;
 };
 const getAllUsers = async (options: PaginateOptions) => {
@@ -117,32 +134,47 @@ const getAllUsers = async (options: PaginateOptions) => {
 	};
 };
 
-const getUserById = async (userId: number) => {
-	const userDetail = await prisma.user.findUnique({
-		where: {
-			id: userId,
-		},
-		include: {
-			state: true,
-		},
-		omit: {
-			password: true,
-			joiningDate: true,
-			lastViewedAt: true,
-		},
-	});
-	if (!userDetail) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'user not found');
-	}
+const getUserById = async (userId: number, adminId: number) => {
+	const result = await prisma.$transaction(async (tx) => {
+		const userDetail = await tx.user.findUnique({
+			where: {
+				id: userId,
+			},
+			include: {
+				state: true,
+			},
+			omit: {
+				password: true,
+				joiningDate: true,
+				lastViewedAt: true,
+			},
+		});
+
+		if (!userDetail) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'user not found');
+		}
+		await tx.activityLog.create({
+			data: {
+				adminId,
+				action: 'VIEW',
+				entityType: EntityType.ADMIN,
+				entityId: userId,
+				details: `View the admin with this email ${userDetail.email}`,
+			},
+		});
+		return userDetail
+	})
 	const formattedResponse = {
-		...userDetail,
+		...result,
 		state: undefined,
-		stateId: userDetail.state?.id,
-		stateName: userDetail.state?.name,
+		stateId: result.state?.id,
+		stateName: result.state?.name,
 	};
+
 	return formattedResponse;
 };
-const deleteUser = async (userId: number) => {
+const deleteUser = async (userId: number, adminId: number) => {
+
 	const userExist = await prisma.user.findUnique({
 		where: {
 			id: userId,
@@ -155,20 +187,30 @@ const deleteUser = async (userId: number) => {
 			'Admin user with this Id not found.',
 		);
 	}
-	await prisma.user.delete({
-		where: {
-			id: userId,
-		},
-		omit: {
-			password: true,
-		},
-	});
-
+	await prisma.$transaction(async (tx) => {
+		await tx.user.delete({
+			where: {
+				id: userId,
+			},
+			omit: {
+				password: true,
+			},
+		});
+		await tx.activityLog.create({
+			data: {
+				adminId,
+				action: 'DELETE',
+				entityType: EntityType.ADMIN,
+				entityId: userId,
+				details: `Delete the admin with this email ${userExist.email}`,
+			},
+		});
+	})
 	return {
 		result: 'Admin user deleted successfully',
 	};
 };
-const disableUser = async (data: { userId: number; status: boolean }) => {
+const disableUser = async (data: { userId: number; status: boolean }, adminId: number) => {
 	console.log(data, 'userId');
 	const { userId, status } = data;
 	const userExist = await prisma.user.findUnique({
@@ -177,21 +219,31 @@ const disableUser = async (data: { userId: number; status: boolean }) => {
 			role: 'SUPER_ADMIN_USER',
 		},
 	});
-	console.log(userExist, 'userExist');
 	if (!userExist) {
 		throw new ApiError(
 			httpStatus.BAD_REQUEST,
 			'Admin user with this Id not found.',
 		);
 	}
-	await prisma.user.update({
-		where: {
-			id: userId,
-		},
-		data: {
-			isActive: status,
-		},
-	});
+	await prisma.$transaction(async (tx) => {
+		await tx.user.update({
+			where: {
+				id: userId,
+			},
+			data: {
+				isActive: status,
+			},
+		});
+		await tx.activityLog.create({
+			data: {
+				adminId,
+				action: status ? 'ACTIVATE' : 'DEACTIVATE',
+				entityType: EntityType.ADMIN,
+				entityId: userId,
+				details: status ? `Activate the admin with this email ${userExist.email}` : `Deactivate the admin with this email ${userExist.email}`,
+			},
+		});
+	})
 	return {
 		message: status
 			? 'User activated successfully'
@@ -291,10 +343,10 @@ const getAdminActivities = async (options: PaginateOptions) => {
 			},
 			target: log.entityId
 				? {
-						type: log.entityType,
-						id: log.entityId,
-						...(targetEntity || {}),
-					}
+					type: log.entityType,
+					id: log.entityId,
+					...(targetEntity || {}),
+				}
 				: null,
 		};
 	});

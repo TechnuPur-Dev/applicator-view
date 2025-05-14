@@ -3,13 +3,14 @@ import express, { Router } from 'express';
 import accounts from './accounts/accounts-routes';
 import dasboard from './dashboard/dashboard-routes'
 import adminUser from './adminControls/admin-user-routes'
+import permission from './permissions/permissions-routes'
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
 
 // Define an array of routes with the path and corresponding route handler
 const defaultRoutes = [
-	
+
 	{
 		path: '/accounts', // Path for the user routes
 		route: accounts,
@@ -22,7 +23,10 @@ const defaultRoutes = [
 		path: '/admin', // Path for the user routes
 		route: adminUser,
 	},
-
+	{
+		path: '/permission',
+		route: permission
+	}
 
 ];
 

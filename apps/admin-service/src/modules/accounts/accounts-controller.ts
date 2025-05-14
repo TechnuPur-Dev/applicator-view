@@ -34,7 +34,8 @@ const getPilotUsers = catchAsync(async (req: Request, res: Response) => {
 });
 const getUserById  = catchAsync(async (req: Request, res: Response) => {
    const id = +req.params.userId
-	const userData = await accountServices.getUserById(id);
+	const adminId = req.payload.id;
+	const userData = await accountServices.getUserById(id,adminId);
 	res.status(httpStatus.OK).json(userData);
 });
 const deleteUser  = catchAsync(async (req: Request, res: Response) => {
