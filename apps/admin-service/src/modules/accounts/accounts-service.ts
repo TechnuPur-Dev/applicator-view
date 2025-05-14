@@ -142,8 +142,6 @@ const getApplicatorUsers = async (
 					mode: 'insensitive',
 				},
 			},
-		
-			
 		];
 	}
 	console.log(whereClause, 'whereClause');
@@ -220,8 +218,6 @@ const getGrowerUsers = async (
 					mode: 'insensitive',
 				},
 			},
-		
-			
 		];
 	}
 
@@ -298,8 +294,6 @@ const getPilotUsers = async (
 					mode: 'insensitive',
 				},
 			},
-		
-			
 		];
 	}
 
@@ -336,7 +330,7 @@ const getPilotUsers = async (
 	};
 };
 
-const getUserById = async (userId: number,adminId:number) => {
+const getUserById = async (userId: number, adminId: number) => {
 	const userDetail = await prisma.user.findUnique({
 		where: {
 			id: userId,
@@ -348,15 +342,15 @@ const getUserById = async (userId: number,adminId:number) => {
 	if (!userDetail) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'user not found');
 	}
-		await prisma.activityLog.create({
-			data: {
-				adminId,
-				action: 'VIEW',
-				entityType: EntityType.ADMIN,
-				entityId: userId,
-				details: `View the admin with this emaill ${userDetail.email}`,
-			},
-		});
+	await prisma.activityLog.create({
+		data: {
+			adminId,
+			action: 'VIEW',
+			entityType: EntityType.USER,
+			entityId: userId,
+			details: `Viewed the user with ${userDetail.email} email.`,
+		},
+	});
 	return {
 		result: userDetail,
 	};
