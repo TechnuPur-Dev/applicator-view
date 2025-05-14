@@ -1,5 +1,4 @@
 // global.d.ts
-
 import { UserRole } from '@prisma/client';
 
 declare global {
@@ -40,5 +39,3 @@ interface PaginateOptions {
 interface city {
 	city?: string;
 }
-
-export { User, PaginateOptions, city }; // Makes the file an external module

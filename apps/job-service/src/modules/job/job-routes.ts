@@ -248,8 +248,12 @@ router
 		jobController.getJobBytokenThroughEmail,
 	);
 
-	router.route('/dashboard/acres-sprayed').get(verifyToken , jobController.getMonthlyAcresSprayed);
-	router.route('/dashboard/financial-summary').get(verifyToken , jobController.getFinancialSummary);
+router
+	.route('/dashboard/acres-sprayed')
+	.get(verifyToken, jobController.getMonthlyAcresSprayed);
+router
+	.route('/dashboard/financial-summary')
+	.get(verifyToken, jobController.getFinancialSummary);
 
 router
 	.route('/calendar/upcoming-applications')
@@ -265,5 +269,11 @@ router
 		validateSchema(jobValidation.upcomingApplicationsRangeSchema),
 		jobController.getApplicationsByRange,
 	);
+router
+	.route('/upload/flight-log/:id')
+	.post(verifyToken, uploadMiddleware, jobController.uploadFlightLog);
+router
+	.route('/faa-reports')
+	.get(verifyToken, normalizeApplicatorUser, jobController.getFaaReports);
 
 export default router;

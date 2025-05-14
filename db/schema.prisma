@@ -248,6 +248,7 @@ model Job {
   products            JobProduct[]
   Notification        Notification[]
   supportTickets      SupportTicket[]
+  DroneFlightLog      DroneFlightLog[]
 }
 
 model Bid {
@@ -559,7 +560,21 @@ model ActivityLog {
   metadata   Json? // <-- stores deleted record data
   timestamp  DateTime       @default(now())
 
-  admin User @relation(fields: [adminId], references: [id])
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model DroneFlightLog {
+  id           Int       @id @default(autoincrement())
+  jobId        Int
+  droneId      Int?
+  startTime    DateTime?
+  endTime      DateTime?
+  geojsonData  Json // optional full GeoJSON
+  mapImageUrl  String? // URL of map image in Azure Blob
+  uploadedById Int // who uploaded the log
+  createdAt    DateTime  @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 enum ActivityAction {
