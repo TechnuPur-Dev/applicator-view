@@ -69,6 +69,11 @@ const createUser = async (adminId: number, data: UserData) => {
 				},
 				AdminPermission: true,
 			},
+			omit:{
+				password:true,
+				experience:true,
+				businessName:true
+			}
 		});
 
 		await tx.activityLog.create({

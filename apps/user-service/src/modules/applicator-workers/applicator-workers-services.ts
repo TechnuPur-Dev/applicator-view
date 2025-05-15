@@ -1,9 +1,9 @@
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { ApplicatorWorker, UpdateStatus } from './applicator-workers-types';
 import ApiError from '../../../../../shared/utils/api-error';
-
+import { InviteStatus } from '@prisma/client';
 import { User, PaginateOptions } from '../../../../../shared/types/global';
 
 import {
@@ -103,7 +103,10 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 
 const getAllWorkers = async (
 	applicatorId: number,
-	options: PaginateOptions,
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
+	},
 ) => {
 	// Set pagination parameters
 	const limit =
@@ -115,12 +118,79 @@ const getAllWorkers = async (
 			? parseInt(options.page.toString(), 10)
 			: 1;
 	const skip = (page - 1) * limit;
+	const filters: Prisma.ApplicatorWorkerWhereInput = {
+		applicatorId,
 
+	};
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'inviteStatus':
+				searchFilter.inviteStatus = {
+					equals: searchValue as InviteStatus
+				}
+				break;
+
+			case 'fullName':
+				searchFilter.worker = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'pilotId':
+				searchFilter.workerId = parseInt(searchValue, 10);
+
+				break;
+			case 'email':
+				searchFilter.worker = {
+					email: { equals: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'phoneNumber':
+				searchFilter.worker = {
+					phoneNumber: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'address':
+				searchFilter.worker = {
+
+					address1: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'code':
+				searchFilter.code = {
+					contains: searchValue, mode: 'insensitive'
+				}
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	// Fetch workers with included user details
 	const workers = await prisma.applicatorWorker.findMany({
-		where: {
-			applicatorId,
-		},
+		where: filters,
 		select: {
 			dollarPerAcre: true,
 			percentageFee: true,
@@ -156,7 +226,7 @@ const getAllWorkers = async (
 
 	// Total workers count
 	const totalResults = await prisma.applicatorWorker.count({
-		where: { applicatorId },
+		where: filters,
 	});
 	const totalPages = Math.ceil(totalResults / limit);
 
@@ -529,7 +599,10 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 };
 const getAllApplicators = async (
 	workerId: number,
-	options: PaginateOptions,
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
+	},
 ) => {
 	// Set pagination parameters
 	const limit =
@@ -541,13 +614,79 @@ const getAllApplicators = async (
 			? parseInt(options.page.toString(), 10)
 			: 1;
 	const skip = (page - 1) * limit;
-	const applicators = await prisma.applicatorWorker.findMany({
-		where: {
-			workerId,
-			NOT: {
-				inviteStatus: 'PENDING',
-			},
+	const filters: Prisma.ApplicatorWorkerWhereInput = {
+		workerId,
+		NOT: {
+			inviteStatus: 'PENDING',
 		},
+	}
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'applicatorName':
+				searchFilter.applicator = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'applicatorId':
+				searchFilter.applicatorId = parseInt(searchValue, 10);
+
+				break;
+			case 'email':
+				searchFilter.applicator = {
+					email: { equals: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'phoneNumber':
+				searchFilter.applicator = {
+					phoneNumber: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'address':
+				searchFilter.applicator = {
+					address1: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'businessName':
+				searchFilter.applicator = {
+					businessName: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+	const applicators = await prisma.applicatorWorker.findMany({
+		where: filters,
+		// {
+		// 	workerId,
+		// 	NOT: {
+		// 		inviteStatus: 'PENDING',
+		// 	},
+		// },
 		include: {
 			// inviteStatus: true,
 			applicator: {
@@ -581,7 +720,7 @@ const getAllApplicators = async (
 
 	// Total workers count
 	const totalResults = await prisma.applicatorWorker.count({
-		where: { workerId },
+		where: filters,
 	});
 	const totalPages = Math.ceil(totalResults / limit);
 
@@ -594,7 +733,10 @@ const getAllApplicators = async (
 		totalResults,
 	};
 };
-const getPendingInvites = async (user: User, options: PaginateOptions) => {
+const getPendingInvites = async (user: User, options: PaginateOptions & {
+	label?: string,
+	searchValue?: string
+}) => {
 	// Set pagination parameters
 	const limit =
 		options.limit && parseInt(options.limit.toString(), 10) > 0
@@ -611,13 +753,78 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 	console.log(isWorker);
 
 	let pendingInvites;
+	const filters: Prisma.ApplicatorWorkerWhereInput = {
+		inviteStatus: 'PENDING',
+		[isWorker ? 'workerId' : 'applicatorId']: user.id,
+	}
 	if (isWorker) {
 		// Fetch pending invites
+		if (options.label && options.searchValue) {
+			const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
+			const searchValue = options.searchValue;
+
+			switch (options.label) {
+				case 'fullName':
+					searchFilter.applicator = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'applicatorId':
+					searchFilter.applicatorId = parseInt(searchValue, 10);
+
+					break;
+				case 'email':
+					searchFilter.applicator = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.applicator = {
+						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'address':
+					searchFilter.applicator = {
+
+						address1: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'code':
+					searchFilter.code = {
+						contains: searchValue, mode: 'insensitive'
+					}
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 		pendingInvites = await prisma.applicatorWorker.findMany({
-			where: {
-				inviteStatus: 'PENDING',
-				workerId: user.id,
-			},
+			where: filters,
+			// {
+			// 	inviteStatus: 'PENDING',
+			// 	workerId: user.id,
+			// },
 			include: {
 				applicator: {
 					include: {
@@ -650,11 +857,72 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 	}
 	if (!isWorker) {
 		// Fetch pending invites
+		if (options.label && options.searchValue) {
+			const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
+			const searchValue = options.searchValue;
+
+			switch (options.label) {
+				case 'fullName':
+					searchFilter.worker = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'pilotId':
+					searchFilter.workerId = parseInt(searchValue, 10);
+
+					break;
+				case 'email':
+					searchFilter.worker = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.worker = {
+						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'address':
+					searchFilter.worker = {
+
+						address1: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'code':
+					searchFilter.code = {
+						contains: searchValue, mode: 'insensitive'
+					}
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 		pendingInvites = await prisma.applicatorWorker.findMany({
-			where: {
-				inviteStatus: 'PENDING',
-				applicatorId: user.id,
-			},
+			where: filters,
+			//  {
+			// 	inviteStatus: 'PENDING',
+			// 	applicatorId: user.id,
+			// },
 			select: {
 				dollarPerAcre: true,
 				percentageFee: true,
@@ -689,10 +957,11 @@ const getPendingInvites = async (user: User, options: PaginateOptions) => {
 
 	// Get total count
 	const totalResults = await prisma.applicatorWorker.count({
-		where: {
-			inviteStatus: 'PENDING',
-			[isWorker ? 'workerId' : 'applicatorId']: user.id,
-		},
+		where: filters
+		//  {
+		// 	inviteStatus: 'PENDING',
+		// 	[isWorker ? 'workerId' : 'applicatorId']: user.id,
+		// },
 	});
 
 	// Calculate total pages
