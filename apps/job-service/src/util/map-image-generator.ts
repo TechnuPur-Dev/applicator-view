@@ -1,44 +1,64 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// utils/staticMapGenerator.ts
 import StaticMaps from 'staticmaps';
+import path from 'path';
+import fs from 'fs';
 
-interface Coord {
-	lat: number;
-	lon: number;
-}
+const outputPath = path.resolve(__dirname, '../output/map.png');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const generateMapImage = async (geojson: any): Promise<Buffer> => {
-	const map = new StaticMaps({ width: 800, height: 600 });
+	const options = { width: 800, height: 600 };
+	const map = new StaticMaps(options);
 
 	const features = geojson?.features;
 	if (!features || features.length === 0) {
 		throw new Error('No features found in GeoJSON');
 	}
 
-	const drawLines = (coords: number[][]) => {
-		const formattedCoords: Coord[] = coords.map(([lng, lat]) => ({
-			lat,
-			lon: lng,
-		}));
-		map.addLine({
-			coords: formattedCoords,
-			color: '#008000',
-			width: 3,
-		});
-	};
+	const allCoords: [number, number][] = [];
 
 	for (const feature of features) {
 		if (feature.geometry.type === 'LineString') {
-			drawLines(feature.geometry.coordinates);
-		} else if (feature.geometry.type === 'MultiLineString') {
-			for (const line of feature.geometry.coordinates) {
-				drawLines(line);
-			}
-		} else if (feature.geometry.type === 'Polygon') {
-			// Use only the outer ring
-			drawLines(feature.geometry.coordinates[0]);
+			const coords = feature.geometry.coordinates;
+
+			// Add to collection for bounds
+			allCoords.push(...coords);
+
+			const line = {
+				coords: coords.map(([lon, lat]: [number, number]) => ({
+					lon,
+					lat,
+				})),
+				color: '#0000FF',
+				width: 8,
+			};
+			// Draw route
+			map.addLine(line);
 		}
 	}
 
-	await map.render();
+	// Compute bounding box
+	const lons = allCoords.map((c) => c[0]);
+	const lats = allCoords.map((c) => c[1]);
+
+	const minLon = Math.min(...lons);
+	const maxLon = Math.max(...lons);
+	const minLat = Math.min(...lats);
+	const maxLat = Math.max(...lats);
+
+	const center: [number, number] = [
+		(minLon + maxLon) / 2,
+		(minLat + maxLat) / 2,
+	];
+
+	await map.render(center); // Auto-zoom
+
+	// Save to disk
+	const dir = path.dirname(outputPath);
+	if (!fs.existsSync(dir)) {
+		fs.mkdirSync(dir, { recursive: true });
+	}
+	await map.image.save(outputPath);
+	console.log(`Map saved to: ${outputPath}`);
 	return map.image.buffer('image/png');
 };
