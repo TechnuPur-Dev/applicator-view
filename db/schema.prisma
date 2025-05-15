@@ -577,6 +577,17 @@ model DroneFlightLog {
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
+model City {
+  id        Int     @id @default(autoincrement())
+  name      String
+  state     String?
+  country   String
+  latitude  Float
+  longitude Float
+
+  @@index([name])
+}
+
 enum ActivityAction {
   LOGIN
   CREATE

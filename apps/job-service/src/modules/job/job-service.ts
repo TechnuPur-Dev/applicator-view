@@ -5207,6 +5207,7 @@ const uploadFlightLog = async (
 
 	// Step 2: Generate flight map image
 	const imageBuffer = await generateMapImage(geojson);
+	// const imageBuffer = await generateMapImage();
 
 	// Step 3: Upload image to Azure Blob
 	const blobPath = `flight-maps/${jobId}_${Date.now()}.png`;

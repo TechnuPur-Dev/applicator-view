@@ -205,6 +205,22 @@ const validateAddress = async (street: string, city: string, state: string) => {
 const getCityByZip = async (zipCode: string) => {
 	return await validateAddressHelper({ zipCode });
 };
+
+const searchCity = async (search: string) => {
+	const cities = await prisma.city.findMany({
+		where: {
+			name: {
+				contains: search,
+				mode: 'insensitive',
+			},
+		},
+		take: 10,
+		orderBy: {
+			name: 'asc',
+		},
+	});
+	return cities;
+};
 export default {
 	createStates,
 	createCounties,
@@ -222,4 +238,5 @@ export default {
 	getTownshipsByCounty,
 	validateAddress,
 	getCityByZip,
+	searchCity,
 };
