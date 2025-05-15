@@ -47,6 +47,8 @@ const createUser = async (adminId: number, data: UserData) => {
 				...restData, // does NOT include stateId now
 				email,
 				password,
+				firstName,
+			    lastName,
 				fullName: `${firstName} ${lastName}`,
 				role: 'SUPER_ADMIN_USER',
 				AdminPermission: {
@@ -134,6 +136,8 @@ const getAllUsers = async (options: PaginateOptions) => {
 		},
 		omit: {
 			password: true,
+			businessName:true,
+			experience:true,
 			joiningDate: true,
 			lastViewedAt: true,
 		},
