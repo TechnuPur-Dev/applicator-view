@@ -100,6 +100,15 @@ const getCityByZip = catchAsync(async (req: Request, res: Response) => {
 	const result = await geoDataService.getCityByZip(zipCode);
 	res.status(httpStatus.OK).json(result);
 });
+const searchCity = catchAsync(async (req: Request, res: Response) => {
+	// Controller
+	const search = req.query.search as string;
+	if (!search || search.length < 2) {
+		return res.status(400).json({ error: 'Search term too short' });
+	}
+	const result = await geoDataService.searchCity(search);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createStates,
 	createCounties,
@@ -117,4 +126,5 @@ export default {
 	getTownshipsByCounty,
 	validateAddress,
 	getCityByZip,
+	searchCity,
 };
