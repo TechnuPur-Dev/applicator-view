@@ -3427,11 +3427,12 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 		});
 		// Calculate the total number of pages based on the total results and limit
 		const totalResults = await prisma.job.count({
-			where: {
-				growerId: user.id,
-				status: 'REJECTED',
-				//   source: 'GROWER'
-			},
+			where: filters
+			// {
+			// 	growerId: user.id,
+			// 	status: 'REJECTED',
+			// 	//   source: 'GROWER'
+			// },
 		});
 
 		const totalPages = Math.ceil(totalResults / limit);

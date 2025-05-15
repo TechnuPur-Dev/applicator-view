@@ -68,7 +68,8 @@ const createGrower = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllGrowersByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page', 'label',
+			'searchValue',]);
 		const applicatorId = req.payload.id;
 		const result = await userService.getAllGrowersByApplicator(
 			applicatorId,
@@ -86,7 +87,8 @@ const updateInviteStatus = catchAsync(async (req: Request, res: Response) => {
 });
 const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page', 'label',
+		'searchValue',]);
 	const result = await userService.getPendingInvites(user, options);
 	res.status(httpStatus.OK).json(result);
 });
@@ -162,7 +164,8 @@ const getGrowerById = catchAsync(async (req: Request, res: Response) => {
 const getPendingInvitesFromOthers = catchAsync(
 	async (req: Request, res: Response) => {
 		const user = req.user;
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page', 'label',
+		'searchValue']);
 		const result = await userService.getPendingInvitesFromOthers(
 			user,
 			options,

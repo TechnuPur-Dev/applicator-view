@@ -1,5 +1,5 @@
 import { prisma } from '../../../../../shared/libs/prisma-client';
-import { ProductCategory, ProductUnit } from '@prisma/client';
+import { Prisma, ProductCategory, ProductUnit } from '@prisma/client';
 import { CreateProduct, UpdateProduct } from './product-types';
 import { PaginateOptions, User } from '../../../../../shared/types/global';
 import ApiError from '../../../../../shared/utils/api-error';
@@ -35,7 +35,10 @@ const createProduct = async (user: User, data: CreateProduct) => {
 	return product;
 };
 
-const getAllProducts = async (user: User,options: PaginateOptions) => {
+const getAllProducts = async (user: User,options: PaginateOptions&{
+	label?:string,
+	searchValue?:string
+}) => {
 	const limit =
 			options.limit && parseInt(options.limit, 10) > 0
 				? parseInt(options.limit, 10)
@@ -54,10 +57,55 @@ const getAllProducts = async (user: User,options: PaginateOptions) => {
 			'You are not authorized to perform this action.',
 		);
 	}
+	const filters: Prisma.ProductWhereInput ={
+		createdById: userId,
+	}
+		if (options.label && options.searchValue) {
+		const searchFilter: Prisma.ProductWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'code':
+					searchFilter.code = parseInt(searchValue, 10);
+				break;
+			case 'productName':
+				searchFilter.productName = {
+                   contains:searchValue, mode:'insensitive'
+				}
+				break;
+			case 'baseProductName':
+				searchFilter.baseProductName = {
+                   contains:searchValue, mode:'insensitive'
+				}
+				break;
+			case 'category':
+					searchFilter.category = {
+                   equals:searchValue as ProductCategory
+				}
+				break;
+			case 'epaRegistration':
+					searchFilter.epaRegistration = {
+                   contains:searchValue, mode:'insensitive'
+				}
+				break;
+			case 'inventoryUnit':
+					searchFilter.inventoryUnit = {
+                   equals:searchValue as ProductUnit
+				}
+				break;
+					case 'appliedUnits':
+					searchFilter.appliedUnits = {
+                   equals:searchValue as ProductUnit
+				}
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	const products = await prisma.product.findMany({
-		where: {
-			createdById: userId,
-		},
+		where:filters,
 		skip,
 			take: limit,
 			orderBy: {
@@ -65,9 +113,7 @@ const getAllProducts = async (user: User,options: PaginateOptions) => {
 			},
 	});
 	const totalResults = await prisma.product.count({
-		where: {
-			createdById: userId,
-		},
+		where: filters
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
