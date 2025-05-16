@@ -729,6 +729,14 @@ const getJobById = async (user: User, jobId: number) => {
 					id: 'desc',
 				},
 			},
+			DroneFlightLog: {
+				select: {
+					droneId: true,
+					startTime: true,
+					endTime: true,
+					mapImageUrl: true,
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -4783,6 +4791,14 @@ const getJobByIdForPilot = async (
 					id: 'desc',
 				},
 			},
+			DroneFlightLog: {
+				select: {
+					droneId: true,
+					startTime: true,
+					endTime: true,
+					mapImageUrl: true,
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -4836,6 +4852,7 @@ const getJobByIdForPilot = async (
 			...activity,
 			updatedBy: changedBy?.fullName || null,
 		})),
+		DroneFlightLog: job.DroneFlightLog,
 	}))(job);
 
 	return formattedJob;
