@@ -240,11 +240,7 @@ const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 });
 const getRejectedJobs = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const options = pick(req.query, 
-		['limit',
-	     'page', 
-		 'label',
-		'searchValue',]);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const result = await jobService.getRejectedJobs(user, options);
 	res.status(httpStatus.OK).json(result);
 });
@@ -406,6 +402,32 @@ const getFaaReports = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
+const uploadFlightLogImage = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const jobId = +req.params.id;
+	const files = req.files;
+
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+
+	const file = files[0];
+
+	if (!file) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+
+	const result = await jobService.uploadFlightLogImage(user, jobId, file);
+	res.status(httpStatus.OK).json(result);
+});
+
+const createFlighLog = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const jobId = +req.params.id;
+	const data = req.body;
+	const result = await jobService.createFlighLog(currentUser, jobId, data);
+	res.status(httpStatus.CREATED).json(result);
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -452,4 +474,6 @@ export default {
 	getApplicationsByRange,
 	uploadFlightLog,
 	getFaaReports,
+	uploadFlightLogImage,
+	createFlighLog,
 };
