@@ -729,6 +729,14 @@ const getJobById = async (user: User, jobId: number) => {
 					id: 'desc',
 				},
 			},
+			DroneFlightLog: {
+				select: {
+					droneId: true,
+					startTime: true,
+					endTime: true,
+					mapImageUrl: true,
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -3128,10 +3136,13 @@ const getHeadersData = async (
 
 	return result;
 };
-const getRejectedJobs = async (user: User, options: PaginateOptions & {
+const getRejectedJobs = async (
+	user: User,
+	options: PaginateOptions & {
 		label?: string;
 		searchValue?: string;
-	}) => {
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -3144,7 +3155,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 	const { role } = user;
- const filters: Prisma.JobWhereInput = {
+	const filters: Prisma.JobWhereInput = {
 		applicatorId: user.id,
 		status: 'REJECTED',
 	};
@@ -4396,6 +4407,14 @@ const getJobByIdForPilot = async (
 					id: 'desc',
 				},
 			},
+			DroneFlightLog: {
+				select: {
+					droneId: true,
+					startTime: true,
+					endTime: true,
+					mapImageUrl: true,
+				},
+			},
 		},
 		omit: {
 			applicatorId: true,
@@ -4449,6 +4468,7 @@ const getJobByIdForPilot = async (
 			...activity,
 			updatedBy: changedBy?.fullName || null,
 		})),
+		DroneFlightLog: job.DroneFlightLog,
 	}))(job);
 
 	return formattedJob;
