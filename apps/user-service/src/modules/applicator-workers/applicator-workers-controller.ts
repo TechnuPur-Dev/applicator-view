@@ -15,7 +15,7 @@ const createWorker = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllWorkers = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const applicatorId = req.payload.id;
 	const workerData = await applicatorWorkersServices.getAllWorkers(
 		applicatorId,
@@ -95,7 +95,7 @@ const getAllApplicators = catchAsync(async (req: Request, res: Response) => {
 });
 const getPendingInvites = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await applicatorWorkersServices.getPendingInvites(
 		user,
 		options,

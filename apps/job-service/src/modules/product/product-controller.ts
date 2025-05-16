@@ -24,7 +24,7 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllProducts = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 
 	const currentUser = req.user;
 	const productData = await productService.getAllProducts(currentUser,options);
