@@ -11,6 +11,7 @@ import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adj
 import config from '../../../../../shared/config/env-config';
 // import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import { Prisma } from '@prisma/client';
 
 const createFarm = async (
 	user: User,
@@ -89,7 +90,10 @@ const createFarm = async (
 
 const getAllFarmsByGrower = async (
 	growerId: number,
-	options: PaginateOptions,
+	options: PaginateOptions &{
+		label?:string,
+		searchValue?:string
+	},
 ) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
@@ -102,11 +106,30 @@ const getAllFarmsByGrower = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
+   const filters:Prisma.FarmWhereInput={
+	growerId,
+   }
+   if (options.label && options.searchValue) {
+			const searchFilter: Prisma.FarmWhereInput = {};
+			const searchValue = options.searchValue;
 
+			switch (options.label) {
+				case 'id':
+					searchFilter.id = parseInt(searchValue, 10);
+					break;
+				case 'name':
+					searchFilter.name = {
+						contains: searchValue, mode: 'insensitive' ,
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 	const farms = await prisma.farm.findMany({
-		where: {
-			growerId,
-		},
+		where: filters,
 		include: {
 			fields: true, // Include related fields in the result
 			permissions: {
@@ -150,9 +173,7 @@ const getAllFarmsByGrower = async (
 	});
 
 	const totalResults = await prisma.farm.count({
-		where: {
-			growerId,
-		},
+		where:filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);

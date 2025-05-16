@@ -14,7 +14,7 @@ const createFarm = catchAsync(async (req: Request, res: Response) => {
 });
 // get all farms
 const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const growerId = req.payload.id;
 	const userData = await farmService.getAllFarmsByGrower(growerId, options);
 	res.status(httpStatus.OK).json(userData);
