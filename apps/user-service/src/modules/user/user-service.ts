@@ -609,7 +609,10 @@ const getAllGrowersByApplicator = async (
 
 const getAllApplicatorsByGrower = async (
 	growerId: number,
-	options: PaginateOptions,
+	options: PaginateOptions &{
+		label?:string,
+		searchValue?:string
+	},
 ) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
@@ -622,9 +625,7 @@ const getAllApplicatorsByGrower = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-	// Fetch applicators
-	const applicators = await prisma.applicatorGrower.findMany({
-		where: {
+	const filters : Prisma.ApplicatorGrowerWhereInput={
 			growerId,
 			AND: [
 				{
@@ -645,7 +646,70 @@ const getAllApplicatorsByGrower = async (
 					],
 				},
 			],
-		},
+	}
+		if (options.label && options.searchValue) {
+		const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'inviteStatus':
+				searchFilter.inviteStatus = {
+					equals: searchValue as InviteStatus,
+				};
+				break;
+			case 'applicatorName':
+				searchFilter.applicator = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'applicatorId':
+				searchFilter.applicatorId = parseInt(searchValue, 10);
+
+				break;
+			case 'email':
+				searchFilter.applicator = {
+					email: { equals: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'phoneNumber':
+				searchFilter.applicator = {
+					phoneNumber: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'address':
+				searchFilter.applicator = {
+
+					address1: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+	// Fetch applicators
+	const applicators = await prisma.applicatorGrower.findMany({
+		where:filters,
 		select: {
 			applicatorFirstName: true,
 			applicatorLastName: true,
@@ -695,28 +759,7 @@ const getAllApplicatorsByGrower = async (
 		};
 	});
 	const totalResults = await prisma.applicatorGrower.count({
-		where: {
-			growerId,
-			AND: [
-				{
-					OR: [
-						{
-							inviteInitiator: 'GROWER',
-							inviteStatus: 'PENDING',
-						},
-						{
-							inviteStatus: {
-								in: [
-									'ACCEPTED',
-									'REJECTED',
-									'DELETED_BY_APPLICATOR',
-								],
-							},
-						},
-					],
-				},
-			],
-		},
+		where: filters
 	});
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -1989,7 +2032,7 @@ const getPendingInvitesFromOthers = async (
 	// Determine the invite type based on the user's role
 	const isApplicator = user.role === 'APPLICATOR';
 	const type = isApplicator ? 'GROWER' : 'APPLICATOR'
-
+          console.log(type,'type')
 	//if pending invites from grower get by applicator
 	if (type === 'GROWER') {
 		const filters: Prisma.ApplicatorGrowerWhereInput = {

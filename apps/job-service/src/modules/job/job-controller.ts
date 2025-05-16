@@ -130,7 +130,7 @@ const uploadJobAttachments = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 const getJobs = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const id = +req.payload.id;
 	const type = req.params.type;
 	const role = req.user.role;
@@ -264,7 +264,7 @@ const getJobInvoice = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllJobInvoices = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await jobService.getAllJobInvoices(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
@@ -278,21 +278,21 @@ const acceptJobThroughEmail = catchAsync(
 );
 const getMyJobsByPilot = catchAsync(async (req: Request, res: Response) => {
 	const pilotId = req.payload.id;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await jobService.getMyJobsByPilot(pilotId, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getPilotPendingJobs = catchAsync(async (req: Request, res: Response) => {
 	const pilotId = req.payload.id;
 	// const pilotId = +req.params.pilotId;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await jobService.getPilotPendingJobs(pilotId, options);
 	res.status(httpStatus.OK).json(result);
 });
 const getPilotRejectedJobs = catchAsync(async (req: Request, res: Response) => {
 	const pilotId = req.payload.id;
 	// const pilotId = +req.params.pilotId;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await jobService.getPilotRejectedJobs(pilotId, options);
 	res.status(httpStatus.OK).json(result);
 });

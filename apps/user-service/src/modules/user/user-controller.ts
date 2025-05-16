@@ -107,7 +107,7 @@ const deleteApplicator = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllApplicatorsByGrower = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, ['limit', 'page']);
+		const options = pick(req.query, ['limit', 'page','label','searchValue']);
 
 		const growerId = req.payload.id;
 		const result = await userService.getAllApplicatorsByGrower(

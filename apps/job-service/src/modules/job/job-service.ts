@@ -1265,7 +1265,10 @@ const getJobs = async (
 	growerId: number,
 	type: string,
 	role: string,
-	options: PaginateOptions,
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
+	},
 ) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
@@ -1284,11 +1287,48 @@ const getJobs = async (
 			'Access denied, only growers can view jobs',
 		);
 	}
+	const filters: Prisma.JobWhereInput = {
+		growerId,
+		source: type === 'ALL' ? undefined : (type as JobSource),
+	}
+	// Apply dynamic label filtering
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+		switch (options.label) {
+			case 'title':
+				searchFilter.title = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+			case 'type':
+				searchFilter.type = {
+					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'source':
+				searchFilter.source = {
+					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'status':
+				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				break;
+
+			case 'farm':
+				searchFilter.farm = {
+					name: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	const jobs = await prisma.job.findMany({
-		where: {
-			growerId,
-			source: type === 'ALL' ? undefined : (type as JobSource),
-		},
+		where: filters,
 		include: {
 			applicator: {
 				select: {
@@ -1383,10 +1423,7 @@ const getJobs = async (
 	});
 	console.log(jobs.length, 'length');
 	const totalResults = await prisma.job.count({
-		where: {
-			growerId,
-			source: type === 'ALL' ? undefined : (type as JobSource),
-		},
+		where: filters
 	});
 
 	// const totalResults = jobs.length;
@@ -1885,6 +1922,30 @@ const getJobsPendingFromMe = async (
 					],
 				};
 				break;
+			case 'applicatorName'://this is for grower portal
+				searchFilter.applicator = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
 			case 'status':
 				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
 				break;
@@ -2081,6 +2142,30 @@ const getJobsPendingFromGrowers = async (
 
 			case 'growerName':
 				searchFilter.grower = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'applicatorName'://this is for grower portal
+				searchFilter.applicator = {
 					OR: [
 						{
 							fullName: {
@@ -2743,26 +2828,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-								totalExpenditures:
-									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-										0) +
-									(dashboardtotalProPrice._sum.price?.toNumber() ||
-										0),
-							}
+							totalExpenditures:
+								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+									0) +
+								(dashboardtotalProPrice._sum.price?.toNumber() ||
+									0),
+						}
 						: {
-								totalRevenue:
-									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-										0) +
-									(dashboardtotalProPrice._sum.price?.toNumber() ||
-										0),
-							}),
+							totalRevenue:
+								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+									0) +
+								(dashboardtotalProPrice._sum.price?.toNumber() ||
+									0),
+						}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-								totalApplicators:
-									dashboardtotalGrowersorApplicators,
-							}),
+							totalApplicators:
+								dashboardtotalGrowersorApplicators,
+						}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -2850,17 +2935,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-								totalAcres:
-									myJobsTotalAcres._sum.actualAcres || 0,
-							}),
+							totalAcres:
+								myJobsTotalAcres._sum.actualAcres || 0,
+						}),
 					...(role === 'APPLICATOR'
 						? {
-								totalGrowers:
-									myJobsTotalGrowersorApplicators.length,
-							}
+							totalGrowers:
+								myJobsTotalGrowersorApplicators.length,
+						}
 						: {
-								totalApplicatorJobs,
-							}),
+							totalApplicatorJobs,
+						}),
 				};
 				break;
 			}
@@ -2895,13 +2980,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-								totalGrowers:
-									openJobTotalGrowersorApplicators.length,
-							}
+							totalGrowers:
+								openJobTotalGrowersorApplicators.length,
+						}
 						: {
-								totalApplicators:
-									openJobTotalGrowersorApplicators.length,
-							}),
+							totalApplicators:
+								openJobTotalGrowersorApplicators.length,
+						}),
 				};
 				break;
 			}
@@ -2936,11 +3021,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+									createdAt: {
+										gte: startDate,
+										lte: endDate,
+									},
+								}
 								: {}),
 						},
 						_count: true,
@@ -2952,11 +3037,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-											createdAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -2992,11 +3077,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+									createdAt: {
+										gte: startDate,
+										lte: endDate,
+									},
+								}
 								: {}),
 						},
 						_count: true,
@@ -3008,11 +3093,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-											createdAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -3095,13 +3180,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-									totalGrowers:
-										pendingJobForMetotalGrowersorApplicator.length,
-								}
+								totalGrowers:
+									pendingJobForMetotalGrowersorApplicator.length,
+							}
 							: {
-									totalApplicators:
-										pendingJobForMetotalGrowersorApplicator.length,
-								}),
+								totalApplicators:
+									pendingJobForMetotalGrowersorApplicator.length,
+							}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -3109,13 +3194,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-									totalGrowers:
-										pendingJobForGrowertotalGrowersorApplicator.length,
-								}
+								totalGrowers:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							}
 							: {
-									totalApplicators:
-										pendingJobForGrowertotalGrowersorApplicator.length,
-								}),
+								totalApplicators:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							}),
 					},
 				};
 
@@ -3129,9 +3214,9 @@ const getHeadersData = async (
 	return result;
 };
 const getRejectedJobs = async (user: User, options: PaginateOptions & {
-		label?: string;
-		searchValue?: string;
-	}) => {
+	label?: string;
+	searchValue?: string;
+}) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -3144,7 +3229,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 	const { role } = user;
- const filters: Prisma.JobWhereInput = {
+	const filters: Prisma.JobWhereInput = {
 		applicatorId: user.id,
 		status: 'REJECTED',
 	};
@@ -3538,14 +3623,14 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 					BidProduct: applicatorBid
 						? {
-								where: {
-									bidId: applicatorBid.id,
-								},
-								select: {
-									bidRateAcre: true,
-									bidPrice: true,
-								},
-							}
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidRateAcre: true,
+								bidPrice: true,
+							},
+						}
 						: false,
 				},
 			},
@@ -3553,13 +3638,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 				include: {
 					BidApplicationFee: applicatorBid
 						? {
-								where: {
-									bidId: applicatorBid.id,
-								},
-								select: {
-									bidAmount: true,
-								},
-							}
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidAmount: true,
+							},
+						}
 						: false,
 				},
 			},
@@ -3839,7 +3924,10 @@ const getJobInvoice = async (user: User, jobId: number) => {
 
 	return formattedJob;
 };
-const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
+const getAllJobInvoices = async (user: User, options: PaginateOptions & {
+	label?: string
+	searchValue?: string
+}) => {
 	const { id, role } = user;
 	// Set pagination
 	const limit =
@@ -3861,6 +3949,65 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions) => {
 	} else if (role === 'GROWER') {
 		whereCondition.growerId = id;
 	}
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'invoiceId':
+				searchFilter.Invoice = {
+					id: parseInt(searchValue, 10),
+				};
+				break;
+				case 'invoiceDate':
+				searchFilter.Invoice = {
+					issuedAt: {gte: new Date(searchValue)},
+				};
+				break;
+			case 'billTo':
+				searchFilter.grower = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'amount':
+				searchFilter.Invoice = {
+					totalAmount: parseInt(searchValue, 10),
+				};
+				break;
+				case 'source':
+				searchFilter.source = {
+					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'status':
+				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(whereCondition, searchFilter); // Merge filters dynamically
+	}
+	console.log(options.label,options.searchValue,whereCondition,'condition')
 	const jobInvoices = await prisma.job.findMany({
 		where: whereCondition,
 		select: {
@@ -4016,7 +4163,10 @@ const acceptJobThroughEmail = async (
 const getMyJobsByPilot = async (
 	// applicatorId: number,
 	pilotId: number,
-	options: PaginateOptions,
+	options: PaginateOptions &{
+		label?:string,
+		searchValue?:string
+	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
 	const limit =
@@ -4031,13 +4181,93 @@ const getMyJobsByPilot = async (
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 
-	const jobs = await prisma.job.findMany({
-		where: {
-			fieldWorkerId: pilotId,
+	const filters: Prisma.JobWhereInput ={
+		fieldWorkerId: pilotId,
 			NOT: {
 				status: 'ASSIGNED_TO_PILOT',
 			},
-		},
+	}
+	// Apply dynamic label filtering
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'title':
+				searchFilter.title = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+			case 'type':
+				searchFilter.type = {
+					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'source':
+				searchFilter.source = {
+					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'applicatorName':
+				searchFilter.applicator = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'status':
+				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				break;
+			case 'township':
+				searchFilter.farm = {
+					township: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'county':
+				searchFilter.farm = {
+					county: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'state':
+				searchFilter.farm = {
+					state: {
+						name: { contains: searchValue, mode: 'insensitive' },
+					},
+				};
+				break;
+
+			case 'pilot':
+				searchFilter.fieldWorker = {
+					fullName: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+	const jobs = await prisma.job.findMany({
+		where:filters,
 		include: {
 			applicator: {
 				select: {
@@ -4084,12 +4314,13 @@ const getMyJobsByPilot = async (
 	});
 
 	const totalResults = await prisma.job.count({
-		where: {
-			fieldWorkerId: pilotId,
-			NOT: {
-				status: 'ASSIGNED_TO_PILOT',
-			},
-		},
+		where:filters,
+		// {
+		// 	fieldWorkerId: pilotId,
+		// 	NOT: {
+		// 		status: 'ASSIGNED_TO_PILOT',
+		// 	},
+		// },
 	});
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -4118,7 +4349,10 @@ const getMyJobsByPilot = async (
 const getPilotPendingJobs = async (
 	// applicatorId: number,
 	pilotId: number,
-	options: PaginateOptions,
+	options: PaginateOptions &{
+		label?:string,
+		searchValue?:string
+	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
 	const limit =
@@ -4132,12 +4366,90 @@ const getPilotPendingJobs = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-
-	const jobs = await prisma.job.findMany({
-		where: {
-			fieldWorkerId: pilotId,
+   const filters: Prisma.JobWhereInput ={
+	        fieldWorkerId: pilotId,
 			status: 'ASSIGNED_TO_PILOT',
-		},
+   }
+   	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+
+		switch (options.label) {
+			case 'title':
+				searchFilter.title = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+			case 'type':
+				searchFilter.type = {
+					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'source':
+				searchFilter.source = {
+					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'applicatorName':
+				searchFilter.applicator = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'status':
+				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				break;
+			case 'township':
+				searchFilter.farm = {
+					township: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'county':
+				searchFilter.farm = {
+					county: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'state':
+				searchFilter.farm = {
+					state: {
+						name: { contains: searchValue, mode: 'insensitive' },
+					},
+				};
+				break;
+
+			case 'pilot':
+				searchFilter.fieldWorker = {
+					fullName: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+	const jobs = await prisma.job.findMany({
+		where: filters,
 		select: {
 			id: true,
 			title: true,
@@ -4189,7 +4501,7 @@ const getPilotPendingJobs = async (
 		), // Sum actualAcres, default to 0 if null
 	}));
 	const totalResults = await prisma.job.count({
-		where: { fieldWorkerId: pilotId, status: 'ASSIGNED_TO_PILOT' },
+		where:filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -4205,7 +4517,10 @@ const getPilotPendingJobs = async (
 const getPilotRejectedJobs = async (
 	// applicatorId: number,
 	pilotId: number,
-	options: PaginateOptions,
+	options: PaginateOptions &{
+		label?:string,
+		searchValue?:string
+	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
 	const limit =
@@ -4219,7 +4534,82 @@ const getPilotRejectedJobs = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
+    const filters:Prisma.JobWhereInput ={
+			fieldWorkerId: pilotId,
+			status: 'PILOT_REJECTED',
+	}
+	  	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
 
+		switch (options.label) {
+			case 'title':
+				searchFilter.title = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
+				break;
+			case 'type':
+				searchFilter.type = {
+					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+				};
+				break;
+			case 'source':
+				searchFilter.source = {
+					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+				};
+				break;
+
+			case 'applicatorName':
+				searchFilter.applicator = {
+					OR: [
+						{
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							firstName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							lastName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				};
+				break;
+			case 'status':
+				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				break;
+			case 'township':
+				searchFilter.farm = {
+					township: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'county':
+				searchFilter.farm = {
+					county: { contains: searchValue, mode: 'insensitive' },
+				};
+				break;
+			case 'state':
+				searchFilter.farm = {
+					state: {
+						name: { contains: searchValue, mode: 'insensitive' },
+					},
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
+		}
+
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	const jobs = await prisma.job.findMany({
 		// where: {
 		// 	jobActivities: {
@@ -4235,10 +4625,7 @@ const getPilotRejectedJobs = async (
 		// 		},
 		// 	},
 		// },
-		where: {
-			fieldWorkerId: pilotId,
-			status: 'PILOT_REJECTED',
-		},
+		where: filters,
 		select: {
 			id: true,
 			title: true,
@@ -4291,7 +4678,7 @@ const getPilotRejectedJobs = async (
 	}));
 
 	const totalResults = await prisma.job.count({
-		where: { fieldWorkerId: pilotId, status: 'PILOT_REJECTED' },
+		where:filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -4309,7 +4696,6 @@ const getJobByIdForPilot = async (
 	pilotId: number,
 	// options: PaginateOptions,
 ) => {
-	console.log(jobId, pilotId, 'jobId');
 	const job = await prisma.job.findUnique({
 		where: {
 			id: jobId,
@@ -5121,7 +5507,6 @@ const getCalendarApplications = async (user: User, month?: string) => {
 			},
 		},
 	});
-	console.log(jobs);
 
 	// 3. Group Jobs by Date
 	const grouped: Record<string, any[]> = {};
