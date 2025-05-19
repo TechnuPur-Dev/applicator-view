@@ -469,94 +469,132 @@ const getAllJobsByApplicator = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			const searchValue = options.searchValue?.toUpperCase();
 
-		switch (options.label) {
-			case 'title':
-				searchFilter.title = {
-					contains: searchValue,
-					mode: 'insensitive',
-				};
-				break;
-			case 'type':
-				searchFilter.type = {
-					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
-				};
-				break;
-			case 'source':
-				searchFilter.source = {
-					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
-				};
-				break;
+			// Try to match enums first
+			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
+			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
+			const isJobStatusMatch = Object.values(JobStatus).includes(searchValue as JobStatus);
 
-			case 'growerName':
-				searchFilter.grower = {
+			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
+				// Only filter on the first matched enum
+				if (isJobTypeMatch) {
+					filters.type = searchValue as JobType;
+				} else if (isJobSourceMatch) {
+					filters.source = searchValue as JobSource;
+				} else if (isJobStatusMatch) {
+					filters.status = searchValue as JobStatus;
+				}
+			} else {
+				Object.assign(filters, {
 					OR: [
+						{ title: { contains: options.searchValue, mode: 'insensitive' } },
 						{
-							fullName: {
-								contains: searchValue,
-								mode: 'insensitive',
+							farm: {
+								name: { contains: options.searchValue, mode: 'insensitive' },
 							},
 						},
 						{
-							firstName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							lastName: {
-								contains: searchValue,
-								mode: 'insensitive',
+							grower: {
+								fullName: {
+									contains: options.searchValue,
+									mode: 'insensitive',
+								},
 							},
 						},
 					],
-				};
-				break;
-			case 'growerId':
-				searchFilter.growerId = parseInt(searchValue, 10);
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'title':
+					searchFilter.title = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'type':
+					searchFilter.type = {
+						equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
+					};
+					break;
+				case 'source':
+					searchFilter.source = {
+						equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
+					};
+					break;
 
-				break;
-			case 'status':
-				searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
-				break;
-			case 'township':
-				searchFilter.farm = {
-					township: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'county':
-				searchFilter.farm = {
-					county: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'state':
-				searchFilter.farm = {
-					state: {
-						name: { contains: searchValue, mode: 'insensitive' },
-					},
-				};
-				break;
+				case 'growerName':
+					searchFilter.grower = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'growerId':
+					searchFilter.growerId = parseInt(searchValue, 10);
 
-			case 'pilot':
-				searchFilter.fieldWorker = {
-					fullName: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'startDate':
-				searchFilter.startDate = {
-					gte: new Date(searchValue),
-				};
-				break;
-			case 'endDate':
-				searchFilter.endDate = {
-					lte: new Date(searchValue),
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+					break;
+				case 'status':
+					searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					break;
+				case 'township':
+					searchFilter.farm = {
+						township: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'county':
+					searchFilter.farm = {
+						county: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'state':
+					searchFilter.farm = {
+						state: {
+							name: { contains: searchValue, mode: 'insensitive' },
+						},
+					};
+					break;
+
+				case 'pilot':
+					searchFilter.fieldWorker = {
+						fullName: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'startDate':
+					searchFilter.startDate = {
+						gte: new Date(searchValue),
+					};
+					break;
+				case 'endDate':
+					searchFilter.endDate = {
+						lte: new Date(searchValue),
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-
-		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 
 	// Fetch jobs
@@ -1304,37 +1342,77 @@ const getJobs = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
-		switch (options.label) {
-			case 'title':
-				searchFilter.title = {
-					contains: searchValue,
-					mode: 'insensitive',
-				};
-				break;
-			case 'type':
-				searchFilter.type = {
-					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
-				};
-				break;
-			case 'source':
-				searchFilter.source = {
-					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
-				};
-				break;
-			case 'status':
-				searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
-				break;
+		// Global search if label is "All"
+		if (options.label === 'all') {
+			const searchValue = options.searchValue?.toUpperCase();
 
-			case 'farm':
-				searchFilter.farm = {
-					name: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+			// Try to match enums first
+			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
+			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
+			const isJobStatusMatch = Object.values(JobStatus).includes(searchValue as JobStatus);
+
+			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
+				// Only filter on the first matched enum
+				if (isJobTypeMatch) {
+					filters.type = searchValue as JobType;
+				} else if (isJobSourceMatch) {
+					filters.source = searchValue as JobSource;
+				} else if (isJobStatusMatch) {
+					filters.status = searchValue as JobStatus;
+				}
+			} else {
+				Object.assign(filters, {
+					OR: [
+						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						{
+							farm: {
+								name: { contains: options.searchValue, mode: 'insensitive' },
+							},
+						},
+						{
+							applicator: {
+								fullName: {
+									contains: options.searchValue,
+									mode: 'insensitive',
+								},
+							},
+						},
+					],
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'title':
+					searchFilter.title = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'type':
+					searchFilter.type = {
+						equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
+					};
+					break;
+				case 'source':
+					searchFilter.source = {
+						equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
+					};
+					break;
+				case 'status':
+					searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					break;
+
+				case 'farm':
+					searchFilter.farm = {
+						name: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-
-		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 	const jobs = await prisma.job.findMany({
 		where: filters,
@@ -1952,7 +2030,7 @@ const getJobsPendingFromMe = async (
 					],
 				};
 				break;
-		
+
 			case 'township':
 				searchFilter.farm = {
 					township: { contains: searchValue, mode: 'insensitive' },
@@ -2192,7 +2270,7 @@ const getJobsPendingFromGrowers = async (
 					],
 				};
 				break;
-			
+
 			case 'township':
 				searchFilter.farm = {
 					township: { contains: searchValue, mode: 'insensitive' },
@@ -3958,9 +4036,9 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 					id: parseInt(searchValue, 10),
 				};
 				break;
-				case 'invoiceDate':
+			case 'invoiceDate':
 				searchFilter.Invoice = {
-					issuedAt: {gte: new Date(searchValue)},
+					issuedAt: { gte: new Date(searchValue) },
 				};
 				break;
 			case 'billTo':
@@ -3992,7 +4070,7 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 					totalAmount: parseInt(searchValue, 10),
 				};
 				break;
-				case 'source':
+			case 'source':
 				searchFilter.source = {
 					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
@@ -4006,7 +4084,7 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 
 		Object.assign(whereCondition, searchFilter); // Merge filters dynamically
 	}
-	console.log(options.label,options.searchValue,whereCondition,'condition')
+	console.log(options.label, options.searchValue, whereCondition, 'condition')
 	const jobInvoices = await prisma.job.findMany({
 		where: whereCondition,
 		select: {
@@ -4162,9 +4240,9 @@ const acceptJobThroughEmail = async (
 const getMyJobsByPilot = async (
 	// applicatorId: number,
 	pilotId: number,
-	options: PaginateOptions &{
-		label?:string,
-		searchValue?:string
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
 	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
@@ -4180,11 +4258,11 @@ const getMyJobsByPilot = async (
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 
-	const filters: Prisma.JobWhereInput ={
+	const filters: Prisma.JobWhereInput = {
 		fieldWorkerId: pilotId,
-			NOT: {
-				status: 'ASSIGNED_TO_PILOT',
-			},
+		NOT: {
+			status: 'ASSIGNED_TO_PILOT',
+		},
 	}
 	// Apply dynamic label filtering
 	if (options.label && options.searchValue) {
@@ -4266,7 +4344,7 @@ const getMyJobsByPilot = async (
 		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 	const jobs = await prisma.job.findMany({
-		where:filters,
+		where: filters,
 		include: {
 			applicator: {
 				select: {
@@ -4313,7 +4391,7 @@ const getMyJobsByPilot = async (
 	});
 
 	const totalResults = await prisma.job.count({
-		where:filters,
+		where: filters,
 		// {
 		// 	fieldWorkerId: pilotId,
 		// 	NOT: {
@@ -4348,9 +4426,9 @@ const getMyJobsByPilot = async (
 const getPilotPendingJobs = async (
 	// applicatorId: number,
 	pilotId: number,
-	options: PaginateOptions &{
-		label?:string,
-		searchValue?:string
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
 	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
@@ -4365,11 +4443,11 @@ const getPilotPendingJobs = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-   const filters: Prisma.JobWhereInput ={
-	        fieldWorkerId: pilotId,
-			status: 'ASSIGNED_TO_PILOT',
-   }
-   	if (options.label && options.searchValue) {
+	const filters: Prisma.JobWhereInput = {
+		fieldWorkerId: pilotId,
+		status: 'ASSIGNED_TO_PILOT',
+	}
+	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
 
@@ -4497,7 +4575,7 @@ const getPilotPendingJobs = async (
 		), // Sum actualAcres, default to 0 if null
 	}));
 	const totalResults = await prisma.job.count({
-		where:filters,
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -4513,9 +4591,9 @@ const getPilotPendingJobs = async (
 const getPilotRejectedJobs = async (
 	// applicatorId: number,
 	pilotId: number,
-	options: PaginateOptions &{
-		label?:string,
-		searchValue?:string
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
 	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
@@ -4530,11 +4608,11 @@ const getPilotRejectedJobs = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-    const filters:Prisma.JobWhereInput ={
-			fieldWorkerId: pilotId,
-			status: 'PILOT_REJECTED',
+	const filters: Prisma.JobWhereInput = {
+		fieldWorkerId: pilotId,
+		status: 'PILOT_REJECTED',
 	}
-	  	if (options.label && options.searchValue) {
+	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
 
@@ -4671,7 +4749,7 @@ const getPilotRejectedJobs = async (
 	}));
 
 	const totalResults = await prisma.job.count({
-		where:filters,
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
