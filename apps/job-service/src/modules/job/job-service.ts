@@ -478,12 +478,12 @@ const getAllJobsByApplicator = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -516,7 +516,7 @@ const getAllJobsByApplicator = async (
 
 				break;
 			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 				break;
 			case 'township':
 				searchFilter.farm = {
@@ -1312,16 +1312,16 @@ const getJobs = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 				break;
 
 			case 'farm':
@@ -1490,12 +1490,12 @@ const getOpenJobs = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -1522,9 +1522,6 @@ const getOpenJobs = async (
 						},
 					],
 				};
-				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
 				break;
 			case 'township':
 				searchFilter.farm = {
@@ -1692,12 +1689,12 @@ const getMyBidJobs = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -1725,9 +1722,9 @@ const getMyBidJobs = async (
 					],
 				};
 				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
-				break;
+			// case 'status':
+			// 	searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+			// 	break;
 			case 'township':
 				searchFilter.farm = {
 					township: { contains: searchValue, mode: 'insensitive' },
@@ -1897,12 +1894,12 @@ const getJobsPendingFromMe = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -1954,9 +1951,7 @@ const getJobsPendingFromMe = async (
 					],
 				};
 				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
-				break;
+		
 			case 'township':
 				searchFilter.farm = {
 					township: { contains: searchValue, mode: 'insensitive' },
@@ -2139,12 +2134,12 @@ const getJobsPendingFromGrowers = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -2196,9 +2191,7 @@ const getJobsPendingFromGrowers = async (
 					],
 				};
 				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
-				break;
+			
 			case 'township':
 				searchFilter.farm = {
 					township: { contains: searchValue, mode: 'insensitive' },
@@ -3254,12 +3247,12 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -3290,9 +3283,6 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 			case 'growerId':
 				searchFilter.growerId = parseInt(searchValue, 10);
 
-				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
 				break;
 			case 'township':
 				searchFilter.farm = {
@@ -4003,11 +3993,11 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 				break;
 				case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 				break;
 			default:
 				throw new Error('Invalid label provided.');
@@ -4209,12 +4199,12 @@ const getMyJobsByPilot = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -4243,7 +4233,7 @@ const getMyJobsByPilot = async (
 				};
 				break;
 			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
+				searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 				break;
 			case 'township':
 				searchFilter.farm = {
@@ -4391,12 +4381,12 @@ const getPilotPendingJobs = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -4423,9 +4413,6 @@ const getPilotPendingJobs = async (
 						},
 					],
 				};
-				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
 				break;
 			case 'township':
 				searchFilter.farm = {
@@ -4559,12 +4546,12 @@ const getPilotRejectedJobs = async (
 				break;
 			case 'type':
 				searchFilter.type = {
-					equals: searchValue as JobType, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
 				};
 				break;
 			case 'source':
 				searchFilter.source = {
-					equals: searchValue as JobSource, // Ensure type matches your Prisma enum
+					equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
 				};
 				break;
 
@@ -4591,9 +4578,6 @@ const getPilotRejectedJobs = async (
 						},
 					],
 				};
-				break;
-			case 'status':
-				searchFilter.status = searchValue as Prisma.EnumJobStatusFilter;
 				break;
 			case 'township':
 				searchFilter.farm = {
