@@ -10,6 +10,8 @@ import validateSchema from '../../../../../shared/middlewares/validation-middlew
 import jobValidation from './job-validation';
 import uploadMiddleware from '../../../../../shared/middlewares/multer-middleware';
 import { normalizeApplicatorUser } from '../../../../../shared/middlewares/normalize-user-middleware';
+import upload from '../../../../../shared/middlewares/multer-middleware';
+
 const router: Router = express.Router();
 
 // Get all jobs for applicator by applicatorId (My Jobs Screen)
@@ -269,11 +271,17 @@ router
 		validateSchema(jobValidation.upcomingApplicationsRangeSchema),
 		jobController.getApplicationsByRange,
 	);
-router
+router // Deprecated
 	.route('/upload/flight-log/:id')
 	.post(verifyToken, uploadMiddleware, jobController.uploadFlightLog);
 router
 	.route('/faa-reports')
 	.get(verifyToken, normalizeApplicatorUser, jobController.getFaaReports);
+router
+	.route('/flight-log/upload/image/:id')
+	.post(verifyToken, upload, jobController.uploadFlightLogImage);
+router
+	.route('/flight-log/:id')
+	.post(verifyToken, upload, jobController.createFlighLog);
 
 export default router;

@@ -3,18 +3,16 @@ import config from '../../../../shared/config/env-config';
 
 export const uploadToAzureBlob = async (
 	buffer: Buffer,
-	blobPath: string,
+	blobName: string,
 ): Promise<string> => {
-	const blobService = BlobServiceClient.fromConnectionString(
-		config.azureStorageUrl,
-	);
-	const containerClient = blobService.getContainerClient(
-		config.azureContainerName,
-	);
-	const blockBlob = containerClient.getBlockBlobClient(blobPath);
+	const storageUrl = config.azureStorageUrl;
+	const containerName = config.azureContainerName;
+	const blobService = BlobServiceClient.fromConnectionString(storageUrl);
+	const containerClient = blobService.getContainerClient(containerName);
+	const blockBlob = containerClient.getBlockBlobClient(blobName);
 
 	await blockBlob.uploadData(buffer, {
 		blobHTTPHeaders: { blobContentType: 'image/png' },
 	});
-	return blockBlob.url;
+	return `/${containerName}/${blobName}`;
 };

@@ -2,6 +2,7 @@
 import httpStatus from 'http-status';
 import {
 	BidStatus,
+	DroneFlightLog,
 	JobSource,
 	JobStatus,
 	JobType,
@@ -3510,7 +3511,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 		});
 		// Calculate the total number of pages based on the total results and limit
 		const totalResults = await prisma.job.count({
-			where: filters
+			where: filters,
 			// {
 			// 	growerId: user.id,
 			// 	status: 'REJECTED',
@@ -5811,6 +5812,87 @@ const getFaaReports = async (user: User, options: PaginateOptions) => {
 	};
 };
 
+const uploadFlightLogImage = async (
+	user: User,
+	jobId: number,
+	file: Express.Multer.File,
+) => {
+	const { id: userId, role } = user;
+
+	const whereCondition: any = { id: jobId };
+
+	if (role === 'APPLICATOR') {
+		whereCondition.applicatorId = userId;
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = userId;
+	}
+
+	const job = await prisma.job.findFirst({
+		where: whereCondition,
+		select: { id: true },
+	});
+
+	if (!job) {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			"Job not found or you don't have permission to upload a flight log image for this job.",
+		);
+	}
+
+	// Upload image to Azure Blob
+	const blobPath = `flight-maps/${jobId}_${Date.now()}`;
+	const mapImageUrl = await uploadToAzureBlob(file.buffer, blobPath);
+
+	return {
+		imageUrl: mapImageUrl,
+	};
+};
+const createFlighLog = async (
+	user: User,
+	jobId: number,
+	data: DroneFlightLog,
+) => {
+	const { id: userId, role } = user;
+	const { droneId, startTime, endTime, mapImageUrl, geojsonData } = data;
+
+	const whereCondition: any = { id: jobId };
+
+	if (role === 'APPLICATOR') {
+		whereCondition.applicatorId = userId;
+	} else if (role === 'GROWER') {
+		whereCondition.growerId = userId;
+	}
+
+	const job = await prisma.job.findFirst({
+		where: whereCondition,
+		select: { id: true },
+	});
+
+	if (!job) {
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			"Job not found or you don't have permission to upload a flight log image for this job.",
+		);
+	}
+
+	// Step 4: Create record in DB
+	const flightLog = await prisma.droneFlightLog.create({
+		data: {
+			jobId,
+			droneId,
+			uploadedById: userId,
+			mapImageUrl,
+			startTime, // optionally parse from GeoJSON if available
+			endTime,
+			geojsonData: geojsonData as Prisma.InputJsonValue,
+		},
+	});
+	return {
+		message: 'Flight log uploaded successfully',
+		flightLog,
+	};
+};
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -5857,4 +5939,6 @@ export default {
 	getApplicationsByRange,
 	uploadFlightLog,
 	getFaaReports,
+	uploadFlightLogImage,
+	createFlighLog,
 };
