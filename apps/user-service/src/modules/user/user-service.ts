@@ -445,7 +445,7 @@ const getAllGrowersByApplicator = async (
 		switch (options.label) {
 			case 'inviteStatus':
 				searchFilter.inviteStatus = {
-					equals: searchValue as InviteStatus,
+					equals: searchValue.toUpperCase()  as InviteStatus,
 				};
 				break;
 			case 'growerName':
@@ -654,7 +654,7 @@ const getAllApplicatorsByGrower = async (
 		switch (options.label) {
 			case 'inviteStatus':
 				searchFilter.inviteStatus = {
-					equals: searchValue as InviteStatus,
+					equals: searchValue.toUpperCase()  as InviteStatus,
 				};
 				break;
 			case 'applicatorName':
