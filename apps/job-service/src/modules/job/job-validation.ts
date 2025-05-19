@@ -123,8 +123,8 @@ const jobSourceParamSchema: Schema = Joi.object({
 	query: Joi.object({
 		limit: Joi.number().integer().min(1).default(10),
 		page: Joi.number().integer().min(1).default(1),
-		label:Joi.string().min(1).max(50).optional(),
-		searchValue:Joi.string().min(1).max(50).optional()
+		label: Joi.string().min(1).max(50).optional().allow(''),
+		searchValue: Joi.string().min(1).max(50).optional().allow(''),
 	}).optional(),
 });
 
