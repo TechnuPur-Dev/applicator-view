@@ -469,7 +469,7 @@ const getAllJobsByApplicator = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
-		if (options.label === 'All') {
+		if (options.label === 'all') {
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
@@ -1343,7 +1343,7 @@ const getJobs = async (
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
 		// Global search if label is "All"
-		if (options.label === 'All') {
+		if (options.label === 'all') {
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
