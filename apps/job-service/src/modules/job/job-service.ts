@@ -3562,15 +3562,10 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 					filters.source = searchValue as JobSource;
 				}
 			} else {
-				console.log('search'
-				)
 				Object.assign(filters, {
 					OR: [
 						{ title: { contains: options.searchValue, mode: 'insensitive' } },
-						!isNaN(Number(searchValue)) ? {
-							growerId: Number(searchValue),
-						} : undefined,
-
+						{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
 						{
 							farm: {
 								OR: [
@@ -3714,11 +3709,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 						// phoneNumber: true,
 					},
 				},
-				// fieldWorker: {
-				// 	select: {
-				// 		fullName: true,
-				// 	},
-				// },
+			
 				farm: {
 					select: {
 						name: true,
@@ -5075,7 +5066,8 @@ const getPilotRejectedJobs = async (
 				} else if (isJobSourceMatch) {
 					filters.source = upperValue as JobSource;
 
-				} else {
+				}
+			 } else {
 					Object.assign(filters, {
 						OR: [
 							{ title: { contains: searchValue, mode: 'insensitive' } },
@@ -5113,7 +5105,7 @@ const getPilotRejectedJobs = async (
 						],
 					});
 				}
-			}
+			
 		} else {
 			switch (options.label) {
 				case 'title':
@@ -5180,6 +5172,7 @@ const getPilotRejectedJobs = async (
 			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
 	}
+	console.log(filters,'filters')
 	const jobs = await prisma.job.findMany({
 		// where: {
 		// 	jobActivities: {
