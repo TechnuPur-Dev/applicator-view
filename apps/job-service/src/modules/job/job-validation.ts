@@ -157,13 +157,13 @@ const pilotJobsParamSchema: Schema = Joi.object({
 		pilotId: Joi.number().integer().positive().required(),
 	}).required(),
 	query: Joi.object({
-		limit: Joi.number().integer().min(1).default(10),
-		page: Joi.number().integer().min(1).default(1),
+		limit: Joi.number().integer().min(1).default(10).allow(''),
+		page: Joi.number().integer().min(1).default(1).allow(''),
 	}).optional(),
 });
 const monthParamsSchema: Schema = Joi.object({
 	query: Joi.object({
-		month: Joi.string().max(500).optional(),
+		month: Joi.string().max(500).optional().allow(''),
 	}).optional(),
 });
 const headerStatsSchema: Schema = Joi.object({
