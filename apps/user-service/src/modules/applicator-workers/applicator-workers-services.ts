@@ -125,68 +125,98 @@ const getAllWorkers = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
 		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			const upperValue = searchValue.toUpperCase();
+			const isStatusMatch = Object.values(InviteStatus).includes(upperValue as InviteStatus);
 
-		switch (options.label) {
-			case 'inviteStatus':
-				searchFilter.inviteStatus = {
-					equals: searchValue as InviteStatus
-				}
-				break;
-
-			case 'fullName':
-				searchFilter.worker = {
+			if (isStatusMatch) {
+				filters.inviteStatus = {
+					equals: upperValue as InviteStatus
+				};
+			} else {
+				Object.assign(filters, {
 					OR: [
+						// code
+						{ code: { contains: searchValue, mode: 'insensitive' } },
+						// fullName, firstName, lastName, email, phoneNumber, address1
 						{
-							fullName: {
-								contains: searchValue,
-								mode: 'insensitive',
+							worker: {
+								OR: [
+									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+								],
 							},
 						},
-						{
-							firstName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							lastName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-					],
-				};
-				break;
-			case 'pilotId':
-				searchFilter.workerId = parseInt(searchValue, 10);
+					]
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'inviteStatus':
+					searchFilter.inviteStatus = {
+						equals: searchValue as InviteStatus
+					}
+					break;
 
-				break;
-			case 'email':
-				searchFilter.worker = {
-					email: { equals: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'phoneNumber':
-				searchFilter.worker = {
-					phoneNumber: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'address':
-				searchFilter.worker = {
+				case 'fullName':
+					searchFilter.worker = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'pilotId':
+					searchFilter.workerId = parseInt(searchValue, 10);
 
-					address1: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'code':
-				searchFilter.code = {
-					contains: searchValue, mode: 'insensitive'
-				}
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+					break;
+				case 'email':
+					searchFilter.worker = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.worker = {
+						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'address1':
+					searchFilter.worker = {
+
+						address1: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'code':
+					searchFilter.code = {
+						contains: searchValue, mode: 'insensitive'
+					}
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-
-		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 	// Fetch workers with included user details
 	const workers = await prisma.applicatorWorker.findMany({
@@ -623,61 +653,84 @@ const getAllApplicators = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
 		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			Object.assign(filters, {
+				OR: [
+					// code
+					{ code: { contains: searchValue, mode: 'insensitive' } },
+					// fullName, firstName, lastName, email, phoneNumber, address1
+					{
+						applicator: {
+							OR: [
+								{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+								{ fullName: { contains: searchValue, mode: 'insensitive' } },
+								{ firstName: { contains: searchValue, mode: 'insensitive' } },
+								{ lastName: { contains: searchValue, mode: 'insensitive' } },
+								{ email: { equals: searchValue, mode: 'insensitive' } },
+								{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+								{ address1: { contains: searchValue, mode: 'insensitive' } },
+								{ businessName: { contains: searchValue, mode: 'insensitive' } }
+							],
+						},
+					},
+				]
+			});
 
-		switch (options.label) {
-			case 'applicatorName':
-				searchFilter.applicator = {
-					OR: [
-						{
-							fullName: {
-								contains: searchValue,
-								mode: 'insensitive',
+		} else {
+			switch (options.label) {
+				case 'applicatorName':
+					searchFilter.applicator = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
 							},
-						},
-						{
-							firstName: {
-								contains: searchValue,
-								mode: 'insensitive',
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
 							},
-						},
-						{
-							lastName: {
-								contains: searchValue,
-								mode: 'insensitive',
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
 							},
-						},
-					],
-				};
-				break;
-			case 'applicatorId':
-				searchFilter.applicatorId = parseInt(searchValue, 10);
+						],
+					};
+					break;
+				case 'applicatorId':
+					searchFilter.applicatorId = parseInt(searchValue, 10);
 
-				break;
-			case 'email':
-				searchFilter.applicator = {
-					email: { equals: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'phoneNumber':
-				searchFilter.applicator = {
-					phoneNumber: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'address':
-				searchFilter.applicator = {
-					address1: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'businessName':
-				searchFilter.applicator = {
-					businessName: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+					break;
+				case 'email':
+					searchFilter.applicator = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.applicator = {
+						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'address1':
+					searchFilter.applicator = {
+						address1: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'businessName':
+					searchFilter.applicator = {
+						businessName: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-
-		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 	const applicators = await prisma.applicatorWorker.findMany({
 		where: filters,
@@ -762,62 +815,85 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
 			const searchValue = options.searchValue;
-
-			switch (options.label) {
-				case 'fullName':
-					searchFilter.applicator = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+			if (options.label === 'all') {
+				Object.assign(filters, {
+					OR: [
+						// code
+						{ code: { contains: searchValue, mode: 'insensitive' } },
+						// fullName, firstName, lastName, email, phoneNumber, address1
+						{
+							applicator: {
+								OR: [
+									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{ businessName: { contains: searchValue, mode: 'insensitive' } }
+								],
 							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						],
-					};
-					break;
-				case 'applicatorId':
-					searchFilter.applicatorId = parseInt(searchValue, 10);
+						},
+					]
+				});
 
-					break;
-				case 'email':
-					searchFilter.applicator = {
-						email: { equals: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'phoneNumber':
-					searchFilter.applicator = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'address':
-					searchFilter.applicator = {
+			} else {
+				switch (options.label) {
+					case 'fullName':
+						searchFilter.applicator = {
+							OR: [
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							],
+						};
+						break;
+					case 'applicatorId':
+						searchFilter.applicatorId = parseInt(searchValue, 10);
 
-						address1: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'code':
-					searchFilter.code = {
-						contains: searchValue, mode: 'insensitive'
-					}
-					break;
-				default:
-					throw new Error('Invalid label provided.');
+						break;
+					case 'email':
+						searchFilter.applicator = {
+							email: { equals: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'phoneNumber':
+						searchFilter.applicator = {
+							phoneNumber: { contains: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'address1':
+						searchFilter.applicator = {
+
+							address1: { contains: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'code':
+						searchFilter.code = {
+							contains: searchValue, mode: 'insensitive'
+						}
+						break;
+					default:
+						throw new Error('Invalid label provided.');
+				}
+				Object.assign(filters, searchFilter); // Merge filters dynamically
 			}
-
-			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
 		pendingInvites = await prisma.applicatorWorker.findMany({
 			where: filters,
@@ -860,62 +936,86 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
 			const searchValue = options.searchValue;
-
-			switch (options.label) {
-				case 'fullName':
-					searchFilter.worker = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+			if (options.label === 'all') {
+				Object.assign(filters, {
+					OR: [
+						// code
+						{ code: { contains: searchValue, mode: 'insensitive' } },
+						// fullName, firstName, lastName, email, phoneNumber, address1
+						{
+							worker: {
+								OR: [
+									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{ businessName: { contains: searchValue, mode: 'insensitive' } }
+								],
 							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						],
-					};
-					break;
-				case 'pilotId':
-					searchFilter.workerId = parseInt(searchValue, 10);
+						},
+					]
+				});
 
-					break;
-				case 'email':
-					searchFilter.worker = {
-						email: { equals: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'phoneNumber':
-					searchFilter.worker = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'address':
-					searchFilter.worker = {
+			} else {
+				switch (options.label) {
+					case 'fullName':
+						searchFilter.worker = {
+							OR: [
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							],
+						};
+						break;
+					case 'pilotId':
+						searchFilter.workerId = parseInt(searchValue, 10);
 
-						address1: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'code':
-					searchFilter.code = {
-						contains: searchValue, mode: 'insensitive'
-					}
-					break;
-				default:
-					throw new Error('Invalid label provided.');
+						break;
+					case 'email':
+						searchFilter.worker = {
+							email: { equals: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'phoneNumber':
+						searchFilter.worker = {
+							phoneNumber: { contains: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'address1':
+						searchFilter.worker = {
+
+							address1: { contains: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'code':
+						searchFilter.code = {
+							contains: searchValue, mode: 'insensitive'
+						}
+						break;
+					default:
+						throw new Error('Invalid label provided.');
+				}
+
+				Object.assign(filters, searchFilter); // Merge filters dynamically
 			}
-
-			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
 		pendingInvites = await prisma.applicatorWorker.findMany({
 			where: filters,

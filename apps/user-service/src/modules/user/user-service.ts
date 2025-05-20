@@ -441,11 +441,39 @@ const getAllGrowersByApplicator = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			const upperValue = searchValue.toUpperCase();
+			const isStatusMatch = Object.values(InviteStatus).includes(upperValue as InviteStatus);
 
+			if (isStatusMatch) {
+				filters.inviteStatus = {
+					equals: upperValue as InviteStatus
+				};
+			} else {
+				Object.assign(filters, {
+					OR: [
+						{
+							grower: {
+								OR: [
+									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+								],
+							},
+						},
+					]
+				});
+
+			}
+		}else{
 		switch (options.label) {
 			case 'inviteStatus':
 				searchFilter.inviteStatus = {
-					equals: searchValue.toUpperCase()  as InviteStatus,
+					equals: searchValue.toUpperCase() as InviteStatus,
 				};
 				break;
 			case 'growerName':
@@ -486,7 +514,7 @@ const getAllGrowersByApplicator = async (
 					phoneNumber: { contains: searchValue, mode: 'insensitive' },
 				};
 				break;
-			case 'address':
+			case 'address1':
 				searchFilter.grower = {
 
 					address1: { contains: searchValue, mode: 'insensitive' },
@@ -495,8 +523,8 @@ const getAllGrowersByApplicator = async (
 			default:
 				throw new Error('Invalid label provided.');
 		}
-
 		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
 	}
 	// Fetch growers with their farms and fields
 	const growers = await prisma.applicatorGrower.findMany({
@@ -609,9 +637,9 @@ const getAllGrowersByApplicator = async (
 
 const getAllApplicatorsByGrower = async (
 	growerId: number,
-	options: PaginateOptions &{
-		label?:string,
-		searchValue?:string
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
 	},
 ) => {
 	const limit =
@@ -625,36 +653,64 @@ const getAllApplicatorsByGrower = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-	const filters : Prisma.ApplicatorGrowerWhereInput={
-			growerId,
-			AND: [
-				{
+	const filters: Prisma.ApplicatorGrowerWhereInput = {
+		growerId,
+		AND: [
+			{
+				OR: [
+					{
+						inviteInitiator: 'GROWER',
+						inviteStatus: 'PENDING',
+					},
+					{
+						inviteStatus: {
+							in: [
+								'ACCEPTED',
+								'REJECTED',
+								'DELETED_BY_APPLICATOR',
+							],
+						},
+					},
+				],
+			},
+		],
+	}
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
+		const searchValue = options.searchValue;
+       	if (options.label === 'all') {
+			const upperValue = searchValue.toUpperCase();
+			const isStatusMatch = Object.values(InviteStatus).includes(upperValue as InviteStatus);
+
+			if (isStatusMatch) {
+				filters.inviteStatus = {
+					equals: upperValue as InviteStatus
+				};
+			} else {
+				Object.assign(filters, {
 					OR: [
 						{
-							inviteInitiator: 'GROWER',
-							inviteStatus: 'PENDING',
-						},
-						{
-							inviteStatus: {
-								in: [
-									'ACCEPTED',
-									'REJECTED',
-									'DELETED_BY_APPLICATOR',
+							applicator: {
+								OR: [
+									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
 								],
 							},
 						},
-					],
-				},
-			],
-	}
-		if (options.label && options.searchValue) {
-		const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
-		const searchValue = options.searchValue;
+					]
+				});
 
+			}
+		}else{
 		switch (options.label) {
 			case 'inviteStatus':
 				searchFilter.inviteStatus = {
-					equals: searchValue.toUpperCase()  as InviteStatus,
+					equals: searchValue.toUpperCase() as InviteStatus,
 				};
 				break;
 			case 'applicatorName':
@@ -695,7 +751,7 @@ const getAllApplicatorsByGrower = async (
 					phoneNumber: { contains: searchValue, mode: 'insensitive' },
 				};
 				break;
-			case 'address':
+			case 'address1':
 				searchFilter.applicator = {
 
 					address1: { contains: searchValue, mode: 'insensitive' },
@@ -707,9 +763,10 @@ const getAllApplicatorsByGrower = async (
 
 		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
+	}
 	// Fetch applicators
 	const applicators = await prisma.applicatorGrower.findMany({
-		where:filters,
+		where: filters,
 		select: {
 			applicatorFirstName: true,
 			applicatorLastName: true,
@@ -1042,7 +1099,27 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
+         	if (options.label === 'all') {
+				Object.assign(filters, {
+					OR: [
+						{
+							grower: {
+								OR: [
+									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+								],
+							},
+						},
+					]
+				});
 
+			
+		}else{
 			switch (options.label) {
 				case 'growerId':
 					searchFilter.growerId = parseInt(searchValue, 10);
@@ -1082,7 +1159,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 						email: { equals: searchValue, mode: 'insensitive' },
 					};
 					break;
-				case 'address':
+				case 'address1':
 					searchFilter.grower = {
 						address1: { contains: searchValue, mode: 'insensitive' },
 					};
@@ -1090,8 +1167,8 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 				default:
 					throw new Error('Invalid label provided.');
 			}
-
 			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -1185,7 +1262,25 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
-
+            	if (options.label === 'all') {
+				Object.assign(filters, {
+					OR: [
+						{
+							applicator: {
+								OR: [
+									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+								],
+							},
+						},
+					]
+				});			
+		}else{
 			switch (options.label) {
 				case 'applicatorId':
 					searchFilter.applicatorId = parseInt(searchValue, 10);
@@ -1225,7 +1320,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 						email: { equals: searchValue, mode: 'insensitive' },
 					};
 					break;
-				case 'address':
+				case 'address1':
 					searchFilter.applicator = {
 						address1: { contains: searchValue, mode: 'insensitive' },
 					};
@@ -1233,8 +1328,8 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 				default:
 					throw new Error('Invalid label provided.');
 			}
-
 			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -2013,10 +2108,10 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 };
 const getPendingInvitesFromOthers = async (
 	user: User,
-	options: PaginateOptions& {
-	label?: string;
-	searchValue?: string;
-},
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
 ) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
@@ -2032,7 +2127,7 @@ const getPendingInvitesFromOthers = async (
 	// Determine the invite type based on the user's role
 	const isApplicator = user.role === 'APPLICATOR';
 	const type = isApplicator ? 'GROWER' : 'APPLICATOR'
-          console.log(type,'type')
+	console.log(type, 'type')
 	//if pending invites from grower get by applicator
 	if (type === 'GROWER') {
 		const filters: Prisma.ApplicatorGrowerWhereInput = {
@@ -2043,7 +2138,27 @@ const getPendingInvitesFromOthers = async (
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
+             	if (options.label === 'all') {
+				Object.assign(filters, {
+					OR: [
+						{
+							grower: {
+								OR: [
+									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+								],
+							},
+						},
+					]
+				});
 
+			
+		}else{
 			switch (options.label) {
 				case 'growerId':
 					searchFilter.growerId = parseInt(searchValue, 10);
@@ -2083,7 +2198,7 @@ const getPendingInvitesFromOthers = async (
 						email: { equals: searchValue, mode: 'insensitive' },
 					};
 					break;
-				case 'address':
+				case 'address1':
 					searchFilter.grower = {
 						address1: { contains: searchValue, mode: 'insensitive' },
 					};
@@ -2091,8 +2206,8 @@ const getPendingInvitesFromOthers = async (
 				default:
 					throw new Error('Invalid label provided.');
 			}
-
 			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -2194,7 +2309,27 @@ const getPendingInvitesFromOthers = async (
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
+            	if (options.label === 'all') {
+				Object.assign(filters, {
+					OR: [
+						{
+							applicator: {
+								OR: [
+									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
+									{ fullName: { contains: searchValue, mode: 'insensitive' } },
+									{ firstName: { contains: searchValue, mode: 'insensitive' } },
+									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{ email: { equals: searchValue, mode: 'insensitive' } },
+									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+									{ address1: { contains: searchValue, mode: 'insensitive' } },
+								],
+							},
+						},
+					]
+				});
 
+			
+		}else{
 			switch (options.label) {
 				case 'applicatorId':
 					searchFilter.applicatorId = parseInt(searchValue, 10);
@@ -2244,6 +2379,7 @@ const getPendingInvitesFromOthers = async (
 			}
 
 			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
