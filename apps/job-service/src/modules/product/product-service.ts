@@ -266,53 +266,55 @@ const updateRestricted = async (productId: number, restrictedUse: boolean) => {
 
 const getAllChemicals = async (
 	user: User,
-	options: PaginateOptions & {
-		searchValue?: string;
-	},
+	// options: PaginateOptions & {
+	// 	search?: string;
+	// },
+	search: string,
 ) => {
-	const limit =
-		options.limit && parseInt(options.limit, 10) > 0
-			? parseInt(options.limit, 10)
-			: 10;
-	// Set the page number, default to 1 if not specified or invalid
-	const page =
-		options.page && parseInt(options.page, 10) > 0
-			? parseInt(options.page, 10)
-			: 1;
-	// Calculate the number of users to skip based on the current page and limit
-	const skip = (page - 1) * limit;
+	// const limit =
+	// 	options.limit && parseInt(options.limit, 10) > 0
+	// 		? parseInt(options.limit, 10)
+	// 		: 10;
+	// // Set the page number, default to 1 if not specified or invalid
+	// const page =
+	// 	options.page && parseInt(options.page, 10) > 0
+	// 		? parseInt(options.page, 10)
+	// 		: 1;
+	// // Calculate the number of users to skip based on the current page and limit
+	// const skip = (page - 1) * limit;
 
 	const chemicals = await prisma.chemical.findMany({
 		where: {
 			productName: {
-				contains: options.searchValue,
+				contains: search,
 				mode: 'insensitive',
 			},
 		},
-		skip,
-		take: limit,
+		// skip,
+		// take: limit,
 		orderBy: {
 			id: 'desc',
 		},
 	});
-	const totalResults = await prisma.chemical.count({
-		where: {
-			productName: {
-				contains: options.searchValue,
-				mode: 'insensitive',
-			},
-		},
-	});
+	// const totalResults = await prisma.chemical.count({
+	// 	where: {
+	// 		productName: {
+	// 			contains: options.search,
+	// 			mode: 'insensitive',
+	// 		},
+	// 	},
+	// });
 
-	const totalPages = Math.ceil(totalResults / limit);
+	// const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
-	return {
-		result: chemicals,
-		page,
-		limit,
-		totalPages,
-		totalResults,
-	};
+	// return {
+	// 	result: chemicals,
+	// 	page,
+	// 	limit,
+	// 	totalPages,
+	// 	totalResults,
+	// };
+	return chemicals;
 };
 export default {
 	getAllProductCategories,
