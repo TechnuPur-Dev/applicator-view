@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { ApplicatorUser } from './applicator-users-types';
 import ApiError from '../../../../../shared/utils/api-error';
@@ -159,7 +159,10 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 
 const getAllApplicatorUser = async (
 	applicatorId: number,
-	options: PaginateOptions,
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
+	},
 ) => {
 	// Set pagination parameters
 	const limit =
@@ -171,10 +174,115 @@ const getAllApplicatorUser = async (
 			? parseInt(options.page.toString(), 10)
 			: 1;
 	const skip = (page - 1) * limit;
+	const filters: Prisma.ApplicatorUserWhereInput = {
+		applicatorId
+	}
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.ApplicatorUserWhereInput = {};
+		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			Object.assign(filters, {
+				OR: [
+					{
+						user: {
+							OR: [
+								{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+								{ fullName: { contains: searchValue, mode: 'insensitive' } },
+								{ firstName: { contains: searchValue, mode: 'insensitive' } },
+								{ lastName: { contains: searchValue, mode: 'insensitive' } },
+								{ email: { equals: searchValue, mode: 'insensitive' } },
+								{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
+								{ address1: { contains: searchValue, mode: 'insensitive' } },
+								{ county: { contains: searchValue, mode: 'insensitive' } },
+								{ township: { contains: searchValue, mode: 'insensitive' } },
+								{
+									state: {
+										name: { contains: searchValue, mode: 'insensitive' },
+									},
+								}
+							],
+						},
+					},
+				]
+			});
 
+
+		} else {
+			switch (options.label) {
+				case 'name':
+					searchFilter.user = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'id':
+					searchFilter.user = {
+						id: parseInt(searchValue, 10),
+					};
+					break;
+				case 'email':
+					searchFilter.user = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.user = {
+						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'address1':
+					searchFilter.user = {
+
+						address1: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'county':
+					searchFilter.user = {
+
+						county: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'township':
+					searchFilter.user = {
+						township: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'state':
+					searchFilter.user = {
+						state: {
+							name: { contains: searchValue, mode: 'insensitive' },
+						},
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
+	}
 	// Fetch workers with included user details
 	const applicatorUser = await prisma.applicatorUser.findMany({
-		where: { applicatorId },
+		where: filters,
+		// { applicatorId },
 		include: {
 			user: {
 				select: {
@@ -205,7 +313,7 @@ const getAllApplicatorUser = async (
 
 	// Total workers count
 	const totalResults = await prisma.applicatorUser.count({
-		where: { applicatorId },
+		where:filters,
 	});
 	const totalPages = Math.ceil(totalResults / limit);
 
