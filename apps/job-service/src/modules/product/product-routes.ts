@@ -22,7 +22,13 @@ router
 		validateSchema(productValidation.productSchema),
 		productController.createProduct,
 	);
-router.route('/all').get(verifyToken, normalizeApplicatorUser,productController.getAllProducts);
+router
+	.route('/all')
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		productController.getAllProducts,
+	);
 router
 	.route('/get-byId/:productId')
 	.get(
@@ -49,8 +55,23 @@ router
 	);
 router
 	.route('/all/dropdown')
-	.get(verifyToken,normalizeApplicatorUser, productController.getAllProductsDropdown);
-	router
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		productController.getAllProductsDropdown,
+	);
+router
 	.route('/restricted/:id')
-	.patch(verifyToken,normalizeApplicatorUser, productController.updateRestricted);
+	.patch(
+		verifyToken,
+		normalizeApplicatorUser,
+		productController.updateRestricted,
+	);
+router
+	.route('/all/chemicals')
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		productController.getAllChemicals,
+	);
 export default router;

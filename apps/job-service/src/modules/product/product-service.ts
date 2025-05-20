@@ -35,10 +35,13 @@ const createProduct = async (user: User, data: CreateProduct) => {
 	return product;
 };
 
-const getAllProducts = async (user: User, options: PaginateOptions & {
-	label?: string,
-	searchValue?: string
-}) => {
+const getAllProducts = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -59,37 +62,62 @@ const getAllProducts = async (user: User, options: PaginateOptions & {
 	}
 	const filters: Prisma.ProductWhereInput = {
 		createdById: userId,
-	}
+	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ProductWhereInput = {};
 		const searchValue = options.searchValue;
 		if (options.label === 'all') {
 			const upperValue = searchValue.toUpperCase();
-			const isProductCategory = Object.values(ProductCategory).includes(upperValue as ProductCategory);
-			const isProductUnit = Object.values(ProductUnit).includes(upperValue as ProductUnit);
+			const isProductCategory = Object.values(ProductCategory).includes(
+				upperValue as ProductCategory,
+			);
+			const isProductUnit = Object.values(ProductUnit).includes(
+				upperValue as ProductUnit,
+			);
 			if (isProductCategory) {
 				Object.assign(filters, {
-					category: { equals: upperValue as ProductCategory }
+					category: { equals: upperValue as ProductCategory },
 				});
 			} else if (isProductUnit) {
 				Object.assign(filters, {
 					OR: [
-						{ inventoryUnit: { equals: upperValue as ProductUnit } },
-						{ appliedUnits: { equals: upperValue as ProductUnit } }
-					]
+						{
+							inventoryUnit: {
+								equals: upperValue as ProductUnit,
+							},
+						},
+						{ appliedUnits: { equals: upperValue as ProductUnit } },
+					],
 				});
 			} else {
 				Object.assign(filters, {
 					OR: [
-						{ code: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
-						{ productName: { contains: searchValue, mode: 'insensitive' } },
-						{ baseProductName: { contains: searchValue, mode: 'insensitive' } },
-						{ epaRegistration: { contains: searchValue, mode: 'insensitive' } },
-					]
+						{
+							code: !isNaN(Number(searchValue))
+								? parseInt(searchValue, 10)
+								: undefined,
+						},
+						{
+							productName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							baseProductName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							epaRegistration: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
 				});
 			}
-
-
 		} else {
 			switch (options.label) {
 				case 'code':
@@ -97,33 +125,36 @@ const getAllProducts = async (user: User, options: PaginateOptions & {
 					break;
 				case 'productName':
 					searchFilter.productName = {
-						contains: searchValue, mode: 'insensitive'
-					}
+						contains: searchValue,
+						mode: 'insensitive',
+					};
 					break;
 				case 'baseProductName':
 					searchFilter.baseProductName = {
-						contains: searchValue, mode: 'insensitive'
-					}
+						contains: searchValue,
+						mode: 'insensitive',
+					};
 					break;
 				case 'category':
 					searchFilter.category = {
-						equals: searchValue as ProductCategory
-					}
+						equals: searchValue as ProductCategory,
+					};
 					break;
 				case 'epaRegistration':
 					searchFilter.epaRegistration = {
-						contains: searchValue, mode: 'insensitive'
-					}
+						contains: searchValue,
+						mode: 'insensitive',
+					};
 					break;
 				case 'inventoryUnit':
 					searchFilter.inventoryUnit = {
-						equals: searchValue as ProductUnit
-					}
+						equals: searchValue as ProductUnit,
+					};
 					break;
 				case 'appliedUnits':
 					searchFilter.appliedUnits = {
-						equals: searchValue as ProductUnit
-					}
+						equals: searchValue as ProductUnit,
+					};
 					break;
 				default:
 					throw new Error('Invalid label provided.');
@@ -141,7 +172,7 @@ const getAllProducts = async (user: User, options: PaginateOptions & {
 		},
 	});
 	const totalResults = await prisma.product.count({
-		where: filters
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -153,7 +184,6 @@ const getAllProducts = async (user: User, options: PaginateOptions & {
 		totalPages,
 		totalResults,
 	};
-
 };
 
 const getProductById = async (user: User, productId: number) => {
@@ -229,9 +259,60 @@ const getAllProductsDropdown = async (user: User) => {
 const updateRestricted = async (productId: number, restrictedUse: boolean) => {
 	await prisma.product.update({
 		where: { id: productId },
-		data: { restrictedUse }
+		data: { restrictedUse },
 	});
-	return { messaage: "Product updated successfully" };
+	return { messaage: 'Product updated successfully' };
+};
+
+const getAllChemicals = async (
+	user: User,
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+
+	const chemicals = await prisma.chemical.findMany({
+		where: {
+			productName: {
+				contains: options.searchValue,
+				mode: 'insensitive',
+			},
+		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+	const totalResults = await prisma.chemical.count({
+		where: {
+			productName: {
+				contains: options.searchValue,
+				mode: 'insensitive',
+			},
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: chemicals,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 export default {
 	getAllProductCategories,
@@ -242,5 +323,6 @@ export default {
 	updateProduct,
 	deleteProduct,
 	getAllProductsDropdown,
-	updateRestricted
+	updateRestricted,
+	getAllChemicals,
 };
