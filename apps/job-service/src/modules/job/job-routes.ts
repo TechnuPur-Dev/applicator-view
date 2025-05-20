@@ -283,5 +283,8 @@ router
 router
 	.route('/flight-log/:id')
 	.post(verifyToken, upload, jobController.createFlighLog);
+router
+	.route('/flight-log/:id')
+	.get(verifyToken, upload, jobController.getFlighLogById);
 
 export default router;
