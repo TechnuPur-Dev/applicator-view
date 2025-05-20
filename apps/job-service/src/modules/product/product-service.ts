@@ -66,49 +66,102 @@ const getAllProducts = async (
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ProductWhereInput = {};
 		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			const upperValue = searchValue.toUpperCase();
+			const isProductCategory = Object.values(ProductCategory).includes(
+				upperValue as ProductCategory,
+			);
+			const isProductUnit = Object.values(ProductUnit).includes(
+				upperValue as ProductUnit,
+			);
+			if (isProductCategory) {
+				Object.assign(filters, {
+					category: { equals: upperValue as ProductCategory },
+				});
+			} else if (isProductUnit) {
+				Object.assign(filters, {
+					OR: [
+						{
+							inventoryUnit: {
+								equals: upperValue as ProductUnit,
+							},
+						},
+						{ appliedUnits: { equals: upperValue as ProductUnit } },
+					],
+				});
+			} else {
+				Object.assign(filters, {
+					OR: [
+						{
+							code: !isNaN(Number(searchValue))
+								? parseInt(searchValue, 10)
+								: undefined,
+						},
+						{
+							productName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							baseProductName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							epaRegistration: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					],
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'code':
+					searchFilter.code = parseInt(searchValue, 10);
+					break;
+				case 'productName':
+					searchFilter.productName = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'baseProductName':
+					searchFilter.baseProductName = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'category':
+					searchFilter.category = {
+						equals: searchValue as ProductCategory,
+					};
+					break;
+				case 'epaRegistration':
+					searchFilter.epaRegistration = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'inventoryUnit':
+					searchFilter.inventoryUnit = {
+						equals: searchValue as ProductUnit,
+					};
+					break;
+				case 'appliedUnits':
+					searchFilter.appliedUnits = {
+						equals: searchValue as ProductUnit,
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
 
-		switch (options.label) {
-			case 'code':
-				searchFilter.code = parseInt(searchValue, 10);
-				break;
-			case 'productName':
-				searchFilter.productName = {
-					contains: searchValue,
-					mode: 'insensitive',
-				};
-				break;
-			case 'baseProductName':
-				searchFilter.baseProductName = {
-					contains: searchValue,
-					mode: 'insensitive',
-				};
-				break;
-			case 'category':
-				searchFilter.category = {
-					equals: searchValue as ProductCategory,
-				};
-				break;
-			case 'epaRegistration':
-				searchFilter.epaRegistration = {
-					contains: searchValue,
-					mode: 'insensitive',
-				};
-				break;
-			case 'inventoryUnit':
-				searchFilter.inventoryUnit = {
-					equals: searchValue as ProductUnit,
-				};
-				break;
-			case 'appliedUnits':
-				searchFilter.appliedUnits = {
-					equals: searchValue as ProductUnit,
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-
-		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 	const products = await prisma.product.findMany({
 		where: filters,
