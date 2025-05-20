@@ -397,7 +397,7 @@ const uploadFlightLog = catchAsync(async (req: Request, res: Response) => {
 
 const getFaaReports = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const options = pick(req.query, ['limit', 'page','label','searchValue']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const result = await jobService.getFaaReports(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
@@ -405,19 +405,29 @@ const getFaaReports = catchAsync(async (req: Request, res: Response) => {
 const uploadFlightLogImage = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const jobId = +req.params.id;
-	const files = req.files;
+	// const files = req.files;
+	const { file } = req.body;
+	// Decode Base64 file
+	const base64Data = file.replace(
+		/^data:(image|application)\/[a-zA-Z0-9+.-]+;base64,/,
+		'',
+	);
+	const fileBuffer = Buffer.from(base64Data, 'base64');
+	// if (!files || !Array.isArray(files)) {
+	// 	throw new Error('No files uploaded');
+	// }
 
-	if (!files || !Array.isArray(files)) {
-		throw new Error('No files uploaded');
-	}
+	// const file = files[0];
 
-	const file = files[0];
+	// if (!file) {
+	// 	return res.status(400).json({ error: 'File is required.' });
+	// }
 
-	if (!file) {
-		return res.status(400).json({ error: 'File is required.' });
-	}
-
-	const result = await jobService.uploadFlightLogImage(user, jobId, file);
+	const result = await jobService.uploadFlightLogImage(
+		user,
+		jobId,
+		fileBuffer,
+	);
 	res.status(httpStatus.OK).json(result);
 });
 

@@ -15,9 +15,7 @@ router
 		validateSchema(farmValidation.farmSchema),
 		farmController.createFarm,
 	);
-router
-	.route('/all/by-grower')
-	.get(farmController.getAllFarmsByGrower);
+router.route('/all/by-grower').get(farmController.getAllFarmsByGrower);
 router
 	.route('/get-farm/:farmId')
 	.get(
@@ -39,23 +37,16 @@ router
 		validateSchema(farmValidation.farmUpdateSchema),
 		farmController.updateFarm,
 	);
-router
-	.route('/permission/assign')
-	.post(farmController.assignFarmPermissions);
-router
-	.route('/permission/update')
-	.put(farmController.updateFarmPermissions);
+router.route('/permission/assign').post(farmController.assignFarmPermissions);
+router.route('/permission/update').put(farmController.updateFarmPermissions);
 router
 	.route('/permission/delete/:permissionId')
 	.delete(farmController.deleteFarmPermission);
-router
-	.route('/permission/request')
-	.post(farmController.askFarmPermission);
+router.route('/permission/request').post(farmController.askFarmPermission);
 
 router
 	.route('/upload/image')
 	.post(
-
 		validateSchema(farmValidation.uploadFarmImage),
 		upload,
 		farmController.uploadFarmImage,
