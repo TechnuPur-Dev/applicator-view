@@ -86,7 +86,7 @@ const searchWorkerByEmail = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllApplicators = catchAsync(async (req: Request, res: Response) => {
 	const workerId = req.payload.id;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await applicatorWorkersServices.getAllApplicators(
 		workerId,
 		options,

@@ -512,18 +512,10 @@ const getAllJobsByApplicator = async (
 						{
 							grower: {
 								OR: [
-									{
-										id: !isNaN(Number(searchValue))
-											? parseInt(searchValue, 10)
-											: undefined,
-									},
-									{
-										fullName: {
-											contains: options.searchValue,
-											mode: 'insensitive',
-										},
-									},
-								],
+									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+									{ fullName: { contains: options.searchValue, mode: 'insensitive' }, }
+								]
+
 							},
 						},
 					],
@@ -3757,17 +3749,10 @@ const getRejectedJobs = async (
 				console.log('search');
 				Object.assign(filters, {
 					OR: [
-						{
-							title: {
-								contains: options.searchValue,
-								mode: 'insensitive',
-							},
-						},
-						!isNaN(Number(searchValue))
-							? {
-									growerId: Number(searchValue),
-								}
-							: undefined,
+						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						!isNaN(Number(searchValue)) ? {
+							growerId: Number(searchValue),
+						} : undefined,
 
 						{
 							farm: {
@@ -3804,18 +3789,10 @@ const getRejectedJobs = async (
 						{
 							grower: {
 								OR: [
-									{
-										id: !isNaN(Number(searchValue))
-											? parseInt(searchValue, 10)
-											: undefined,
-									},
-									{
-										fullName: {
-											contains: options.searchValue,
-											mode: 'insensitive',
-										},
-									},
-								],
+									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
+									{ fullName: { contains: options.searchValue, mode: 'insensitive' }, }
+								]
+
 							},
 						},
 					],
@@ -4876,20 +4853,8 @@ const getMyJobsByPilot = async (
 			} else {
 				Object.assign(filters, {
 					OR: [
-						{
-							title: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							fieldWorker: {
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						},
+						{ title: { contains: searchValue, mode: 'insensitive' } },
+						{ fieldWorker: { fullName: { contains: searchValue, mode: 'insensitive' }, }, },
 						{
 							farm: {
 								OR: [
@@ -5142,53 +5107,32 @@ const getPilotPendingJobs = async (
 					filters.type = upperValue as JobType;
 				} else if (isJobSourceMatch) {
 					filters.source = upperValue as JobSource;
+
 				} else {
 					Object.assign(filters, {
 						OR: [
-							{
-								title: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-							{
-								fieldWorker: {
-									fullName: {
-										contains: searchValue,
-										mode: 'insensitive',
-									},
-								},
-							},
+							{ title: { contains: searchValue, mode: 'insensitive' } },
+							{ fieldWorker: { fullName: { contains: searchValue, mode: 'insensitive' }, }, },
 							{
 								farm: {
 									OR: [
 										{
-											name: {
-												contains: searchValue,
-												mode: 'insensitive',
-											},
+											name: { contains: searchValue, mode: 'insensitive' },
 										},
 										{
-											township: {
-												contains: searchValue,
-												mode: 'insensitive',
-											},
-										},
-										{
-											county: {
-												contains: searchValue,
-												mode: 'insensitive',
-											},
-										},
-										{
+											township: { contains: searchValue, mode: 'insensitive' },
+										}, {
+											county: { contains: searchValue, mode: 'insensitive' },
+
+										}, {
+
 											state: {
-												name: {
-													contains: searchValue,
-													mode: 'insensitive',
-												},
+												name: { contains: searchValue, mode: 'insensitive' },
 											},
-										},
-									],
+										}
+									]
+
+
 								},
 							},
 							{
@@ -5198,7 +5142,7 @@ const getPilotPendingJobs = async (
 										mode: 'insensitive',
 									},
 								},
-							},
+							}
 						],
 					});
 				}
@@ -5248,10 +5192,7 @@ const getPilotPendingJobs = async (
 					break;
 				case 'township':
 					searchFilter.farm = {
-						township: {
-							contains: searchValue,
-							mode: 'insensitive',
-						},
+						township: { contains: searchValue, mode: 'insensitive' },
 					};
 					break;
 				case 'county':
@@ -5262,20 +5203,14 @@ const getPilotPendingJobs = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
+							name: { contains: searchValue, mode: 'insensitive' },
 						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.fieldWorker = {
-						fullName: {
-							contains: searchValue,
-							mode: 'insensitive',
-						},
+						fullName: { contains: searchValue, mode: 'insensitive' },
 					};
 					break;
 				default:
@@ -5394,53 +5329,32 @@ const getPilotRejectedJobs = async (
 					filters.type = upperValue as JobType;
 				} else if (isJobSourceMatch) {
 					filters.source = upperValue as JobSource;
+
 				} else {
 					Object.assign(filters, {
 						OR: [
-							{
-								title: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-							{
-								fieldWorker: {
-									fullName: {
-										contains: searchValue,
-										mode: 'insensitive',
-									},
-								},
-							},
+							{ title: { contains: searchValue, mode: 'insensitive' } },
+							{ fieldWorker: { fullName: { contains: searchValue, mode: 'insensitive' }, }, },
 							{
 								farm: {
 									OR: [
 										{
-											name: {
-												contains: searchValue,
-												mode: 'insensitive',
-											},
+											name: { contains: searchValue, mode: 'insensitive' },
 										},
 										{
-											township: {
-												contains: searchValue,
-												mode: 'insensitive',
-											},
-										},
-										{
-											county: {
-												contains: searchValue,
-												mode: 'insensitive',
-											},
-										},
-										{
+											township: { contains: searchValue, mode: 'insensitive' },
+										}, {
+											county: { contains: searchValue, mode: 'insensitive' },
+
+										}, {
+
 											state: {
-												name: {
-													contains: searchValue,
-													mode: 'insensitive',
-												},
+												name: { contains: searchValue, mode: 'insensitive' },
 											},
-										},
-									],
+										}
+									]
+
+
 								},
 							},
 							{
@@ -5450,7 +5364,7 @@ const getPilotRejectedJobs = async (
 										mode: 'insensitive',
 									},
 								},
-							},
+							}
 						],
 					});
 				}
@@ -5500,10 +5414,7 @@ const getPilotRejectedJobs = async (
 					break;
 				case 'township':
 					searchFilter.farm = {
-						township: {
-							contains: searchValue,
-							mode: 'insensitive',
-						},
+						township: { contains: searchValue, mode: 'insensitive' },
 					};
 					break;
 				case 'county':
@@ -5514,10 +5425,7 @@ const getPilotRejectedJobs = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
+							name: { contains: searchValue, mode: 'insensitive' },
 						},
 					};
 					break;
@@ -6637,7 +6545,10 @@ const uploadFlightLog = async (
 	};
 };
 
-const getFaaReports = async (user: User, options: PaginateOptions) => {
+const getFaaReports = async (user: User, options: PaginateOptions & {
+	label?: string,
+	searchValue?: string
+}) => {
 	const { id, role } = user;
 	// Set pagination
 	const limit =
@@ -6659,6 +6570,68 @@ const getFaaReports = async (user: User, options: PaginateOptions) => {
 	} else if (role === 'GROWER') {
 		whereCondition.growerId = id;
 	}
+	// Apply dynamic label filtering
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			const upperValue = options.searchValue?.toUpperCase();
+			// Try to match enums first
+			const isJobTypeMatch = Object.values(JobType).includes(upperValue as JobType);
+			const isJobStatusMatch = Object.values(JobStatus).includes(upperValue as JobStatus);
+			// Only filter on the first matched enum
+			if (isJobTypeMatch) {
+				Object.assign(whereCondition, {
+					type: { equals: upperValue as JobType }
+				})
+			} else if (isJobStatusMatch) {
+				if (upperValue === 'SPRAYED' || upperValue === 'INVOICED' || upperValue === 'PAID') {
+					Object.assign(whereCondition, {
+						status: { equals: upperValue as JobStatus }
+					})
+				}
+
+
+			} else {
+				Object.assign(whereCondition, {
+					OR: [
+						{
+							id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined,
+						},
+						{
+							title: { contains: searchValue, mode: 'insensitive' },
+						}
+					]
+
+
+				})
+			}
+		} else {
+			switch (options.label) {
+				case 'title':
+					searchFilter.title = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'type':
+					searchFilter.type = {
+						equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
+					};
+					break;
+				case 'status':
+					searchFilter.status = {
+						equals: searchValue.toUpperCase() as JobStatus, // Ensure type matches your Prisma enum
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(whereCondition, searchFilter); // Merge filters dynamically
+		}
+	}
+	console.log(whereCondition,'whereCondition')
 	const jobInvoices = await prisma.job.findMany({
 		where: whereCondition,
 		select: {

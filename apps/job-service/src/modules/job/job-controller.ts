@@ -397,7 +397,7 @@ const uploadFlightLog = catchAsync(async (req: Request, res: Response) => {
 
 const getFaaReports = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const result = await jobService.getFaaReports(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
