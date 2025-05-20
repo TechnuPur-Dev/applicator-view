@@ -577,6 +577,44 @@ model DroneFlightLog {
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
+model Chemical {
+  id                    Int       @id @default(autoincrement())
+  productName           String
+  registrationNumber    String
+  registrationType      String?
+  companyNumber         String?
+  companyName           String?
+  firstRegistrationDate DateTime?
+  status                String?
+  statusDescription     String?
+  statusGroup           String?
+  statusDate            DateTime?
+  useType               String?
+  signalWord            String?
+  rupFlag               Boolean?
+  rupReason             String?
+  pesticideType         String?
+  pesticideCategory     String?
+  physicalForm          String?
+  ais                   String?
+  pests                 String?
+  sites                 String?
+  team                  String?
+  pmEmail               String?
+  ridpNumberSort        String?
+  usePattern            String?
+  transferHistory       String?
+  abns                  String?
+  meTooFlag             Boolean?
+  meTooRefs             String?
+  maxLabelDate          DateTime?
+  labelDates            String?
+  labelNames            String?
+  createdAt             DateTime? @default(now())
+  updatedAt             DateTime? @updatedAt
+  deletedAt             DateTime?
+}
+
 model City {
   id        Int     @id @default(autoincrement())
   name      String

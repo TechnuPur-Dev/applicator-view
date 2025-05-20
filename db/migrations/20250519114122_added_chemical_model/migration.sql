@@ -1,0 +1,32 @@
+-- CreateTable
+CREATE TABLE "Chemical" (
+    "id" SERIAL NOT NULL,
+    "productName" TEXT NOT NULL,
+    "registrationNumber" TEXT NOT NULL,
+    "registrationType" TEXT,
+    "companyNumber" TEXT,
+    "companyName" TEXT,
+    "firstRegistrationDate" TIMESTAMP(3),
+    "status" TEXT,
+    "statusDescription" TEXT,
+    "statusGroup" TEXT,
+    "statusDate" TIMESTAMP(3),
+    "useType" TEXT,
+    "signalWord" TEXT,
+    "rupFlag" BOOLEAN,
+    "rupReason" TEXT,
+    "pesticideType" TEXT,
+    "pesticideCategory" TEXT,
+    "physicalForm" TEXT,
+    "ais" TEXT,
+    "pests" TEXT,
+    "sites" TEXT,
+    "ridpNumberSort" TEXT,
+    "usePattern" TEXT,
+    "maxLabelDate" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Chemical_pkey" PRIMARY KEY ("id")
+);
