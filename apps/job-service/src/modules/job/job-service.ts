@@ -803,6 +803,7 @@ const getJobById = async (user: User, jobId: number) => {
 			},
 			DroneFlightLog: {
 				select: {
+					id: true,
 					droneId: true,
 					startTime: true,
 					endTime: true,
@@ -5697,6 +5698,7 @@ const getJobByIdForPilot = async (
 			},
 			DroneFlightLog: {
 				select: {
+					id: true,
 					droneId: true,
 					startTime: true,
 					endTime: true,
