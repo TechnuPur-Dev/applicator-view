@@ -24,10 +24,12 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllProducts = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page','label','searchValue']);
-
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const currentUser = req.user;
-	const productData = await productService.getAllProducts(currentUser,options);
+	const productData = await productService.getAllProducts(
+		currentUser,
+		options,
+	);
 	res.status(httpStatus.OK).json(productData);
 });
 
@@ -65,15 +67,24 @@ const getAllProductsDropdown = catchAsync(
 		res.status(httpStatus.OK).json({ result: productData });
 	},
 );
-const updateRestricted=  catchAsync(
-	async (req: Request, res: Response) => {
-		const  id  = +req.params.id;
-        const { restrictedUse } = req.body;
-		const productData =
-			await productService.updateRestricted(id,restrictedUse);
-		res.status(httpStatus.OK).json( productData);
-	},
-);
+const updateRestricted = catchAsync(async (req: Request, res: Response) => {
+	const id = +req.params.id;
+	const { restrictedUse } = req.body;
+	const productData = await productService.updateRestricted(
+		id,
+		restrictedUse,
+	);
+	res.status(httpStatus.OK).json(productData);
+});
+const getAllChemicals = catchAsync(async (req: Request, res: Response) => {
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
+	const currentUser = req.user;
+	const productData = await productService.getAllChemicals(
+		currentUser,
+		options,
+	);
+	res.status(httpStatus.OK).json(productData);
+});
 export default {
 	getAllProductCategories,
 	getAllAppliedUnits,
@@ -83,5 +94,6 @@ export default {
 	updateProduct,
 	deleteProduct,
 	getAllProductsDropdown,
-	updateRestricted
+	updateRestricted,
+	getAllChemicals,
 };

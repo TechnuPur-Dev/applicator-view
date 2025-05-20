@@ -35,21 +35,24 @@ const createProduct = async (user: User, data: CreateProduct) => {
 	return product;
 };
 
-const getAllProducts = async (user: User,options: PaginateOptions&{
-	label?:string,
-	searchValue?:string
-}) => {
+const getAllProducts = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
-			options.limit && parseInt(options.limit, 10) > 0
-				? parseInt(options.limit, 10)
-				: 10;
-		// Set the page number, default to 1 if not specified or invalid
-		const page =
-			options.page && parseInt(options.page, 10) > 0
-				? parseInt(options.page, 10)
-				: 1;
-		// Calculate the number of users to skip based on the current page and limit
-		const skip = (page - 1) * limit;
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
 	const { id: userId, role } = user;
 	if (role !== 'APPLICATOR') {
 		throw new ApiError(
@@ -57,46 +60,49 @@ const getAllProducts = async (user: User,options: PaginateOptions&{
 			'You are not authorized to perform this action.',
 		);
 	}
-	const filters: Prisma.ProductWhereInput ={
+	const filters: Prisma.ProductWhereInput = {
 		createdById: userId,
-	}
-		if (options.label && options.searchValue) {
+	};
+	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ProductWhereInput = {};
 		const searchValue = options.searchValue;
 
 		switch (options.label) {
 			case 'code':
-					searchFilter.code = parseInt(searchValue, 10);
+				searchFilter.code = parseInt(searchValue, 10);
 				break;
 			case 'productName':
 				searchFilter.productName = {
-                   contains:searchValue, mode:'insensitive'
-				}
+					contains: searchValue,
+					mode: 'insensitive',
+				};
 				break;
 			case 'baseProductName':
 				searchFilter.baseProductName = {
-                   contains:searchValue, mode:'insensitive'
-				}
+					contains: searchValue,
+					mode: 'insensitive',
+				};
 				break;
 			case 'category':
-					searchFilter.category = {
-                   equals:searchValue as ProductCategory
-				}
+				searchFilter.category = {
+					equals: searchValue as ProductCategory,
+				};
 				break;
 			case 'epaRegistration':
-					searchFilter.epaRegistration = {
-                   contains:searchValue, mode:'insensitive'
-				}
+				searchFilter.epaRegistration = {
+					contains: searchValue,
+					mode: 'insensitive',
+				};
 				break;
 			case 'inventoryUnit':
-					searchFilter.inventoryUnit = {
-                   equals:searchValue as ProductUnit
-				}
+				searchFilter.inventoryUnit = {
+					equals: searchValue as ProductUnit,
+				};
 				break;
-					case 'appliedUnits':
-					searchFilter.appliedUnits = {
-                   equals:searchValue as ProductUnit
-				}
+			case 'appliedUnits':
+				searchFilter.appliedUnits = {
+					equals: searchValue as ProductUnit,
+				};
 				break;
 			default:
 				throw new Error('Invalid label provided.');
@@ -105,15 +111,15 @@ const getAllProducts = async (user: User,options: PaginateOptions&{
 		Object.assign(filters, searchFilter); // Merge filters dynamically
 	}
 	const products = await prisma.product.findMany({
-		where:filters,
+		where: filters,
 		skip,
-			take: limit,
-			orderBy: {
-				id: 'desc',
-			},
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
 	});
 	const totalResults = await prisma.product.count({
-		where: filters
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
@@ -125,7 +131,6 @@ const getAllProducts = async (user: User,options: PaginateOptions&{
 		totalPages,
 		totalResults,
 	};
-
 };
 
 const getProductById = async (user: User, productId: number) => {
@@ -198,12 +203,63 @@ const getAllProductsDropdown = async (user: User) => {
 		orderBy: { id: 'desc' },
 	});
 };
-const updateRestricted = async (productId:number,restrictedUse:boolean) => {
+const updateRestricted = async (productId: number, restrictedUse: boolean) => {
 	await prisma.product.update({
-		where: { id:productId },
-		data: { restrictedUse }
+		where: { id: productId },
+		data: { restrictedUse },
 	});
-	return {messaage:"Product updated successfully"};
+	return { messaage: 'Product updated successfully' };
+};
+
+const getAllChemicals = async (
+	user: User,
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	// Set the page number, default to 1 if not specified or invalid
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	// Calculate the number of users to skip based on the current page and limit
+	const skip = (page - 1) * limit;
+
+	const chemicals = await prisma.chemical.findMany({
+		where: {
+			productName: {
+				contains: options.searchValue,
+				mode: 'insensitive',
+			},
+		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+	const totalResults = await prisma.chemical.count({
+		where: {
+			productName: {
+				contains: options.searchValue,
+				mode: 'insensitive',
+			},
+		},
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, current page, limit, total pages, and total results
+	return {
+		result: chemicals,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
 };
 export default {
 	getAllProductCategories,
@@ -214,5 +270,6 @@ export default {
 	updateProduct,
 	deleteProduct,
 	getAllProductsDropdown,
-	updateRestricted
+	updateRestricted,
+	getAllChemicals,
 };

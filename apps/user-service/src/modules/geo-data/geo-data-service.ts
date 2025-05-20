@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
@@ -214,7 +215,6 @@ const searchCity = async (search: string) => {
 				mode: 'insensitive',
 			},
 		},
-		take: 10,
 		orderBy: {
 			name: 'asc',
 		},
