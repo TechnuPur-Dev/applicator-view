@@ -21,8 +21,8 @@ async function main() {
 				email,
 				phoneNumber: '1234567890',
 				password: hashedPassword,
-				role: 'SUPER_ADMIN', // Make sure this exists in your UserRole enum
-				profileStatus: 'COMPLETE', // Or INCOMPLETE if that's the default
+				role: 'SUPER_ADMIN',
+				profileStatus: 'COMPLETE',
 				createdAt: new Date(),
 				joiningDate: new Date(),
 				address1: '123 Admin Blvd',
@@ -30,20 +30,25 @@ async function main() {
 			},
 		});
 		console.log('✅ Super admin created.');
+	} else {
+		console.log('Super admin already exists.');
 	}
-	console.log('Super admin already exists.');
-	PERMISSIONS.admin.map(async (name) => {
-		await prisma.permission.upsert({
-			where: { name },
-			update: {},
-			create: { name },
-		});
-	});
+
+	await Promise.all(
+		PERMISSIONS.admin.map((name) =>
+			prisma.permission.upsert({
+				where: { name },
+				update: {},
+				create: { name },
+			}),
+		),
+	);
 	console.log('Permissions seeded.');
 
-	const filePath = path.join(__dirname, './../city.list.json');
-	const fileData = await fs.readFile(filePath, 'utf-8');
-	const cities = JSON.parse(fileData);
+	// Seed cities
+	const citiesFilePath = path.join(__dirname, './../city.list.json');
+	const cityFileData = await fs.readFile(citiesFilePath, 'utf-8');
+	const cities = JSON.parse(cityFileData);
 
 	const cityRecords = cities.map((city: any) => ({
 		id: city.id,
@@ -54,17 +59,39 @@ async function main() {
 		longitude: city.coord.lon,
 	}));
 
-	// Batch insert in chunks
-	const chunkSize = 1000;
-	for (let i = 0; i < cityRecords.length; i += chunkSize) {
+	for (let i = 0; i < cityRecords.length; i += 1000) {
 		await prisma.city.createMany({
-			data: cityRecords.slice(i, i + chunkSize),
+			data: cityRecords.slice(i, i + 1000),
+			skipDuplicates: true,
+		});
+	}
+	console.log('Cities imported successfully.');
+
+	const filePath = path.join(__dirname, './../chemicals_seed_data.json');
+	const fileData = await fs.readFile(filePath, 'utf-8');
+	const chemicals = JSON.parse(fileData);
+	chemicals.forEach((item: any) => {
+		if (item.companyNumber !== null && item.companyNumber !== undefined) {
+			const firstRegistrationDate = new Date(item.firstRegistrationDate);
+			const statusDate = new Date(item.statusDate);
+			const maxLabelDate = new Date(item.maxLabelDate);
+			item.companyNumber = String(item.companyNumber);
+			item.ridpNumberSort = String(item.ridpNumberSort);
+			item.firstRegistrationDate = firstRegistrationDate.toISOString();
+			item.statusDate = statusDate.toISOString();
+			item.maxLabelDate = maxLabelDate.toISOString();
+		}
+	});
+
+	const chunkSize = 1000;
+	for (let i = 0; i < chemicals.length; i += chunkSize) {
+		await prisma.chemical.createMany({
+			data: chemicals.slice(i, i + chunkSize),
 			skipDuplicates: true,
 		});
 	}
 
-	console.log('Cities imported successfully');
-	return;
+	console.log('✅ Chemicals seeded successfully');
 }
 
 main()
