@@ -473,9 +473,15 @@ const getAllJobsByApplicator = async (
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
-			const isJobStatusMatch = Object.values(JobStatus).includes(searchValue as JobStatus);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
+			const isJobStatusMatch = Object.values(JobStatus).includes(
+				searchValue as JobStatus,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
 				// Only filter on the first matched enum
@@ -489,10 +495,18 @@ const getAllJobsByApplicator = async (
 			} else {
 				Object.assign(filters, {
 					OR: [
-						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						{
+							title: {
+								contains: options.searchValue,
+								mode: 'insensitive',
+							},
+						},
 						{
 							farm: {
-								name: { contains: options.searchValue, mode: 'insensitive' },
+								name: {
+									contains: options.searchValue,
+									mode: 'insensitive',
+								},
 							},
 						},
 						{
@@ -555,11 +569,15 @@ const getAllJobsByApplicator = async (
 
 					break;
 				case 'status':
-					searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					searchFilter.status =
+						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 					break;
 				case 'township':
 					searchFilter.farm = {
-						township: { contains: searchValue, mode: 'insensitive' },
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'county':
@@ -570,14 +588,20 @@ const getAllJobsByApplicator = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: { contains: searchValue, mode: 'insensitive' },
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.fieldWorker = {
-						fullName: { contains: searchValue, mode: 'insensitive' },
+						fullName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'startDate':
@@ -1314,8 +1338,8 @@ const getJobs = async (
 	type: string,
 	role: string,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	const limit =
@@ -1338,7 +1362,7 @@ const getJobs = async (
 	const filters: Prisma.JobWhereInput = {
 		growerId,
 		source: type === 'ALL' ? undefined : (type as JobSource),
-	}
+	};
 	// Apply dynamic label filtering
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
@@ -1348,9 +1372,15 @@ const getJobs = async (
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
-			const isJobStatusMatch = Object.values(JobStatus).includes(searchValue as JobStatus);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
+			const isJobStatusMatch = Object.values(JobStatus).includes(
+				searchValue as JobStatus,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
 				// Only filter on the first matched enum
@@ -1364,10 +1394,18 @@ const getJobs = async (
 			} else {
 				Object.assign(filters, {
 					OR: [
-						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						{
+							title: {
+								contains: options.searchValue,
+								mode: 'insensitive',
+							},
+						},
 						{
 							farm: {
-								name: { contains: options.searchValue, mode: 'insensitive' },
+								name: {
+									contains: options.searchValue,
+									mode: 'insensitive',
+								},
 							},
 						},
 						{
@@ -1400,7 +1438,8 @@ const getJobs = async (
 					};
 					break;
 				case 'status':
-					searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					searchFilter.status =
+						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 					break;
 
 				case 'farm':
@@ -1511,7 +1550,7 @@ const getJobs = async (
 	});
 	console.log(jobs.length, 'length');
 	const totalResults = await prisma.job.count({
-		where: filters
+		where: filters,
 	});
 
 	// const totalResults = jobs.length;
@@ -1564,8 +1603,12 @@ const getOpenJobs = async (
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch) {
 				// Only filter on the first matched enum
@@ -1575,31 +1618,45 @@ const getOpenJobs = async (
 					filters.source = searchValue as JobSource;
 				}
 			} else {
-				console.log('search'
-				)
+				console.log('search');
 				Object.assign(filters, {
 					OR: [
-						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						{
+							title: {
+								contains: options.searchValue,
+								mode: 'insensitive',
+							},
+						},
 						{
 							farm: {
 								OR: [
 									{
-										name: { contains: options.searchValue, mode: 'insensitive' },
+										name: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
 									},
 									{
-										township: { contains: options.searchValue, mode: 'insensitive' },
-									}, {
-										county: { contains: options.searchValue, mode: 'insensitive' },
-
-									}, {
-
-										state: {
-											name: { contains: options.searchValue, mode: 'insensitive' },
+										township: {
+											contains: options.searchValue,
+											mode: 'insensitive',
 										},
-									}
-								]
-
-
+									},
+									{
+										county: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										state: {
+											name: {
+												contains: options.searchValue,
+												mode: 'insensitive',
+											},
+										},
+									},
+								],
 							},
 						},
 						{
@@ -1613,8 +1670,7 @@ const getOpenJobs = async (
 					],
 				});
 			}
-		}
-		else {
+		} else {
 			switch (options.label) {
 				case 'title':
 					searchFilter.title = {
@@ -1659,7 +1715,10 @@ const getOpenJobs = async (
 					break;
 				case 'township':
 					searchFilter.farm = {
-						township: { contains: searchValue, mode: 'insensitive' },
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'county':
@@ -1670,14 +1729,20 @@ const getOpenJobs = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: { contains: searchValue, mode: 'insensitive' },
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.fieldWorker = {
-						fullName: { contains: searchValue, mode: 'insensitive' },
+						fullName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'startDate':
@@ -1818,45 +1883,77 @@ const getMyBidJobs = async (
 		if (options.label === 'all') {
 			const upperValue = searchValue.toUpperCase();
 
-			const isJobTypeMatch = Object.values(JobType).includes(upperValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(upperValue as JobSource);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				upperValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				upperValue as JobSource,
+			);
 
 			if (isJobTypeMatch) {
 				filters.job = {
-					type: { equals: upperValue as JobType }
+					type: { equals: upperValue as JobType },
 				};
 			} else if (isJobSourceMatch) {
 				filters.job = {
-					source: { equals: upperValue as JobSource }
+					source: { equals: upperValue as JobSource },
 				};
 			} else {
 				Object.assign(filters, {
 					OR: [
-						{ job: { title: { contains: searchValue, mode: 'insensitive' } } },
+						{
+							job: {
+								title: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						},
 						{
 							job: {
 								farm: {
 									OR: [
-										{ name: { contains: searchValue, mode: 'insensitive' } },
-										{ township: { contains: searchValue, mode: 'insensitive' } },
-										{ county: { contains: searchValue, mode: 'insensitive' } },
+										{
+											name: {
+												contains: searchValue,
+												mode: 'insensitive',
+											},
+										},
+										{
+											township: {
+												contains: searchValue,
+												mode: 'insensitive',
+											},
+										},
+										{
+											county: {
+												contains: searchValue,
+												mode: 'insensitive',
+											},
+										},
 										{
 											state: {
-												name: { contains: searchValue, mode: 'insensitive' }
-											}
-										}
-									]
-								}
-							}
+												name: {
+													contains: searchValue,
+													mode: 'insensitive',
+												},
+											},
+										},
+									],
+								},
+							},
 						},
 						{
 							job: {
 								grower: {
-									fullName: { contains: searchValue, mode: 'insensitive' }
-								}
-							}
-						}
-					]
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							},
+						},
+					],
 				});
 			}
 		} else {
@@ -1864,19 +1961,21 @@ const getMyBidJobs = async (
 			switch (options.label) {
 				case 'title':
 					searchFilter.job = {
-						title: { contains: searchValue, mode: 'insensitive' }
+						title: { contains: searchValue, mode: 'insensitive' },
 					};
 					break;
 
 				case 'type':
 					searchFilter.job = {
-						type: { equals: searchValue.toUpperCase() as JobType }
+						type: { equals: searchValue.toUpperCase() as JobType },
 					};
 					break;
 
 				case 'source':
 					searchFilter.job = {
-						source: { equals: searchValue.toUpperCase() as JobSource }
+						source: {
+							equals: searchValue.toUpperCase() as JobSource,
+						},
 					};
 					break;
 
@@ -1884,27 +1983,48 @@ const getMyBidJobs = async (
 					searchFilter.job = {
 						grower: {
 							OR: [
-								{ fullName: { contains: searchValue, mode: 'insensitive' } },
-								{ firstName: { contains: searchValue, mode: 'insensitive' } },
-								{ lastName: { contains: searchValue, mode: 'insensitive' } }
-							]
-						}
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							],
+						},
 					};
 					break;
 
 				case 'township':
 					searchFilter.job = {
 						farm: {
-							township: { contains: searchValue, mode: 'insensitive' }
-						}
+							township: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
 					};
 					break;
 
 				case 'county':
 					searchFilter.job = {
 						farm: {
-							county: { contains: searchValue, mode: 'insensitive' }
-						}
+							county: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
 					};
 					break;
 
@@ -1912,33 +2032,39 @@ const getMyBidJobs = async (
 					searchFilter.job = {
 						farm: {
 							state: {
-								name: { contains: searchValue, mode: 'insensitive' }
-							}
-						}
+								name: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.job = {
 						fieldWorker: {
-							fullName: { contains: searchValue, mode: 'insensitive' }
-						}
+							fullName: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
 					};
 					break;
 
 				case 'startDate':
 					searchFilter.job = {
 						startDate: {
-							gte: new Date(searchValue)
-						}
+							gte: new Date(searchValue),
+						},
 					};
 					break;
 
 				case 'endDate':
 					searchFilter.job = {
 						endDate: {
-							lte: new Date(searchValue)
-						}
+							lte: new Date(searchValue),
+						},
 					};
 					break;
 
@@ -1950,7 +2076,6 @@ const getMyBidJobs = async (
 			Object.assign(filters, searchFilter);
 		}
 	}
-
 
 	const bidData = await prisma.bid.findMany({
 		where: filters,
@@ -2073,8 +2198,12 @@ const getJobsPendingFromMe = async (
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch) {
 				// Only filter on the first matched enum
@@ -2084,31 +2213,45 @@ const getJobsPendingFromMe = async (
 					whereCondition.source = searchValue as JobSource;
 				}
 			} else {
-				console.log('search'
-				)
+				console.log('search');
 				Object.assign(whereCondition, {
 					OR: [
-						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						{
+							title: {
+								contains: options.searchValue,
+								mode: 'insensitive',
+							},
+						},
 						{
 							farm: {
 								OR: [
 									{
-										name: { contains: options.searchValue, mode: 'insensitive' },
+										name: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
 									},
 									{
-										township: { contains: options.searchValue, mode: 'insensitive' },
-									}, {
-										county: { contains: options.searchValue, mode: 'insensitive' },
-
-									}, {
-
-										state: {
-											name: { contains: options.searchValue, mode: 'insensitive' },
+										township: {
+											contains: options.searchValue,
+											mode: 'insensitive',
 										},
-									}
-								]
-
-
+									},
+									{
+										county: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										state: {
+											name: {
+												contains: options.searchValue,
+												mode: 'insensitive',
+											},
+										},
+									},
+								],
 							},
 						},
 						{
@@ -2118,7 +2261,6 @@ const getJobsPendingFromMe = async (
 									mode: 'insensitive',
 								},
 							},
-
 						},
 						{
 							applicator: {
@@ -2127,7 +2269,7 @@ const getJobsPendingFromMe = async (
 									mode: 'insensitive',
 								},
 							},
-						}
+						},
 					],
 				});
 			}
@@ -2174,7 +2316,7 @@ const getJobsPendingFromMe = async (
 						],
 					};
 					break;
-				case 'applicatorName'://this is for grower portal
+				case 'applicatorName': //this is for grower portal
 					searchFilter.applicator = {
 						OR: [
 							{
@@ -2201,7 +2343,10 @@ const getJobsPendingFromMe = async (
 
 				case 'township':
 					searchFilter.farm = {
-						township: { contains: searchValue, mode: 'insensitive' },
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'county':
@@ -2212,14 +2357,20 @@ const getJobsPendingFromMe = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: { contains: searchValue, mode: 'insensitive' },
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.fieldWorker = {
-						fullName: { contains: searchValue, mode: 'insensitive' },
+						fullName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'startDate':
@@ -2357,7 +2508,7 @@ const getJobsPendingFromGrowers = async (
 		// applicatorId?: number;
 		// growerId?: number;
 		// source?: 'GROWER' | 'APPLICATOR';
-	}
+	};
 	// = {
 	// 	status: 'PENDING',
 	// };
@@ -2377,8 +2528,12 @@ const getJobsPendingFromGrowers = async (
 			const searchValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch) {
 				// Only filter on the first matched enum
@@ -2388,31 +2543,45 @@ const getJobsPendingFromGrowers = async (
 					whereCondition.source = searchValue as JobSource;
 				}
 			} else {
-				console.log('search'
-				)
+				console.log('search');
 				Object.assign(whereCondition, {
 					OR: [
-						{ title: { contains: options.searchValue, mode: 'insensitive' } },
+						{
+							title: {
+								contains: options.searchValue,
+								mode: 'insensitive',
+							},
+						},
 						{
 							farm: {
 								OR: [
 									{
-										name: { contains: options.searchValue, mode: 'insensitive' },
+										name: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
 									},
 									{
-										township: { contains: options.searchValue, mode: 'insensitive' },
-									}, {
-										county: { contains: options.searchValue, mode: 'insensitive' },
-
-									}, {
-
-										state: {
-											name: { contains: options.searchValue, mode: 'insensitive' },
+										township: {
+											contains: options.searchValue,
+											mode: 'insensitive',
 										},
-									}
-								]
-
-
+									},
+									{
+										county: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										state: {
+											name: {
+												contains: options.searchValue,
+												mode: 'insensitive',
+											},
+										},
+									},
+								],
 							},
 						},
 						{
@@ -2422,7 +2591,6 @@ const getJobsPendingFromGrowers = async (
 									mode: 'insensitive',
 								},
 							},
-
 						},
 						{
 							applicator: {
@@ -2431,7 +2599,7 @@ const getJobsPendingFromGrowers = async (
 									mode: 'insensitive',
 								},
 							},
-						}
+						},
 					],
 				});
 			}
@@ -2478,7 +2646,7 @@ const getJobsPendingFromGrowers = async (
 						],
 					};
 					break;
-				case 'applicatorName'://this is for grower portal
+				case 'applicatorName': //this is for grower portal
 					searchFilter.applicator = {
 						OR: [
 							{
@@ -2505,7 +2673,10 @@ const getJobsPendingFromGrowers = async (
 
 				case 'township':
 					searchFilter.farm = {
-						township: { contains: searchValue, mode: 'insensitive' },
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'county':
@@ -2516,14 +2687,20 @@ const getJobsPendingFromGrowers = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: { contains: searchValue, mode: 'insensitive' },
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.fieldWorker = {
-						fullName: { contains: searchValue, mode: 'insensitive' },
+						fullName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'startDate':
@@ -3140,26 +3317,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-							totalExpenditures:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}
+								totalExpenditures:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}
 						: {
-							totalRevenue:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}),
+								totalRevenue:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-							totalApplicators:
-								dashboardtotalGrowersorApplicators,
-						}),
+								totalApplicators:
+									dashboardtotalGrowersorApplicators,
+							}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -3247,17 +3424,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-							totalAcres:
-								myJobsTotalAcres._sum.actualAcres || 0,
-						}),
+								totalAcres:
+									myJobsTotalAcres._sum.actualAcres || 0,
+							}),
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								myJobsTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									myJobsTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicatorJobs,
-						}),
+								totalApplicatorJobs,
+							}),
 				};
 				break;
 			}
@@ -3292,13 +3469,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								openJobTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									openJobTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicators:
-								openJobTotalGrowersorApplicators.length,
-						}),
+								totalApplicators:
+									openJobTotalGrowersorApplicators.length,
+							}),
 				};
 				break;
 			}
@@ -3333,11 +3510,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -3349,11 +3526,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -3389,11 +3566,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -3405,11 +3582,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -3492,13 +3669,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -3506,13 +3683,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}),
 					},
 				};
 
@@ -3525,10 +3702,13 @@ const getHeadersData = async (
 
 	return result;
 };
-const getRejectedJobs = async (user: User, options: PaginateOptions & {
-	label?: string;
-	searchValue?: string;
-}) => {
+const getRejectedJobs = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -3551,8 +3731,12 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 		if (options.label === 'all') {
 			const searchValue = options.searchValue?.toUpperCase();
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(searchValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(searchValue as JobSource);
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch) {
 				// Only filter on the first matched enum
@@ -3570,22 +3754,32 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 							farm: {
 								OR: [
 									{
-										name: { contains: options.searchValue, mode: 'insensitive' },
+										name: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
 									},
 									{
-										township: { contains: options.searchValue, mode: 'insensitive' },
-									}, {
-										county: { contains: options.searchValue, mode: 'insensitive' },
-
-									}, {
-
-										state: {
-											name: { contains: options.searchValue, mode: 'insensitive' },
+										township: {
+											contains: options.searchValue,
+											mode: 'insensitive',
 										},
-									}
-								]
-
-
+									},
+									{
+										county: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										state: {
+											name: {
+												contains: options.searchValue,
+												mode: 'insensitive',
+											},
+										},
+									},
+								],
 							},
 						},
 						{
@@ -3596,9 +3790,7 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 								]
 
 							},
-
 						},
-
 					],
 				});
 			}
@@ -3651,7 +3843,10 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 					break;
 				case 'township':
 					searchFilter.farm = {
-						township: { contains: searchValue, mode: 'insensitive' },
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'county':
@@ -3662,7 +3857,10 @@ const getRejectedJobs = async (user: User, options: PaginateOptions & {
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: { contains: searchValue, mode: 'insensitive' },
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						},
 					};
 					break;
@@ -3977,14 +4175,14 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 					BidProduct: applicatorBid
 						? {
-							where: {
-								bidId: applicatorBid.id,
-							},
-							select: {
-								bidRateAcre: true,
-								bidPrice: true,
-							},
-						}
+								where: {
+									bidId: applicatorBid.id,
+								},
+								select: {
+									bidRateAcre: true,
+									bidPrice: true,
+								},
+							}
 						: false,
 				},
 			},
@@ -3992,13 +4190,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 				include: {
 					BidApplicationFee: applicatorBid
 						? {
-							where: {
-								bidId: applicatorBid.id,
-							},
-							select: {
-								bidAmount: true,
-							},
-						}
+								where: {
+									bidId: applicatorBid.id,
+								},
+								select: {
+									bidAmount: true,
+								},
+							}
 						: false,
 				},
 			},
@@ -4278,10 +4476,13 @@ const getJobInvoice = async (user: User, jobId: number) => {
 
 	return formattedJob;
 };
-const getAllJobInvoices = async (user: User, options: PaginateOptions & {
-	label?: string
-	searchValue?: string
-}) => {
+const getAllJobInvoices = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const { id, role } = user;
 	// Set pagination
 	const limit =
@@ -4310,9 +4511,12 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 		if (options.label === 'all') {
 			const upperValue = searchValue.toUpperCase();
 
-			const isJobSourceMatch = Object.values(JobSource).includes(upperValue as JobSource);
-			const isJobStatuseMatch = Object.values(JobStatus).includes(upperValue as JobStatus);
-
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				upperValue as JobSource,
+			);
+			const isJobStatuseMatch = Object.values(JobStatus).includes(
+				upperValue as JobStatus,
+			);
 
 			if (isJobSourceMatch || isJobStatuseMatch) {
 				if (isJobSourceMatch) {
@@ -4329,7 +4533,7 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 					OR: [
 						{
 							Invoice: {
-								id: parseInt(searchValue, 10)
+								id: parseInt(searchValue, 10),
 							},
 						},
 						{
@@ -4346,9 +4550,24 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 						{
 							grower: {
 								OR: [
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
@@ -4402,7 +4621,8 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 					};
 					break;
 				case 'status':
-					searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					searchFilter.status =
+						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 					break;
 				default:
 					throw new Error('Invalid label provided.');
@@ -4410,7 +4630,12 @@ const getAllJobInvoices = async (user: User, options: PaginateOptions & {
 			Object.assign(whereCondition, searchFilter); // Merge filters dynamically
 		}
 	}
-	console.log(options.label, options.searchValue, whereCondition, 'condition')
+	console.log(
+		options.label,
+		options.searchValue,
+		whereCondition,
+		'condition',
+	);
 	const jobInvoices = await prisma.job.findMany({
 		where: whereCondition,
 		select: {
@@ -4567,8 +4792,8 @@ const getMyJobsByPilot = async (
 	// applicatorId: number,
 	pilotId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
@@ -4589,7 +4814,7 @@ const getMyJobsByPilot = async (
 		NOT: {
 			status: 'ASSIGNED_TO_PILOT',
 		},
-	}
+	};
 	// Apply dynamic label filtering
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
@@ -4598,10 +4823,15 @@ const getMyJobsByPilot = async (
 			const upperValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(upperValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(upperValue as JobSource);
-			const isJobStatusMatch = Object.values(JobStatus).includes(upperValue as JobStatus);
-
+			const isJobTypeMatch = Object.values(JobType).includes(
+				upperValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				upperValue as JobSource,
+			);
+			const isJobStatusMatch = Object.values(JobStatus).includes(
+				upperValue as JobStatus,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
 				// Only filter on the first matched enum
@@ -4621,22 +4851,32 @@ const getMyJobsByPilot = async (
 							farm: {
 								OR: [
 									{
-										name: { contains: searchValue, mode: 'insensitive' },
+										name: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
 									},
 									{
-										township: { contains: searchValue, mode: 'insensitive' },
-									}, {
-										county: { contains: searchValue, mode: 'insensitive' },
-
-									}, {
-
-										state: {
-											name: { contains: searchValue, mode: 'insensitive' },
+										township: {
+											contains: searchValue,
+											mode: 'insensitive',
 										},
-									}
-								]
-
-
+									},
+									{
+										county: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										state: {
+											name: {
+												contains: searchValue,
+												mode: 'insensitive',
+											},
+										},
+									},
+								],
 							},
 						},
 						{
@@ -4646,7 +4886,7 @@ const getMyJobsByPilot = async (
 									mode: 'insensitive',
 								},
 							},
-						}
+						},
 					],
 				});
 			}
@@ -4694,11 +4934,15 @@ const getMyJobsByPilot = async (
 					};
 					break;
 				case 'status':
-					searchFilter.status = searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					searchFilter.status =
+						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
 					break;
 				case 'township':
 					searchFilter.farm = {
-						township: { contains: searchValue, mode: 'insensitive' },
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'county':
@@ -4709,14 +4953,20 @@ const getMyJobsByPilot = async (
 				case 'state':
 					searchFilter.farm = {
 						state: {
-							name: { contains: searchValue, mode: 'insensitive' },
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						},
 					};
 					break;
 
 				case 'pilot':
 					searchFilter.fieldWorker = {
-						fullName: { contains: searchValue, mode: 'insensitive' },
+						fullName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				default:
@@ -4809,8 +5059,8 @@ const getPilotPendingJobs = async (
 	// applicatorId: number,
 	pilotId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
@@ -4828,7 +5078,7 @@ const getPilotPendingJobs = async (
 	const filters: Prisma.JobWhereInput = {
 		fieldWorkerId: pilotId,
 		status: 'ASSIGNED_TO_PILOT',
-	}
+	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
@@ -4836,9 +5086,12 @@ const getPilotPendingJobs = async (
 			const upperValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(upperValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(upperValue as JobSource);
-
+			const isJobTypeMatch = Object.values(JobType).includes(
+				upperValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				upperValue as JobSource,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch) {
 				// Only filter on the first matched enum
@@ -5028,8 +5281,8 @@ const getPilotRejectedJobs = async (
 	// applicatorId: number,
 	pilotId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	// Set the limit of users to be returned per page, default to 10 if not specified or invalid
@@ -5047,7 +5300,7 @@ const getPilotRejectedJobs = async (
 	const filters: Prisma.JobWhereInput = {
 		fieldWorkerId: pilotId,
 		status: 'PILOT_REJECTED',
-	}
+	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
@@ -5055,9 +5308,12 @@ const getPilotRejectedJobs = async (
 			const upperValue = options.searchValue?.toUpperCase();
 
 			// Try to match enums first
-			const isJobTypeMatch = Object.values(JobType).includes(upperValue as JobType);
-			const isJobSourceMatch = Object.values(JobSource).includes(upperValue as JobSource);
-
+			const isJobTypeMatch = Object.values(JobType).includes(
+				upperValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				upperValue as JobSource,
+			);
 
 			if (isJobTypeMatch || isJobSourceMatch) {
 				// Only filter on the first matched enum
@@ -6527,6 +6783,16 @@ const createFlighLog = async (
 		flightLog,
 	};
 };
+const getFlighLogById = async (user: User, logId: number) => {
+	// const { id: userId, role } = user;
+	
+	const flightLog = await prisma.droneFlightLog.findUnique({
+		where: {
+			id: logId,
+		},
+	});
+	return flightLog;
+};
 
 export default {
 	createJob,
@@ -6576,4 +6842,5 @@ export default {
 	getFaaReports,
 	uploadFlightLogImage,
 	createFlighLog,
+	getFlighLogById,
 };
