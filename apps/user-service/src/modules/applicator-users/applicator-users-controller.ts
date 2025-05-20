@@ -37,7 +37,7 @@ const sendInviteToUser = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getAllApplicatorUser = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const applicatorId = req.payload.id;
 	const UserData = await applicatorUserServices.getAllApplicatorUser(
 		applicatorId,
