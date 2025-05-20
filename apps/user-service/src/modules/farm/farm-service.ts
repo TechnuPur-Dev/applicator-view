@@ -90,9 +90,9 @@ const createFarm = async (
 
 const getAllFarmsByGrower = async (
 	growerId: number,
-	options: PaginateOptions &{
-		label?:string,
-		searchValue?:string
+	options: PaginateOptions & {
+		label?: string,
+		searchValue?: string
 	},
 ) => {
 	const limit =
@@ -106,28 +106,39 @@ const getAllFarmsByGrower = async (
 			: 1;
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
-   const filters:Prisma.FarmWhereInput={
-	growerId,
-   }
-   if (options.label && options.searchValue) {
-			const searchFilter: Prisma.FarmWhereInput = {};
-			const searchValue = options.searchValue;
-
-			switch (options.label) {
-				case 'id':
-					searchFilter.id = parseInt(searchValue, 10);
-					break;
-				case 'name':
-					searchFilter.name = {
-						contains: searchValue, mode: 'insensitive' ,
-					};
-					break;
-				default:
-					throw new Error('Invalid label provided.');
-			}
-
-			Object.assign(filters, searchFilter); // Merge filters dynamically
+	const filters: Prisma.FarmWhereInput = {
+		growerId,
+	}
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.FarmWhereInput = {};
+		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			Object.assign(filters, {
+				OR: [
+					{
+						name: { contains: options.searchValue, mode: 'insensitive' },
+					},
+					{
+						id:parseInt(searchValue, 10),
+					},
+				]
+			})
+		}else{
+		switch (options.label) {
+			case 'id':
+				searchFilter.id = parseInt(searchValue, 10);
+				break;
+			case 'name':
+				searchFilter.name = {
+					contains: searchValue, mode: 'insensitive',
+				};
+				break;
+			default:
+				throw new Error('Invalid label provided.');
 		}
+		Object.assign(filters, searchFilter); // Merge filters dynamically
+	}
+	}
 	const farms = await prisma.farm.findMany({
 		where: filters,
 		include: {
@@ -173,7 +184,7 @@ const getAllFarmsByGrower = async (
 	});
 
 	const totalResults = await prisma.farm.count({
-		where:filters,
+		where: filters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
