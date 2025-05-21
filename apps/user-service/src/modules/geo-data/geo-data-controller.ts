@@ -3,11 +3,11 @@ import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import geoDataService from './geo-data-service';
 // Controller to update user profile
-const createStates = catchAsync(async (req: Request, res: Response) => {
-	const data = req.body.states;
-	const result = await geoDataService.createStates(data);
-	res.status(httpStatus.OK).json(result);
-});
+// const createStates = catchAsync(async (req: Request, res: Response) => {
+// 	const data = req.body.states;
+// 	const result = await geoDataService.createStates(data);
+// 	res.status(httpStatus.OK).json(result);
+// });
 const createCounties = catchAsync(async (req: Request, res: Response) => {
 	// const data = req.body.counties;
 	const data = req.body.counties;
@@ -32,12 +32,12 @@ const getAllTownships = catchAsync(async (req: Request, res: Response) => {
 	const townships = await geoDataService.getAllTownships();
 	res.status(httpStatus.OK).json({ result: townships });
 });
-const deleteState = catchAsync(async (req: Request, res: Response) => {
-	const stateId = +req.params.stateId;
-	// const userId = req.payload.id;
-	const result = await geoDataService.deleteState(stateId);
-	res.status(httpStatus.OK).json(result);
-});
+// const deleteState = catchAsync(async (req: Request, res: Response) => {
+// 	const stateId = +req.params.stateId;
+// 	// const userId = req.payload.id;
+// 	const result = await geoDataService.deleteState(stateId);
+// 	res.status(httpStatus.OK).json(result);
+// });
 const deleteCounty = catchAsync(async (req: Request, res: Response) => {
 	const countyId = +req.params.countyId;
 	// const userId = req.payload.id;
@@ -50,13 +50,13 @@ const deleteTownship = catchAsync(async (req: Request, res: Response) => {
 	const result = await geoDataService.deleteTownship(townshipId);
 	res.status(httpStatus.OK).json(result);
 });
-const updateState = catchAsync(async (req: Request, res: Response) => {
-	const stateId = +req.params.stateId;
-	const data = req.body;
+// const updateState = catchAsync(async (req: Request, res: Response) => {
+// 	const stateId = +req.params.stateId;
+// 	const data = req.body;
 
-	const result = await geoDataService.updateState(stateId, data);
-	res.status(httpStatus.OK).json(result);
-});
+// 	const result = await geoDataService.updateState(stateId, data);
+// 	res.status(httpStatus.OK).json(result);
+// });
 const updateCounty = catchAsync(async (req: Request, res: Response) => {
 	const countyId = +req.params.countyId;
 	const data = req.body;
@@ -110,16 +110,13 @@ const searchCity = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 export default {
-	createStates,
 	createCounties,
 	createTownships,
 	getAllStates,
 	getAllCounties,
 	getAllTownships,
-	deleteState,
 	deleteCounty,
 	deleteTownship,
-	updateState,
 	updateCounty,
 	updateTownship,
 	getCountiesByState,

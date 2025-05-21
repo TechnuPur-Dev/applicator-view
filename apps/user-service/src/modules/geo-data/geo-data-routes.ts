@@ -5,7 +5,6 @@ import validateSchema from '../../../../../shared/middlewares/validation-middlew
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware';
 const router: Router = express.Router();
 
-router.route('/state/create').post(verifyToken, geoDataController.createStates);
 router
 	.route('/county/create')
 	.post(verifyToken, geoDataController.createCounties);
@@ -19,13 +18,7 @@ router
 router
 	.route('/all-townships')
 	.get(verifyToken, geoDataController.getAllTownships);
-router
-	.route('/delete-state/:stateId')
-	.delete(
-		verifyToken,
-		validateSchema(geoDataValidation.paramsSchema),
-		geoDataController.deleteState,
-	);
+
 router
 	.route('/delete-county/:countyId')
 	.delete(
@@ -40,13 +33,7 @@ router
 		validateSchema(geoDataValidation.paramsSchema),
 		geoDataController.deleteTownship,
 	);
-router
-	.route('/update-state/:stateId')
-	.put(
-		verifyToken,
-		validateSchema(geoDataValidation.stateUpdateSchema),
-		geoDataController.updateState,
-	);
+
 router
 	.route('/update-county/:countyId')
 	.put(
