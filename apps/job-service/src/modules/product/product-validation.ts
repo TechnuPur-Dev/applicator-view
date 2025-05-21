@@ -33,8 +33,8 @@ const productUnitSchema = Joi.string()
 
 const productSchema: Schema = Joi.object({
 	body: Joi.object({
-		baseProductName: Joi.string().min(1).max(300).required(),
-		productName: Joi.string().min(1).max(300).required(),
+		baseProductName: Joi.string().min(1).max(600).required(),
+		productName: Joi.string().min(1).max(600).required(),
 		code: Joi.number().integer().positive().optional(),
 		category: productCategorySchema.required(),
 		restrictedUse: Joi.boolean().required(),
@@ -70,8 +70,8 @@ const updateProductSchema: Schema = Joi.object({
 		productId: Joi.number().integer().positive().required(),
 	}).required(),
 	body: Joi.object({
-		baseProductName: Joi.string().min(1).max(300).optional(),
-		productName: Joi.string().min(1).max(300).optional(),
+		baseProductName: Joi.string().min(1).max(600).optional(),
+		productName: Joi.string().min(1).max(600).optional(),
 		code: Joi.number().integer().positive().optional(),
 		category: productCategorySchema.optional(),
 		restrictedUse: Joi.boolean().optional(),
