@@ -25,7 +25,6 @@ import {
 } from '../../../../../shared/types/global';
 import { generateToken, verifyInvite } from '../../helper/invite-token';
 import { InviteStatus } from '@prisma/client';
-import { filter } from 'lodash';
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
