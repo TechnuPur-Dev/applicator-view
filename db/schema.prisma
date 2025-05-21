@@ -71,6 +71,7 @@ model User {
   warrantyRegistrations  WarrantyRegistration[]
   AdminPermission        AdminPermission[]
   ActivityLog            ActivityLog[]
+  Certification          Certification[]
 }
 
 model ApplicatorWorker {
@@ -401,11 +402,12 @@ model Product {
 }
 
 model State {
-  id       Int      @id @default(autoincrement())
-  name     String   @unique
-  counties County[]
-  Farm     Farm[]
-  User     User[]
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  counties      County[]
+  Farm          Farm[]
+  User          User[]
+  Certification Certification[]
 }
 
 model County {
@@ -627,6 +629,38 @@ model City {
   longitude Float
 
   @@index([name])
+}
+
+model Certification {
+  id             Int               @id @default(autoincrement())
+  name           CertificationType
+  licenseNumber  String
+  stateId        Int?
+  additionalInfo String?
+  documentUrl    String? // Link to uploaded certificate
+  expiryDate     DateTime?
+  state          State?             @relation(fields: [stateId], references: [id])
+  userId         Int
+  user           User              @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum CertificationType {
+  FAA_PART_107
+  FAA_PART_137
+  FAA_44807
+  MEDICAL
+  INSURANCE
+  STATE_APPLICATOR_LICENSE
+  STATE_BUSINESS_LICENSE
+  STATE_CERTIFICATION
+  WRITTEN_TEST
+  ANNUAL_SAFETY
+  DRONE_REGISTRATION
+  CONDITIONS_LIMITATIONS
+  OTHER
 }
 
 enum ActivityAction {
