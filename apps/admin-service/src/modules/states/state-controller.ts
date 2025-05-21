@@ -2,11 +2,13 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../../../shared/utils/catch-async';
 import httpStatus from 'http-status';
 import stateService from './state-service';
-// import pick from '../../../../../shared/utils/pick';
+import pick from '../../../../../shared/utils/pick';
 
 const getAllStates = catchAsync(async (req: Request, res: Response) => {
-	const states = await stateService.getAllStates();
-	res.status(httpStatus.OK).json({ result: states });
+	const options = pick(req.query, ['limit', 'page', 'searchValue']);
+	const states = await stateService.getAllStates(options);
+
+	res.status(httpStatus.OK).json(states);
 });
 const createStates = catchAsync(async (req: Request, res: Response) => {
 	const data = req.body.states;
