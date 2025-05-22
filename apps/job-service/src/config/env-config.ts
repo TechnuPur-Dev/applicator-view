@@ -32,6 +32,8 @@ const envVarsSchema = Joi.object({
 	JWT_REFRESH_EXPIRATION_DAYS: Joi.number()
 		.default(30)
 		.description('Days after which refresh tokens expire'),
+	XAG_BASE_URL: Joi.string().required().description('XAG base url'),
+	XAG_DEV_TOKEN: Joi.string().required().description('XAG dev token'),
 }).unknown(true);
 
 // Validate the environment variables
@@ -54,6 +56,8 @@ const config = {
 			envVars.JWT_ACCESS_EXPIRATION_MINUTES as string,
 		refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS as number,
 	},
+	xag_base_url: envVars.XAG_BASE_URL as string,
+	xag_dev_token: envVars.XAG_DEV_TOKEN as string,
 };
 
 export default config; // Default export
