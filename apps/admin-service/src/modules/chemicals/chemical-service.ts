@@ -8,7 +8,7 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { PaginateOptions } from '../../../../../shared/types/global';
 import * as XLSX from 'xlsx';
 // import fs from 'fs';
-// import { chemicalData } from './chemical-types';
+import { chemicalData } from './chemical-types';
 // import { EntityType } from '../../../../../shared/constants';
 // create chemical
 const bulkUploadChemicals = async (fileBuffer: Buffer) => {
@@ -78,7 +78,24 @@ const bulkUploadChemicals = async (fileBuffer: Buffer) => {
     total: formattedData.length,// how much records added 
   };
 };
-
+// create 
+const createChemical = async (data:chemicalData) => {
+	const dataExist = await prisma.chemical.findFirst({
+		where:{
+			productName:data.productName    
+		},
+	});
+  console.log(dataExist,'dataExist')
+  if(dataExist){
+       	throw new ApiError(httpStatus.CONFLICT, 'chemical record already exist.');
+  }
+ const result = await prisma.chemical.create({
+    data:{
+      ...data
+    }
+  });
+	return { result };
+};
 // get user List
 const getAllChemicals = async (options: PaginateOptions) => {
 	const limit =
@@ -95,7 +112,7 @@ const getAllChemicals = async (options: PaginateOptions) => {
 	const data = await prisma.chemical.findMany({
 		skip,
 		take: limit,
-		orderBy: { id: 'asc' }
+		orderBy: { id: 'desc' }
 	});
 	const totalResults = await prisma.chemical.count({});
 
@@ -158,6 +175,7 @@ export default {
 	bulkUploadChemicals,
 	getAllChemicals,
 	updateChemical,
-	deleteChemical
+	deleteChemical,
+  createChemical
 
 };

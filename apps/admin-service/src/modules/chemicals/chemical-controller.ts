@@ -14,6 +14,12 @@ const bulkUploadChemicals = catchAsync(async (req: Request, res: Response) => {
 	const result = await chemicalService.bulkUploadChemicals(fileBuffer);
 	res.status(httpStatus.OK).json(result);
 });
+// post 
+const createChemical = catchAsync(async (req: Request, res: Response) => {
+	const data = req.body;
+	const result = await chemicalService.createChemical(data);
+	res.status(httpStatus.OK).json(result);
+});
 const getAllChemicals = catchAsync(async (req: Request, res: Response) => {
 	const options = pick(req.query, ['limit', 'page']);
 	const chemicals = await chemicalService.getAllChemicals(options);
@@ -38,7 +44,8 @@ export default {
 	getAllChemicals,
 	bulkUploadChemicals,
 	deleteChemical,
-	updateChemical
+	updateChemical,
+	createChemical
 
 
 };

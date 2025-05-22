@@ -12,9 +12,13 @@ const upload = multer({
   storage: multer.memoryStorage(), // This keeps file in memory
 });
 router.route('/all').get(verifyToken, chemicalController.getAllChemicals);
+// bulk upload
 router.
 route('/uploadFile').post(verifyToken, upload.single('file'),
  chemicalController.bulkUploadChemicals);
+//  post Api
+router.route('/create').post(verifyToken,  validateSchema(ChemicalValidation.chemicalSchema), chemicalController.createChemical);
+
 router
     .route('/update/:id')
     .put(

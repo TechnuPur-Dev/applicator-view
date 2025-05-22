@@ -1,6 +1,12 @@
 import Joi, { Schema } from 'joi';
 
+const stateSchema: Schema = Joi.object({
 
+    body: Joi.object({
+        name: Joi.string().min(1).max(50).required(), 
+        
+    }).required(),
+})
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
 		stateId: Joi.number().integer().positive(),
@@ -24,4 +30,5 @@ const stateUpdateSchema: Schema = Joi.object({
 export default {
 	paramsSchema,
 	stateUpdateSchema,
+	stateSchema
 };

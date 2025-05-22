@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import ApiError from '../../../../../shared/utils/api-error';
 import { StateData } from './state-types';
 import { PaginateOptions } from '../../../../../shared/types/global';
+import * as XLSX from 'xlsx';
 // import { EntityType } from '../../../../../shared/constants';
 
 // get user List
@@ -53,18 +54,20 @@ const getAllStates = async (options: PaginateOptions & {
 		totalResults,
 	};
 }
-
 // create state
-const createStates = async (data: StateData[]) => {
-	if (!Array.isArray(data) || data.length === 0) {
-		throw new ApiError(
-			httpStatus.CONFLICT,
-			'Request body must be a non-empty array of states.',
-		);
+const createStates = async (data: StateData) => {
+	const dataExist = await prisma.state.findFirst({
+		where: {
+			name: data.name
+		},
+	});
+	if (dataExist) {
+		throw new ApiError(httpStatus.CONFLICT, 'state already exist.');
 	}
-
-	return await prisma.state.createMany({
-		data,
+	return await prisma.state.create({
+		data: {
+			name: data.name,
+		},
 	});
 };
 const updateState = async (stateId: number, data: StateData) => {
@@ -117,12 +120,32 @@ const deleteState = async (Id: number) => {
 		message: 'State deleted successfully.',
 	};
 };
+const bulkUploadstate = async (fileBuffer: Buffer) => {
+	const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+	const sheet = workbook.Sheets[workbook.SheetNames[0]];
+	const jsonData = XLSX.utils.sheet_to_json<any>(sheet);
 
+	if (!jsonData || jsonData.length === 0) {
+		throw new Error('Excel file is empty or format is invalid.');
+	}
+	console.log(jsonData, 'jsonData')
+	// Insert all data
+	await prisma.state.createMany({
+		data: jsonData,
+		skipDuplicates: true,
+	});
+
+	return {
+		message: 'Data uploaded successfully.',
+		total: jsonData.length,// how much records added 
+	};
+};
 
 export default {
 	getAllStates,
 	createStates,
 	updateState,
-	deleteState
+	deleteState,
+	bulkUploadstate
 
 };

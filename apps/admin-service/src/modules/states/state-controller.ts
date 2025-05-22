@@ -11,7 +11,7 @@ const getAllStates = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(states);
 });
 const createStates = catchAsync(async (req: Request, res: Response) => {
-	const data = req.body.states;
+	const data = req.body;
 	const result = await stateService.createStates(data);
 	res.status(httpStatus.OK).json(result);
 });
@@ -29,11 +29,23 @@ const deleteState = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
+const bulkUploadstate = catchAsync(async (req: Request, res: Response) => {
+	// const file = req.file;
+	  const fileBuffer = req.file?.buffer;
+	   console.log(fileBuffer,'dataupdate')
+	if (!fileBuffer) {
+		return res.status(400).json({ error: 'File is required.' });
+	}
+	const result = await stateService.bulkUploadstate(fileBuffer);
+	res.status(httpStatus.OK).json(result);
+});
+
 export default {
 	getAllStates,
 	createStates,
 	deleteState,
-	updateState
+	updateState,
+	bulkUploadstate
 	
 	
 };
