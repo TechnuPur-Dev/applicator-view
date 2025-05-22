@@ -4,13 +4,14 @@ import user from './user/user-routes';
 import field from './field/field-routes';
 import farm from './farm/farm-routes';
 import table from './table-view/table-view-routes';
-import  applicatorWorker from './applicator-workers/applicator-workers-routes';
-import  forecastCity from './forecast-city/forecast-city-routes';
-import  permission from './permission/permission-routes';
+import applicatorWorker from './applicator-workers/applicator-workers-routes';
+import forecastCity from './forecast-city/forecast-city-routes';
+import permission from './permission/permission-routes';
 
 import geoData from './geo-data/geo-data-routes';
-import userNotification from './notification/notification-routes'
-import applicatorUser  from './applicator-users/applicator-users-routes';
+import userNotification from './notification/notification-routes';
+import applicatorUser from './applicator-users/applicator-users-routes';
+import certification from './certification/certification-routes';
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -38,8 +39,8 @@ const defaultRoutes = [
 		route: table,
 	},
 	{
-		path:'/applicator-workers',
-		route:applicatorWorker
+		path: '/applicator-workers',
+		route: applicatorWorker,
 	},
 	{
 		path: '/geo-data', // Path for the geo-data routes
@@ -50,16 +51,20 @@ const defaultRoutes = [
 		route: userNotification,
 	},
 	{
-		path:'/forecast-city',
-		route: forecastCity
+		path: '/forecast-city',
+		route: forecastCity,
 	},
 	{
-		path:'/applicator-users',
-		route:applicatorUser
+		path: '/applicator-users',
+		route: applicatorUser,
 	},
 	{
-		path:'/permission',
-		route: permission
+		path: '/permission',
+		route: permission,
+	},
+	{
+		path: '/certification',
+		route: certification,
 	},
 ];
 
