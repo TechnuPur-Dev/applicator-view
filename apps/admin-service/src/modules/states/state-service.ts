@@ -120,6 +120,22 @@ const deleteState = async (Id: number) => {
 		message: 'State deleted successfully.',
 	};
 };
+const getStateById = async (stateId: number) => {
+	const state = await prisma.state.findUnique({
+		where: { id: stateId },
+		select: { id: true },
+	});
+	if (!state) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'State not found.');
+	}
+	const result = await prisma.state.findUnique({
+		where: { id: stateId },
+
+	});
+
+	return { result };
+};
+// bulk upload
 const bulkUploadstate = async (fileBuffer: Buffer) => {
 	const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
 	const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -146,6 +162,7 @@ export default {
 	createStates,
 	updateState,
 	deleteState,
+	getStateById,
 	bulkUploadstate
 
 };

@@ -39,13 +39,18 @@ const deleteChemical = catchAsync(async (req: Request, res: Response) => {
 	const result = await chemicalService.deleteChemical(ChemicalId);
 	res.status(httpStatus.OK).json(result);
 });
-
+const getChemicalById = catchAsync(async (req: Request, res: Response) => {
+	const ChemicalId = +req.params.id;
+	const result = await chemicalService.getChemicalById(ChemicalId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	getAllChemicals,
 	bulkUploadChemicals,
 	deleteChemical,
 	updateChemical,
-	createChemical
+	createChemical,
+	getChemicalById
 
 
 };

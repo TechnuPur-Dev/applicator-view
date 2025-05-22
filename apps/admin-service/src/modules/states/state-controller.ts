@@ -28,7 +28,12 @@ const deleteState = catchAsync(async (req: Request, res: Response) => {
 	const result = await stateService.deleteState(stateId);
 	res.status(httpStatus.OK).json(result);
 });
-
+const getStateById = catchAsync(async (req: Request, res: Response) => {
+	const stateId = +req.params.stateId;
+	const result = await stateService.getStateById(stateId);
+	res.status(httpStatus.OK).json(result);
+});
+// bulk upload
 const bulkUploadstate = catchAsync(async (req: Request, res: Response) => {
 	// const file = req.file;
 	  const fileBuffer = req.file?.buffer;
@@ -45,7 +50,8 @@ export default {
 	createStates,
 	deleteState,
 	updateState,
-	bulkUploadstate
+	bulkUploadstate,
+	getStateById
 	
 	
 };

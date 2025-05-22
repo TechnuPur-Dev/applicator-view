@@ -9,15 +9,15 @@ import multer from 'multer';
 // import permissionValidation from './permissions-validation';
 const router: Router = express.Router();
 const upload = multer({
-  storage: multer.memoryStorage(), // This keeps file in memory
+    storage: multer.memoryStorage(), // This keeps file in memory
 });
 router.route('/all').get(verifyToken, chemicalController.getAllChemicals);
 // bulk upload
 router.
-route('/uploadFile').post(verifyToken, upload.single('file'),
- chemicalController.bulkUploadChemicals);
+    route('/uploadFile').post(verifyToken, upload.single('file'),
+        chemicalController.bulkUploadChemicals);
 //  post Api
-router.route('/create').post(verifyToken,  validateSchema(ChemicalValidation.chemicalSchema), chemicalController.createChemical);
+router.route('/create').post(verifyToken, validateSchema(ChemicalValidation.chemicalSchema), chemicalController.createChemical);
 
 router
     .route('/update/:id')
@@ -33,5 +33,11 @@ router
         validateSchema(ChemicalValidation.paramsSchema),
         chemicalController.deleteChemical,
     );
-
+router
+    .route('/get/:id')
+    .get(
+        verifyToken,
+        validateSchema(ChemicalValidation.paramsSchema),
+        chemicalController.getChemicalById,
+    );
 export default router;

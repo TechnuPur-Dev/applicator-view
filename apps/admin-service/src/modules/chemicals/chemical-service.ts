@@ -167,6 +167,20 @@ const deleteChemical = async (Id: number) => {
 	};
 };
 
+const getChemicalById = async (chemicalId: number) => {
+	const chemical = await prisma.chemical.findUnique({
+		where: { id: chemicalId },
+		select: { id: true },
+	});
+	if (!chemical) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'chemical not found.');
+	}
+	const result = await prisma.chemical.findUnique({
+		where: { id: chemicalId },
+	});
+
+	return { result };
+};
 
 
 
@@ -176,6 +190,7 @@ export default {
 	getAllChemicals,
 	updateChemical,
 	deleteChemical,
-  createChemical
+  createChemical,
+  getChemicalById
 
 };

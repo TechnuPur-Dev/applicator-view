@@ -29,7 +29,9 @@ router
         validateSchema(stateValidation.paramsSchema),
         stateController.deleteState,
     );
+router.route('/get/:stateId').get(verifyToken, stateController.getStateById);
 // bulk upload
 router.route('/uploadFile').post(verifyToken, upload.single('file'),
  stateController.bulkUploadstate);
+ 
 export default router;
