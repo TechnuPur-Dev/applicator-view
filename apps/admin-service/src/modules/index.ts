@@ -4,6 +4,8 @@ import accounts from './accounts/accounts-routes';
 import dasboard from './dashboard/dashboard-routes'
 import adminUser from './adminControls/admin-user-routes'
 import permission from './permissions/permissions-routes'
+import state from './states/state-routes'
+import chemical from './chemicals/chemical-routes'
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -26,6 +28,14 @@ const defaultRoutes = [
 	{
 		path: '/permission',
 		route: permission
+	},
+		{
+		path: '/state',
+		route: state
+	},
+	{
+		path:'/chemical',
+		route: chemical
 	}
 
 ];
