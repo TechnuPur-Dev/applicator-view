@@ -387,8 +387,8 @@ model Product {
   nutrients                   Json?
   jobPricePerMonth            Json            @default("{}")
   ticketPricePerMonth         Json            @default("{}")
-  jobPrice                    Float           @default(0)
-  ticketPrice                 Float           @default(0)
+  // jobPrice                    Float           @default(0)
+  // ticketPrice                 Float           @default(0)
   personalProtectiveEquipment String?
   preHarvestInterval          String?
   comments                    String?
@@ -639,7 +639,7 @@ model Certification {
   additionalInfo String?
   documentUrl    String? // Link to uploaded certificate
   expiryDate     DateTime?
-  state          State?             @relation(fields: [stateId], references: [id])
+  state          State?            @relation(fields: [stateId], references: [id])
   userId         Int
   user           User              @relation(fields: [userId], references: [id])
 

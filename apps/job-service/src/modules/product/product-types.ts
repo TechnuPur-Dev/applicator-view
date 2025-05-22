@@ -22,8 +22,8 @@ interface CreateProduct {
     jobPricePerMonth?: Record<string, any>; // JSON object for monthly job prices
     ticketPricePerMonth?: Record<string, any>; // JSON object for monthly ticket prices
 
-    jobPrice?: number; // Float for job price
-    ticketPrice?: number; // Float for ticket price
+    // jobPrice?: number; // Float for job price
+    // ticketPrice?: number; // Float for ticket price
 
     personalProtectiveEquipment?: string; // Optional PPE details
     preHarvestInterval?: string; // Optional pre-harvest interval
@@ -51,8 +51,8 @@ interface UpdateProduct {
     jobPricePerMonth?: Record<string, any>; // JSON object for monthly job prices
     ticketPricePerMonth?: Record<string, any>; // JSON object for monthly ticket prices
 
-    jobPrice?: number; // Float for job price
-    ticketPrice?: number; // Float for ticket price
+    // jobPrice?: number; // Float for job price
+    // ticketPrice?: number; // Float for ticket price
 
     personalProtectiveEquipment?: string; // Optional PPE details
     preHarvestInterval?: string; // Optional pre-harvest interval
