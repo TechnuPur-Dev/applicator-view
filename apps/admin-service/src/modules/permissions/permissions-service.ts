@@ -9,25 +9,38 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 // get user List
 
 const getAllPermissions = async () => {
-	// Calculate the number of users to skip based on the current page and limit
-	const result = await prisma.permission.findMany({
-		select:{
-            id:true,
-			name:true
-		},
-		orderBy: {
-			id: 'desc',
-		},
-	
-	}); // Fetch all permissions
-	
-	// Return the paginated result including users, current page, limit, total pages, and total results
-	return {
-		result: result,
-	
-	};
-};
+	const permissionData = await prisma.permission.findMany({
+		include: {
+			adminPermissions: {
+				select: {
+					adminId: true,
+					admin: {
+						select: {
+							fullName: true
+						}
+					},
+					accessLevel: true
 
+				}
+			}
+		}
+	});
+	const formatData = permissionData.map((item) => (
+		{
+			...item,
+			adminPermissions: item.adminPermissions.map((item) => (
+				{
+					adminId: item.adminId,
+					fullName: item.admin.fullName,
+					accessLevel: item.accessLevel
+				}
+
+			))
+
+		}
+	))
+	return formatData;
+};
 
 
 
