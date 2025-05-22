@@ -8,9 +8,13 @@ import ChemicalValidation from './chemical-validation';
 import multer from 'multer';
 // import permissionValidation from './permissions-validation';
 const router: Router = express.Router();
-const upload = multer({ dest: 'uploads/' }); // Temp folder for Excel files
+const upload = multer({
+  storage: multer.memoryStorage(), // This keeps file in memory
+});
 router.route('/all').get(verifyToken, chemicalController.getAllChemicals);
-router.route('/uploadFile').post(verifyToken, upload.single('file'), chemicalController.bulkUploadChemicals);
+router.
+route('/uploadFile').post(verifyToken, upload.single('file'),
+ chemicalController.bulkUploadChemicals);
 router
     .route('/update/:id')
     .put(

@@ -7,17 +7,12 @@ import ApiError from '../../../../../shared/utils/api-error';
 // import { chemicalData } from './chemical-types';
 import { PaginateOptions } from '../../../../../shared/types/global';
 import * as XLSX from 'xlsx';
-import fs from 'fs';
+// import fs from 'fs';
 // import { chemicalData } from './chemical-types';
 // import { EntityType } from '../../../../../shared/constants';
-
 // create chemical
-const bulkUploadChemicals = async (file: Express.Multer.File,) => {
-	console.log('Uploaded file:', file.path);
-	 const filePath = file.path;
-
-  // Step 1: Read Excel
-  const workbook = XLSX.readFile(filePath);
+const bulkUploadChemicals = async (fileBuffer: Buffer) => {
+    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const jsonData = XLSX.utils.sheet_to_json<any>(sheet);
 
@@ -25,38 +20,65 @@ const bulkUploadChemicals = async (file: Express.Multer.File,) => {
     throw new Error('Excel file is empty or format is invalid.');
   }
 
-  // Format only entries that contain number and date 
-  jsonData.forEach((item: any) => {
-	delete item.id
-    if (item.companyNumber !== null && item.companyNumber !== undefined) {
-      const toValidISOString = (val: any) => {
-        const d = new Date(val);
-        return isNaN(d.getTime()) ? undefined : d.toISOString();
-      };
+  //  convert to DateTime ISO string
+  const toValidISOString = (val: any): string | undefined => {
+    if (!val) return undefined;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? undefined : d.toISOString();
+  };
 
-      item.companyNumber = String(item.companyNumber);
-      item.ridpNumberSort = item.ridpNumberSort ? String(item.ridpNumberSort) : null;
-      item.firstRegistrationDate = toValidISOString(item.firstRegistrationDate);
-      item.statusDate = toValidISOString(item.statusDate);
-      item.maxLabelDate = toValidISOString(item.maxLabelDate);
-	  item.labelDates =toValidISOString(item.labelDates);
-    }
+  // Format and clean data according to schema
+  const formattedData = jsonData.map((item: any) => {
+    return {
+      productName: item.productName?.toString() || '',
+      registrationNumber: item.registrationNumber?.toString() || '',
+      registrationType: item.registrationType || null,
+      companyNumber: item.companyNumber?.toString() || null,
+      companyName: item.companyName || null,
+      firstRegistrationDate: toValidISOString(item.firstRegistrationDate),
+      status: item.status || null,
+      statusDescription: item.statusDescription || null,
+      statusGroup: item.statusGroup || null,
+      statusDate: toValidISOString(item.statusDate),
+      useType: item.useType || null,
+      signalWord: item.signalWord || null,
+      rupFlag: item.rupFlag?.toString().toLowerCase() === 'true',
+      rupReason: item.rupReason || null,
+      pesticideType: item.pesticideType || null,
+      pesticideCategory: item.pesticideCategory || null,
+      physicalForm: item.physicalForm || null,
+      ais: item.ais || null,
+      pests: item.pests || null,
+      sites: item.sites || null,
+      team: item.team || null,
+      pmEmail: item.pmEmail || null,
+      ridpNumberSort: item.ridpNumberSort?.toString() || null,
+      usePattern: item.usePattern || null,
+      transferHistory: item.transferHistory || null,
+      abns: item.abns || null,
+      meTooFlag: item.meTooFlag?.toString().toLowerCase() === 'true',
+      meTooRefs: item.meTooRefs || null,
+      maxLabelDate: toValidISOString(item.maxLabelDate),
+      labelDates: item.labelDates || null,
+      labelNames: item.labelNames || null,
+    //   createdAt: toValidISOString(item.createdAt) || undefined,
+    //   updatedAt: toValidISOString(item.updatedAt) || undefined,
+    //   deletedAt: toValidISOString(item.deletedAt) || null,
+    };
   });
-
-  //  Insert all data 
+    console.log(formattedData,'formattedData')
+  // Insert all data
   await prisma.chemical.createMany({
-    data: jsonData,
-    skipDuplicates: true,
+    data: formattedData,
+    // skipDuplicates: true,
   });
-
-  // Delete uploaded file
-  await fs.unlinkSync(filePath);
 
   return {
     message: 'Data uploaded successfully.',
-    total: jsonData.length,
+    total: formattedData.length,// how much records added 
   };
 };
+
 // get user List
 const getAllChemicals = async (options: PaginateOptions) => {
 	const limit =
@@ -89,7 +111,7 @@ const getAllChemicals = async (options: PaginateOptions) => {
 
 }
 
-const updateChemical = async (chemicalId: number, data:any) => {
+const updateChemical = async (chemicalId: number, data: any) => {
 	const chemical = await prisma.chemical.findUnique({
 		where: { id: chemicalId },
 		select: { id: true },
@@ -99,7 +121,9 @@ const updateChemical = async (chemicalId: number, data:any) => {
 	}
 	const updatedchemical = await prisma.chemical.update({
 		where: { id: chemicalId },
-		data,
+		data:{
+			...data
+		},
 	});
 
 	return { updatedchemical };
