@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import ApiError from '../../../../../shared/utils/api-error';
 import {
-	StateData,
+	// StateData,
 	CountyData,
 	TownShipData,
 	UpdateTownShipData,
@@ -12,18 +12,19 @@ import {
 import validateAddressHelper from '../../helper/validate-address';
 
 // to update user profile
-const createStates = async (data: StateData[]) => {
-	if (!Array.isArray(data) || data.length === 0) {
-		throw new ApiError(
-			httpStatus.CONFLICT,
-			'Request body must be a non-empty array of states.',
-		);
-	}
+// shifted to admin panel 
+// const createStates = async (data: StateData[]) => {
+// 	if (!Array.isArray(data) || data.length === 0) {
+// 		throw new ApiError(
+// 			httpStatus.CONFLICT,
+// 			'Request body must be a non-empty array of states.',
+// 		);
+// 	}
 
-	return await prisma.state.createMany({
-		data,
-	});
-};
+// 	return await prisma.state.createMany({
+// 		data,
+// 	});
+// }; 
 
 // to update user profile
 const createCounties = async (data: CountyData) => {
@@ -104,17 +105,42 @@ const getAllCounties = async () =>
 const getAllTownships = async () =>
 	await prisma.township.findMany({ orderBy: { id: 'asc' } });
 
-const deleteState = async (Id: number) => {
-	await prisma.state.delete({
-		where: {
-			id: Id,
-		},
-	});
+// const deleteState = async (Id: number) => {
+// 	// Check if related records exist
+// 	const relatedRecords = await prisma.state.findUnique({
+// 		where: { id: Id },
+// 		select: {
+// 			counties: { select: { id: true }, take: 1 },
+// 			Farm: { select: { id: true }, take: 1 },
+// 			User: { select: { id: true }, take: 1 },
+// 		},
+// 	});
+// 	if (!relatedRecords) {
+// 		throw new ApiError(
+// 			httpStatus.NOT_FOUND,
+// 			'state not found.',
+// 		);
+// 	}
 
-	return {
-		message: 'State deleted successfully.',
-	};
-};
+// 	if (relatedRecords.counties.length > 0 ||
+// 		relatedRecords.Farm.length > 0 || 
+// 		relatedRecords.User.length > 0) 
+// 		{
+//          throw new ApiError(
+// 			httpStatus.NOT_FOUND,
+// 			'state cannot be deleted.It is currently in use',
+// 		); 
+// 	}
+// 	await prisma.state.delete({
+// 		where: {
+// 			id: Id,
+// 		},
+// 	});
+
+// 	return {
+// 		message: 'State deleted successfully.',
+// 	};
+// };
 const deleteCounty = async (Id: number) => {
 	await prisma.county.delete({
 		where: {
@@ -137,21 +163,21 @@ const deleteTownship = async (Id: number) => {
 		message: 'Township deleted successfully.',
 	};
 };
-const updateState = async (stateId: number, data: StateData) => {
-	const state = await prisma.state.findUnique({
-		where: { id: stateId },
-		select: { id: true },
-	});
-	if (!state) {
-		throw new ApiError(httpStatus.NOT_FOUND, 'State not found.');
-	}
-	const updatedState = await prisma.state.update({
-		where: { id: stateId },
-		data,
-	});
+// const updateState = async (stateId: number, data: StateData) => {
+// 	const state = await prisma.state.findUnique({
+// 		where: { id: stateId },
+// 		select: { id: true },
+// 	});
+// 	if (!state) {
+// 		throw new ApiError(httpStatus.NOT_FOUND, 'State not found.');
+// 	}
+// 	const updatedState = await prisma.state.update({
+// 		where: { id: stateId },
+// 		data,
+// 	});
 
-	return updatedState;
-};
+// 	return updatedState;
+// };
 const updateCounty = async (countyId: number, data: UpdateCountyData) => {
 	const county = await prisma.county.findUnique({
 		where: { id: countyId },
@@ -222,16 +248,16 @@ const searchCity = async (search: string) => {
 	return cities;
 };
 export default {
-	createStates,
+	// createStates,
 	createCounties,
 	createTownships,
 	getAllStates,
 	getAllCounties,
 	getAllTownships,
-	deleteState,
+	// deleteState,
 	deleteCounty,
 	deleteTownship,
-	updateState,
+	// updateState,
 	updateCounty,
 	updateTownship,
 	getCountiesByState,
