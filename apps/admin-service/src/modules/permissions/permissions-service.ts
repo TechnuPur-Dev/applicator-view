@@ -9,6 +9,21 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 // get user List
 
 const getAllPermissions = async () => {
+	const result = await prisma.permission.findMany({
+		select:{
+            id:true,
+			name:true
+		},
+		orderBy: {
+			id: 'desc',
+		},
+	
+	}); // Fetch all permissions
+	
+	return {
+		result: result,
+	
+	};
 	const permissionData = await prisma.permission.findMany({
 		include: {
 			adminPermissions: {
@@ -42,11 +57,50 @@ const getAllPermissions = async () => {
 	return formatData;
 };
 
+const getAdminUserPermissions = async () => {
+	
+	const permissionData = await prisma.permission.findMany({
+		include: {
+			adminPermissions: {
+				select: {
+					adminId: true,
+					admin: {
+						select: {
+							fullName: true
+						}
+					},
+					accessLevel: true
+
+				}
+			}
+		},
+		omit:{
+			createdAt:true,
+			updatedAt:true
+		}
+	});
+	const formatData = permissionData.map((item) => (
+		{
+			...item,
+			adminPermissions: item.adminPermissions.map((item) => (
+				{
+					adminId: item.adminId,
+					fullName: item.admin.fullName,
+					accessLevel: item.accessLevel
+				}
+
+			))
+
+		}
+	))
+	return formatData;
+};
 
 
 
 
 export default {
 	getAllPermissions,
+	getAdminUserPermissions
 
 };

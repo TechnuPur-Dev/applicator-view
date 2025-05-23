@@ -11,8 +11,14 @@ const getAllPermissions = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(userData);
 });
 
+const getAdminUserPermissions = catchAsync(async (req: Request, res: Response) => {
+	// const options = pick(req.query, ['limit', 'page']);
+	const userData = await permissionService.getAdminUserPermissions();
+	res.status(httpStatus.OK).json(userData);
+});
 
 export default {
 	getAllPermissions,
+	getAdminUserPermissions
 	
 };
