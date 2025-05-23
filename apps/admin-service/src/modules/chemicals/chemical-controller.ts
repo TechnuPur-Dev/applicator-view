@@ -21,7 +21,7 @@ const createChemical = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getAllChemicals = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const chemicals = await chemicalService.getAllChemicals(options);
 	res.status(httpStatus.OK).json(chemicals);
 });
