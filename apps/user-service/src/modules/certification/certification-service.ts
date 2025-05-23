@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import httpStatus from 'http-status';
-import ApiError from '../../../../../shared/utils/api-error';
+// import httpStatus from 'http-status';
+// import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { CertificationType } from '@prisma/client';
 import config from '../../../../../shared/config/env-config';

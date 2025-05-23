@@ -551,7 +551,7 @@ model AdminPermission {
   admin        User         @relation(fields: [adminId], references: [id], onDelete: Cascade)
   permission   Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  @@id([id, adminId, permissionId])
+  @@id(id)
 }
 
 model ActivityLog {
