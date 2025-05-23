@@ -10,6 +10,8 @@ const router: Router = express.Router();
 
 router.route('/all').get(verifyToken, permissionController.getAllPermissions);
 router.route('/user-permissions').get(verifyToken, permissionController.getAdminUserPermissions);
+router.route('/update-permissions').put(verifyToken, permissionController.updateAdminPermission);
+
 
 
 export default router;
