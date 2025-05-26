@@ -442,11 +442,13 @@ const getAllGrowersByApplicator = async (
 		const searchValue = options.searchValue;
 		if (options.label === 'all') {
 			const upperValue = searchValue.toUpperCase();
-			const isStatusMatch = Object.values(InviteStatus).includes(upperValue as InviteStatus);
+			const isStatusMatch = Object.values(InviteStatus).includes(
+				upperValue as InviteStatus,
+			);
 
 			if (isStatusMatch) {
 				filters.inviteStatus = {
-					equals: upperValue as InviteStatus
+					equals: upperValue as InviteStatus,
 				};
 			} else {
 				Object.assign(filters, {
@@ -454,76 +456,114 @@ const getAllGrowersByApplicator = async (
 						{
 							grower: {
 								OR: [
-									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
-				});
-
-			}
-		}else{
-		switch (options.label) {
-			case 'inviteStatus':
-				searchFilter.inviteStatus = {
-					equals: searchValue.toUpperCase() as InviteStatus,
-				};
-				break;
-			case 'growerName':
-				searchFilter.grower = {
-					OR: [
-						{
-							fullName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							firstName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							lastName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
 					],
-				};
-				break;
-			case 'growerId':
-				searchFilter.growerId = parseInt(searchValue, 10);
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'inviteStatus':
+					searchFilter.inviteStatus = {
+						equals: searchValue.toUpperCase() as InviteStatus,
+					};
+					break;
+				case 'growerName':
+					searchFilter.grower = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'growerId':
+					searchFilter.growerId = parseInt(searchValue, 10);
 
-				break;
-			case 'email':
-				searchFilter.grower = {
-					email: { equals: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'phoneNumber':
-				searchFilter.grower = {
-					phoneNumber: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'address1':
-				searchFilter.grower = {
-
-					address1: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+					break;
+				case 'email':
+					searchFilter.grower = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.grower = {
+						phoneNumber: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
+					};
+					break;
+				case 'address1':
+					searchFilter.grower = {
+						address1: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-		Object.assign(filters, searchFilter); // Merge filters dynamically
-	}
 	}
 	// Fetch growers with their farms and fields
 	const growers = await prisma.applicatorGrower.findMany({
@@ -606,7 +646,7 @@ const getAllGrowersByApplicator = async (
 		};
 	});
 	const totalResults = await prisma.applicatorGrower.count({
-		where: filters
+		where: filters,
 		// {
 		// 	applicatorId,
 		// 	AND: [
@@ -637,8 +677,8 @@ const getAllGrowersByApplicator = async (
 const getAllApplicatorsByGrower = async (
 	growerId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	const limit =
@@ -673,17 +713,19 @@ const getAllApplicatorsByGrower = async (
 				],
 			},
 		],
-	}
+	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 		const searchValue = options.searchValue;
-       	if (options.label === 'all') {
+		if (options.label === 'all') {
 			const upperValue = searchValue.toUpperCase();
-			const isStatusMatch = Object.values(InviteStatus).includes(upperValue as InviteStatus);
+			const isStatusMatch = Object.values(InviteStatus).includes(
+				upperValue as InviteStatus,
+			);
 
 			if (isStatusMatch) {
 				filters.inviteStatus = {
-					equals: upperValue as InviteStatus
+					equals: upperValue as InviteStatus,
 				};
 			} else {
 				Object.assign(filters, {
@@ -691,77 +733,115 @@ const getAllApplicatorsByGrower = async (
 						{
 							applicator: {
 								OR: [
-									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
-				});
-
-			}
-		}else{
-		switch (options.label) {
-			case 'inviteStatus':
-				searchFilter.inviteStatus = {
-					equals: searchValue.toUpperCase() as InviteStatus,
-				};
-				break;
-			case 'applicatorName':
-				searchFilter.applicator = {
-					OR: [
-						{
-							fullName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							firstName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
-						{
-							lastName: {
-								contains: searchValue,
-								mode: 'insensitive',
-							},
-						},
 					],
-				};
-				break;
-			case 'applicatorId':
-				searchFilter.applicatorId = parseInt(searchValue, 10);
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'inviteStatus':
+					searchFilter.inviteStatus = {
+						equals: searchValue.toUpperCase() as InviteStatus,
+					};
+					break;
+				case 'applicatorName':
+					searchFilter.applicator = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'applicatorId':
+					searchFilter.applicatorId = parseInt(searchValue, 10);
 
-				break;
-			case 'email':
-				searchFilter.applicator = {
-					email: { equals: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'phoneNumber':
-				searchFilter.applicator = {
-					phoneNumber: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			case 'address1':
-				searchFilter.applicator = {
+					break;
+				case 'email':
+					searchFilter.applicator = {
+						email: { equals: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'phoneNumber':
+					searchFilter.applicator = {
+						phoneNumber: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
+					};
+					break;
+				case 'address1':
+					searchFilter.applicator = {
+						address1: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
 
-					address1: { contains: searchValue, mode: 'insensitive' },
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-
-		Object.assign(filters, searchFilter); // Merge filters dynamically
-	}
 	}
 	// Fetch applicators
 	const applicators = await prisma.applicatorGrower.findMany({
@@ -815,7 +895,7 @@ const getAllApplicatorsByGrower = async (
 		};
 	});
 	const totalResults = await prisma.applicatorGrower.count({
-		where: filters
+		where: filters,
 	});
 	const totalPages = Math.ceil(updatedApplicators?.length / limit);
 	// Return the paginated result including users, current page, limit, total pages, and total results
@@ -1068,10 +1148,13 @@ const deleteApplicator = async (growerId: number, applicatorId: number) => {
 	};
 };
 
-const getPendingInvites = async (user: User, options: PaginateOptions & {
-	label?: string;
-	searchValue?: string;
-}) => {
+const getPendingInvites = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -1098,76 +1181,114 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
-         	if (options.label === 'all') {
+			if (options.label === 'all') {
 				Object.assign(filters, {
 					OR: [
 						{
 							grower: {
 								OR: [
-									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
+					],
 				});
+			} else {
+				switch (options.label) {
+					case 'growerId':
+						searchFilter.growerId = parseInt(searchValue, 10);
+						break;
+					case 'growerName':
+						searchFilter.grower = {
+							OR: [
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							],
+						};
+						break;
 
-			
-		}else{
-			switch (options.label) {
-				case 'growerId':
-					searchFilter.growerId = parseInt(searchValue, 10);
-					break;
-				case 'growerName':
-					searchFilter.grower = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+					case 'phoneNumber':
+						searchFilter.grower = {
+							phoneNumber: {
+								contains: searchValue,
+								mode: 'insensitive',
 							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+						};
+						break;
+					case 'email':
+						searchFilter.grower = {
+							email: { equals: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'address1':
+						searchFilter.grower = {
+							address1: {
+								contains: searchValue,
+								mode: 'insensitive',
 							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						],
-					};
-					break;
-
-				case 'phoneNumber':
-					searchFilter.grower = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'email':
-					searchFilter.grower = {
-						email: { equals: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'address1':
-					searchFilter.grower = {
-						address1: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				default:
-					throw new Error('Invalid label provided.');
+						};
+						break;
+					default:
+						throw new Error('Invalid label provided.');
+				}
+				Object.assign(filters, searchFilter); // Merge filters dynamically
 			}
-			Object.assign(filters, searchFilter); // Merge filters dynamically
-		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -1246,7 +1367,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 			};
 		});
 		const totalResults = await prisma.applicatorGrower.count({
-			where: filters
+			where: filters,
 		});
 		const totalPages = Math.ceil(totalResults / limit);
 		return {
@@ -1261,74 +1382,114 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
-            	if (options.label === 'all') {
+			if (options.label === 'all') {
 				Object.assign(filters, {
 					OR: [
 						{
 							applicator: {
 								OR: [
-									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
-				});			
-		}else{
-			switch (options.label) {
-				case 'applicatorId':
-					searchFilter.applicatorId = parseInt(searchValue, 10);
-					break;
-				case 'applicatorName':
-					searchFilter.applicator = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
+					],
+				});
+			} else {
+				switch (options.label) {
+					case 'applicatorId':
+						searchFilter.applicatorId = parseInt(searchValue, 10);
+						break;
+					case 'applicatorName':
+						searchFilter.applicator = {
+							OR: [
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
 								},
-							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
 								},
-							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
 								},
-							},
-						],
-					};
-					break;
+							],
+						};
+						break;
 
-				case 'phoneNumber':
-					searchFilter.applicator = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'email':
-					searchFilter.applicator = {
-						email: { equals: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'address1':
-					searchFilter.applicator = {
-						address1: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				default:
-					throw new Error('Invalid label provided.');
+					case 'phoneNumber':
+						searchFilter.applicator = {
+							phoneNumber: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						};
+						break;
+					case 'email':
+						searchFilter.applicator = {
+							email: { equals: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'address1':
+						searchFilter.applicator = {
+							address1: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						};
+						break;
+					default:
+						throw new Error('Invalid label provided.');
+				}
+				Object.assign(filters, searchFilter); // Merge filters dynamically
 			}
-			Object.assign(filters, searchFilter); // Merge filters dynamically
-		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -1409,7 +1570,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 		});
 
 		const totalResults = await prisma.applicatorGrower.count({
-			where: filters
+			where: filters,
 		});
 		const totalPages = Math.ceil(totalResults / limit);
 		return {
@@ -2125,8 +2286,8 @@ const getPendingInvitesFromOthers = async (
 	const skip = (page - 1) * limit;
 	// Determine the invite type based on the user's role
 	const isApplicator = user.role === 'APPLICATOR';
-	const type = isApplicator ? 'GROWER' : 'APPLICATOR'
-	console.log(type, 'type')
+	const type = isApplicator ? 'GROWER' : 'APPLICATOR';
+	console.log(type, 'type');
 	//if pending invites from grower get by applicator
 	if (type === 'GROWER') {
 		const filters: Prisma.ApplicatorGrowerWhereInput = {
@@ -2137,76 +2298,114 @@ const getPendingInvitesFromOthers = async (
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
-             	if (options.label === 'all') {
+			if (options.label === 'all') {
 				Object.assign(filters, {
 					OR: [
 						{
 							grower: {
 								OR: [
-									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
+					],
 				});
+			} else {
+				switch (options.label) {
+					case 'growerId':
+						searchFilter.growerId = parseInt(searchValue, 10);
+						break;
+					case 'growerName':
+						searchFilter.grower = {
+							OR: [
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							],
+						};
+						break;
 
-			
-		}else{
-			switch (options.label) {
-				case 'growerId':
-					searchFilter.growerId = parseInt(searchValue, 10);
-					break;
-				case 'growerName':
-					searchFilter.grower = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+					case 'phoneNumber':
+						searchFilter.grower = {
+							phoneNumber: {
+								contains: searchValue,
+								mode: 'insensitive',
 							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+						};
+						break;
+					case 'email':
+						searchFilter.grower = {
+							email: { equals: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'address1':
+						searchFilter.grower = {
+							address1: {
+								contains: searchValue,
+								mode: 'insensitive',
 							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						],
-					};
-					break;
-
-				case 'phoneNumber':
-					searchFilter.grower = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'email':
-					searchFilter.grower = {
-						email: { equals: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'address1':
-					searchFilter.grower = {
-						address1: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				default:
-					throw new Error('Invalid label provided.');
+						};
+						break;
+					default:
+						throw new Error('Invalid label provided.');
+				}
+				Object.assign(filters, searchFilter); // Merge filters dynamically
 			}
-			Object.assign(filters, searchFilter); // Merge filters dynamically
-		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -2308,77 +2507,115 @@ const getPendingInvitesFromOthers = async (
 		if (options.label && options.searchValue) {
 			const searchFilter: Prisma.ApplicatorGrowerWhereInput = {};
 			const searchValue = options.searchValue;
-            	if (options.label === 'all') {
+			if (options.label === 'all') {
 				Object.assign(filters, {
 					OR: [
 						{
 							applicator: {
 								OR: [
-									{id:!isNaN(Number(searchValue)) ? parseInt(searchValue, 10):undefined},
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
+					],
 				});
+			} else {
+				switch (options.label) {
+					case 'applicatorId':
+						searchFilter.applicatorId = parseInt(searchValue, 10);
+						break;
+					case 'applicatorName':
+						searchFilter.applicator = {
+							OR: [
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+							],
+						};
+						break;
 
-			
-		}else{
-			switch (options.label) {
-				case 'applicatorId':
-					searchFilter.applicatorId = parseInt(searchValue, 10);
-					break;
-				case 'applicatorName':
-					searchFilter.applicator = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+					case 'phoneNumber':
+						searchFilter.applicator = {
+							phoneNumber: {
+								contains: searchValue,
+								mode: 'insensitive',
 							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
+						};
+						break;
+					case 'email':
+						searchFilter.applicator = {
+							email: { equals: searchValue, mode: 'insensitive' },
+						};
+						break;
+					case 'address':
+						searchFilter.applicator = {
+							address1: {
+								contains: searchValue,
+								mode: 'insensitive',
 							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						],
-					};
-					break;
+						};
+						break;
+					default:
+						throw new Error('Invalid label provided.');
+				}
 
-				case 'phoneNumber':
-					searchFilter.applicator = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'email':
-					searchFilter.applicator = {
-						email: { equals: searchValue, mode: 'insensitive' },
-					};
-					break;
-				case 'address':
-					searchFilter.applicator = {
-						address1: { contains: searchValue, mode: 'insensitive' },
-					};
-					break;
-				default:
-					throw new Error('Invalid label provided.');
+				Object.assign(filters, searchFilter); // Merge filters dynamically
 			}
-
-			Object.assign(filters, searchFilter); // Merge filters dynamically
-		}
 		}
 		const pendingInvites = await prisma.applicatorGrower.findMany({
 			where: filters,
@@ -2788,20 +3025,24 @@ const verifyInviteToken = async (token: string) => {
 };
 const getWeather = async (user: User, options: city) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
+
 	const userData = await prisma.user.findUnique({
 		where: { id: user.id },
 		select: { township: true },
 	});
 
+	const cityName = options.city || userData?.township;
+
 	// Get latitude & longitude
-	const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${options.city ? options.city : userData?.township}&limit=1&appid=${OPEN_WEATHER_API_KEY}`;
+	const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${OPEN_WEATHER_API_KEY}`;
 	const geoResponse = await axios.get(geoUrl);
 	const { lat, lon } = geoResponse.data[0];
 
 	// Fetch 5-day weather forecast
-	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${options.city ? options.city : userData?.township}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
+	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
 	const weatherResponse = await axios.get(weatherUrl);
 	const weatherData = weatherResponse.data.list;
+	const timezoneOffset = weatherResponse.data.city.timezone; // in seconds
 
 	// Fetch AQI data
 	const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution/forecast?lat=${lat}&lon=${lon}&appid=${OPEN_WEATHER_API_KEY}`;
@@ -2812,26 +3053,29 @@ const getWeather = async (user: User, options: city) => {
 	const groupedWeather: Record<string, any> = {};
 
 	weatherData.forEach((item: any) => {
-		const date = item.dt_txt.split(' ')[0];
-		const time24 = item.dt_txt.split(' ')[1].slice(0, 5);
-		const [hour, minute] = time24.split(':');
-		const hour12 = parseInt(hour) % 12 || 12;
-		const ampm = parseInt(hour) >= 12 ? 'PM' : 'AM';
-		const time12 = `${hour12}:${minute} ${ampm}`;
+		// Convert UTC timestamp to local time using timezone offset
+		const localDateObj = new Date((item.dt + timezoneOffset) * 1000);
+		const date = localDateObj.toISOString().split('T')[0];
+
+		const hours = localDateObj.getHours();
+		const minutes = localDateObj.getMinutes().toString().padStart(2, '0');
+		const hour12 = hours % 12 || 12;
+		const ampm = hours >= 12 ? 'PM' : 'AM';
+		const time12 = `${hour12}:${minutes} ${ampm}`;
 
 		if (!groupedWeather[date]) {
 			groupedWeather[date] = {
-				day: new Date(item.dt_txt).toLocaleDateString('en-US', {
+				day: localDateObj.toLocaleDateString('en-US', {
 					weekday: 'long',
 				}),
-				date: item.dt_txt,
+				date: localDateObj.toISOString(),
 				minTemp: item.main.temp,
 				maxTemp: item.main.temp,
 				description: item.weather[0].description,
-				icon: item.weather[0].icon, // ✅ Daily icon added here
+				icon: item.weather[0].icon,
 				hourly: [],
 				aqi: null,
-				city: options.city || userData?.township,
+				city: cityName,
 			};
 		}
 
@@ -2844,21 +3088,21 @@ const getWeather = async (user: User, options: city) => {
 			item.main.temp,
 		);
 
-		if (parseInt(hour) % 1 === 0) {
-			groupedWeather[date].hourly.push({
-				time: time12,
-				temperature: item.main.temp,
-				description: item.weather[0].description,
-				icon: item.weather[0].icon, // ✅ Hourly icon added here
-			});
-		}
+		groupedWeather[date].hourly.push({
+			time: time12,
+			temperature: item.main.temp,
+			description: item.weather[0].description,
+			icon: item.weather[0].icon,
+		});
 	});
 
 	// Match AQI data
 	aqiData.forEach((aqiItem: any) => {
-		const aqiDate = new Date(aqiItem.dt * 1000).toISOString().split('T')[0];
-		if (groupedWeather[aqiDate]) {
-			groupedWeather[aqiDate].aqi = aqiItem.main.aqi * 10;
+		const localAqiDate = new Date((aqiItem.dt + timezoneOffset) * 1000)
+			.toISOString()
+			.split('T')[0];
+		if (groupedWeather[localAqiDate]) {
+			groupedWeather[localAqiDate].aqi = aqiItem.main.aqi * 10;
 		}
 	});
 
