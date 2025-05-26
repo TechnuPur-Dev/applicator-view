@@ -12,17 +12,15 @@ const getAllPermissions = async () => {
 	const result = await prisma.permission.findMany({
 		select: {
 			id: true,
-			name: true
+			name: true,
 		},
 		orderBy: {
 			id: 'desc',
 		},
-
 	}); // Fetch all permissions
 
 	return {
 		result: result,
-
 	};
 	const permissionData = await prisma.permission.findMany({
 		include: {
@@ -31,110 +29,96 @@ const getAllPermissions = async () => {
 					adminId: true,
 					admin: {
 						select: {
-							fullName: true
-						}
+							fullName: true,
+						},
 					},
-					accessLevel: true
-
-				}
-			}
-		}
+					accessLevel: true,
+				},
+			},
+		},
 	});
-	const formatData = permissionData.map((item) => (
-		{
-			...item,
-			adminPermissions: item.adminPermissions.map((item) => (
-				{
-					adminId: item.adminId,
-					fullName: item.admin.fullName,
-					accessLevel: item.accessLevel
-				}
-
-			))
-
-		}
-	))
+	const formatData = permissionData.map((item) => ({
+		...item,
+		adminPermissions: item.adminPermissions.map((item) => ({
+			adminId: item.adminId,
+			fullName: item.admin.fullName,
+			accessLevel: item.accessLevel,
+		})),
+	}));
 	return formatData;
 };
 
 const getAdminUserPermissions = async () => {
 	const permissionData = await prisma.permission.findMany({
-		include: {
+		select: {
+			name: true,
 			adminPermissions: {
 				orderBy: {
-					adminId: 'asc', 
+					id: 'desc',
 				},
-				include: {
+				select: {
+					id: true,
+					accessLevel: true,
 					admin: {
 						select: {
-							fullName: true
-						}
+							fullName: true,
+							profileImage: true,
+							thumbnailProfileImage: true,
+							email: true,
+						},
 					},
-
-				}
+				},
 			},
-
 		},
 		orderBy: {
 			id: 'asc',
 		},
-		omit: {
-			createdAt: true,
-			updatedAt: true
-		}
 	});
-	const formatData = permissionData.map((item) => (
-		{
+	const formatData = permissionData.map((item) => ({
+		...item,
+		adminPermissions: item.adminPermissions.map((item) => ({
 			...item,
-			adminPermissions: item.adminPermissions.map((item) => (
-				{
-					...item,
-					adminId: item.adminId,
-					fullName: item.admin.fullName,
-					accessLevel: item.accessLevel,
-					admin: undefined,
-					createdAt: undefined,
-					updatedAt: undefined
-				}
-
-			))
-
-		}
-	))
+			fullName: item.admin.fullName,
+			profileImage: item.admin.profileImage,
+			thumbnailProfileImage: item.admin.thumbnailProfileImage,
+			email: item.admin.email,
+			accessLevel: item.accessLevel,
+			admin: undefined,
+		})),
+	}));
 	return formatData;
 };
 const updateAdminPermission = async (data: {
 	adminPermissionId: number;
 	accessLevel: 'read' | 'write';
 }) => {
-	// Check if the AdminPermission exists
-	console.log(data.adminPermissionId, 'adminPermissionId')
-	const existing = await prisma.adminPermission.findUnique({
-		where: {
-			id: data?.adminPermissionId
-		}
-	});
-	if (!existing) {
-		throw new Error('Permission not found for this admin.');
-	}
+	// // Check if the AdminPermission exists
+	// console.log(data.adminPermissionId, 'adminPermissionId');
+	// const existing = await prisma.adminPermission.findUnique({
+	// 	where: {
+	// 		id: data?.adminPermissionId,
+	// 	},
+	// });
+	// if (!existing) {
+	// 	throw new Error('Permission not found for this admin.');
+	// }
 	// Update the permission access level
-	const updated = await prisma.adminPermission.update({
+	await prisma.adminPermission.update({
 		where: {
-			id: data.adminPermissionId
+			id: data.adminPermissionId,
 		},
 		data: {
-			accessLevel: data.accessLevel
-		}
+			accessLevel: data.accessLevel,
+		},
 	});
 
-	return updated;
+	return {
+		message: 'Permission updated successfully',
+	};
 };
-
-
 
 export default {
 	getAllPermissions,
 	getAdminUserPermissions,
-	updateAdminPermission
-
+	updateAdminPermission,
 };
