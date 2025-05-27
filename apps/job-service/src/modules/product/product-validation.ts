@@ -90,9 +90,9 @@ const updateProductSchema: Schema = Joi.object({
 		ticketPricePerMonth: Joi.object().optional(),
 		// jobPrice: Joi.number().positive().precision(2).optional(),
 		// ticketPrice: Joi.number().positive().precision(2).optional(),
-		personalProtectiveEquipment: Joi.string().min(1).max(300).optional(),
-		preHarvestInterval: Joi.string().min(1).max(300).optional(),
-		comments: Joi.string().min(1).max(300).optional(),
+		personalProtectiveEquipment: Joi.string().allow('').max(300).optional(),
+		preHarvestInterval: Joi.string().allow('').max(300).optional(),
+		comments: Joi.string().allow('').max(300).optional(),
 	}).required(),
 });
 export default { productSchema, paramsSchema, updateProductSchema };
