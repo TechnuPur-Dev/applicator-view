@@ -70,7 +70,7 @@ const bulkUploadChemicals = async (fileBuffer: Buffer) => {
 	// Insert all data
 	await prisma.chemical.createMany({
 		data: formattedData,
-		// skipDuplicates: true,
+		skipDuplicates: true,
 	});
 
 	return {
