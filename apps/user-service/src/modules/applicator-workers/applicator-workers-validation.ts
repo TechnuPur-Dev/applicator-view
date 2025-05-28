@@ -77,6 +77,7 @@ const updateSchema: Schema = Joi.object({
 		dollarPerAcre: Joi.number().precision(2).min(0).optional(), // Decimal field
 		autoAcceptJobs: Joi.boolean().default(false).optional(),
 		canViewPricingDetails: Joi.boolean().default(false).optional(),
+		isActive: Joi.boolean().optional(),
 		code: Joi.string().optional(),
 	}).required(),
 });
