@@ -36,11 +36,16 @@ const getStateById = catchAsync(async (req: Request, res: Response) => {
 // bulk upload
 const bulkUploadstate = catchAsync(async (req: Request, res: Response) => {
 	// const file = req.file;
-	  const fileBuffer = req.file?.buffer;
-	   console.log(fileBuffer,'dataupdate')
-	if (!fileBuffer) {
+	const files = req.files;
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+	const file = files[0];
+	console.log('Uploaded file:', file);
+	if (!file) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
+	const fileBuffer = file?.buffer;
 	const result = await stateService.bulkUploadstate(fileBuffer);
 	res.status(httpStatus.OK).json(result);
 });
@@ -52,6 +57,6 @@ export default {
 	updateState,
 	bulkUploadstate,
 	getStateById
-	
-	
+
+
 };

@@ -6,11 +6,16 @@ import pick from '../../../../../shared/utils/pick';
 
 const bulkUploadChemicals = catchAsync(async (req: Request, res: Response) => {
 	// const file = req.file;
-	  const fileBuffer = req.file?.buffer;
-	   console.log(fileBuffer,'dataupdate')
-	if (!fileBuffer) {
+	const files = req.files;
+	if (!files || !Array.isArray(files)) {
+		throw new Error('No files uploaded');
+	}
+	const file = files[0];
+	console.log('Uploaded file:', file);
+	if (!file) {
 		return res.status(400).json({ error: 'File is required.' });
 	}
+	const fileBuffer = file?.buffer;
 	const result = await chemicalService.bulkUploadChemicals(fileBuffer);
 	res.status(httpStatus.OK).json(result);
 });
@@ -21,13 +26,13 @@ const createChemical = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 const getAllChemicals = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page','label','searchValue']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const chemicals = await chemicalService.getAllChemicals(options);
 	res.status(httpStatus.OK).json(chemicals);
 });
 
 const updateChemical = catchAsync(async (req: Request, res: Response) => {
-	
+
 	const ChemicalId = +req.params.id;
 	const data = req.body;
 	const result = await chemicalService.updateChemical(ChemicalId, data);

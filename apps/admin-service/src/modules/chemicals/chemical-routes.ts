@@ -5,16 +5,16 @@ import chemicalController from './chemical-controller';
 import { verifyToken } from '../../../../../shared/middlewares/auth-middleware'; // Uncomment and add correct path for TypeScript support if needed
 import validateSchema from '../../../../../shared/middlewares/validation-middleware';
 import ChemicalValidation from './chemical-validation';
-import multer from 'multer';
+import uploadMiddleware from '../../../../../shared/middlewares/multer-middleware';
 // import permissionValidation from './permissions-validation';
 const router: Router = express.Router();
-const upload = multer({
-    storage: multer.memoryStorage(), // This keeps file in memory
-});
+// const upload = multer({
+//     storage: multer.memoryStorage(), // This keeps file in memory
+// });
 router.route('/all').get(verifyToken, chemicalController.getAllChemicals);
 // bulk upload
 router.
-    route('/uploadFile').post(verifyToken, upload.single('file'),
+    route('/uploadFile').post(verifyToken, uploadMiddleware,
         chemicalController.bulkUploadChemicals);
 //  post Api
 router.route('/create').post(verifyToken, validateSchema(ChemicalValidation.chemicalSchema), chemicalController.createChemical);
