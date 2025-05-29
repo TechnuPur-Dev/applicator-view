@@ -23,6 +23,7 @@ interface ApplicatorWorker {
 	canViewPricingDetails: boolean;
 	code: string;
 	lastLogin: Date;
+	isActive: boolean;
 }
 interface UpdateStatus {
 	status: InviteStatus;

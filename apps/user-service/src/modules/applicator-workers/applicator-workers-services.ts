@@ -104,8 +104,8 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 const getAllWorkers = async (
 	applicatorId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	// Set pagination parameters
@@ -120,47 +120,87 @@ const getAllWorkers = async (
 	const skip = (page - 1) * limit;
 	const filters: Prisma.ApplicatorWorkerWhereInput = {
 		applicatorId,
-
 	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
 		const searchValue = options.searchValue;
 		if (options.label === 'all') {
 			const upperValue = searchValue.toUpperCase();
-			const isStatusMatch = Object.values(InviteStatus).includes(upperValue as InviteStatus);
+			const isStatusMatch = Object.values(InviteStatus).includes(
+				upperValue as InviteStatus,
+			);
 
 			if (isStatusMatch) {
 				filters.inviteStatus = {
-					equals: upperValue as InviteStatus
+					equals: upperValue as InviteStatus,
 				};
 			} else {
 				Object.assign(filters, {
 					OR: [
 						// code
-						{ code: { contains: searchValue, mode: 'insensitive' } },
+						{
+							code: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
 						// fullName, firstName, lastName, email, phoneNumber, address1
 						{
 							worker: {
 								OR: [
-									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
+					],
 				});
 			}
 		} else {
 			switch (options.label) {
 				case 'inviteStatus':
 					searchFilter.inviteStatus = {
-						equals: searchValue as InviteStatus
-					}
+						equals: searchValue as InviteStatus,
+					};
 					break;
 
 				case 'fullName':
@@ -198,19 +238,25 @@ const getAllWorkers = async (
 					break;
 				case 'phoneNumber':
 					searchFilter.worker = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+						phoneNumber: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'address1':
 					searchFilter.worker = {
-
-						address1: { contains: searchValue, mode: 'insensitive' },
+						address1: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'code':
 					searchFilter.code = {
-						contains: searchValue, mode: 'insensitive'
-					}
+						contains: searchValue,
+						mode: 'insensitive',
+					};
 					break;
 				default:
 					throw new Error('Invalid label provided.');
@@ -344,6 +390,7 @@ const updateWorker = async (
 		autoAcceptJobs,
 		canViewPricingDetails,
 		code,
+		isActive,
 		// Exclude fields that belong to applicatorWorker
 		...userData
 	} = data;
@@ -383,6 +430,7 @@ const updateWorker = async (
 				autoAcceptJobs,
 				canViewPricingDetails,
 				code,
+				isActive,
 			},
 			omit: {
 				id: true,
@@ -630,8 +678,8 @@ const searchWorkerByEmail = async (applicatorId: number, email: string) => {
 const getAllApplicators = async (
 	workerId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	// Set pagination parameters
@@ -649,7 +697,7 @@ const getAllApplicators = async (
 		NOT: {
 			inviteStatus: 'PENDING',
 		},
-	}
+	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.ApplicatorWorkerWhereInput = {};
 		const searchValue = options.searchValue;
@@ -662,20 +710,58 @@ const getAllApplicators = async (
 					{
 						applicator: {
 							OR: [
-								{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
-								{ fullName: { contains: searchValue, mode: 'insensitive' } },
-								{ firstName: { contains: searchValue, mode: 'insensitive' } },
-								{ lastName: { contains: searchValue, mode: 'insensitive' } },
-								{ email: { equals: searchValue, mode: 'insensitive' } },
-								{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-								{ address1: { contains: searchValue, mode: 'insensitive' } },
-								{ businessName: { contains: searchValue, mode: 'insensitive' } }
+								{
+									id: !isNaN(Number(searchValue))
+										? parseInt(searchValue, 10)
+										: undefined,
+								},
+								{
+									fullName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									firstName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									lastName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									email: {
+										equals: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									phoneNumber: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									address1: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
+								{
+									businessName: {
+										contains: searchValue,
+										mode: 'insensitive',
+									},
+								},
 							],
 						},
 					},
-				]
+				],
 			});
-
 		} else {
 			switch (options.label) {
 				case 'applicatorName':
@@ -713,17 +799,26 @@ const getAllApplicators = async (
 					break;
 				case 'phoneNumber':
 					searchFilter.applicator = {
-						phoneNumber: { contains: searchValue, mode: 'insensitive' },
+						phoneNumber: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'address1':
 					searchFilter.applicator = {
-						address1: { contains: searchValue, mode: 'insensitive' },
+						address1: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				case 'businessName':
 					searchFilter.applicator = {
-						businessName: { contains: searchValue, mode: 'insensitive' },
+						businessName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
 					};
 					break;
 				default:
@@ -786,10 +881,13 @@ const getAllApplicators = async (
 		totalResults,
 	};
 };
-const getPendingInvites = async (user: User, options: PaginateOptions & {
-	label?: string,
-	searchValue?: string
-}) => {
+const getPendingInvites = async (
+	user: User,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+) => {
 	// Set pagination parameters
 	const limit =
 		options.limit && parseInt(options.limit.toString(), 10) > 0
@@ -809,7 +907,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 	const filters: Prisma.ApplicatorWorkerWhereInput = {
 		inviteStatus: 'PENDING',
 		[isWorker ? 'workerId' : 'applicatorId']: user.id,
-	}
+	};
 	if (isWorker) {
 		// Fetch pending invites
 		if (options.label && options.searchValue) {
@@ -819,25 +917,68 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 				Object.assign(filters, {
 					OR: [
 						// code
-						{ code: { contains: searchValue, mode: 'insensitive' } },
+						{
+							code: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
 						// fullName, firstName, lastName, email, phoneNumber, address1
 						{
 							applicator: {
 								OR: [
-									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
-									{ businessName: { contains: searchValue, mode: 'insensitive' } }
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										businessName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
+					],
 				});
-
 			} else {
 				switch (options.label) {
 					case 'fullName':
@@ -875,19 +1016,25 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 						break;
 					case 'phoneNumber':
 						searchFilter.applicator = {
-							phoneNumber: { contains: searchValue, mode: 'insensitive' },
+							phoneNumber: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						};
 						break;
 					case 'address1':
 						searchFilter.applicator = {
-
-							address1: { contains: searchValue, mode: 'insensitive' },
+							address1: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						};
 						break;
 					case 'code':
 						searchFilter.code = {
-							contains: searchValue, mode: 'insensitive'
-						}
+							contains: searchValue,
+							mode: 'insensitive',
+						};
 						break;
 					default:
 						throw new Error('Invalid label provided.');
@@ -940,25 +1087,68 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 				Object.assign(filters, {
 					OR: [
 						// code
-						{ code: { contains: searchValue, mode: 'insensitive' } },
+						{
+							code: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
 						// fullName, firstName, lastName, email, phoneNumber, address1
 						{
 							worker: {
 								OR: [
-									{ id: !isNaN(Number(searchValue)) ? parseInt(searchValue, 10) : undefined },
-									{ fullName: { contains: searchValue, mode: 'insensitive' } },
-									{ firstName: { contains: searchValue, mode: 'insensitive' } },
-									{ lastName: { contains: searchValue, mode: 'insensitive' } },
-									{ email: { equals: searchValue, mode: 'insensitive' } },
-									{ phoneNumber: { contains: searchValue, mode: 'insensitive' } },
-									{ address1: { contains: searchValue, mode: 'insensitive' } },
-									{ businessName: { contains: searchValue, mode: 'insensitive' } }
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										firstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										lastName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										email: {
+											equals: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										phoneNumber: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										address1: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										businessName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
 								],
 							},
 						},
-					]
+					],
 				});
-
 			} else {
 				switch (options.label) {
 					case 'fullName':
@@ -996,19 +1186,25 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 						break;
 					case 'phoneNumber':
 						searchFilter.worker = {
-							phoneNumber: { contains: searchValue, mode: 'insensitive' },
+							phoneNumber: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						};
 						break;
 					case 'address1':
 						searchFilter.worker = {
-
-							address1: { contains: searchValue, mode: 'insensitive' },
+							address1: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
 						};
 						break;
 					case 'code':
 						searchFilter.code = {
-							contains: searchValue, mode: 'insensitive'
-						}
+							contains: searchValue,
+							mode: 'insensitive',
+						};
 						break;
 					default:
 						throw new Error('Invalid label provided.');
@@ -1057,7 +1253,7 @@ const getPendingInvites = async (user: User, options: PaginateOptions & {
 
 	// Get total count
 	const totalResults = await prisma.applicatorWorker.count({
-		where: filters
+		where: filters,
 		//  {
 		// 	inviteStatus: 'PENDING',
 		// 	[isWorker ? 'workerId' : 'applicatorId']: user.id,
