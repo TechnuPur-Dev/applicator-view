@@ -3771,10 +3771,10 @@ const getHeadersDataForPilot = async (
 				const myJobsfilters: Prisma.JobWhereInput = {
 					fieldWorkerId: id,
 					status: {
-						in: ['IN_PROGRESS', 'SPRAYED'],
+						in: ['IN_PROGRESS', 'SPRAYED', 'INVOICED', 'PAID'],
 					},
 					...(options.startDate
-						? { createdAt: { gte: startDate, lte: endDate } }
+						? { startDate: { gte: startDate, lte: endDate } }
 						: {}),
 				};
 				const totalJobs = await prisma.job.count({
@@ -3804,7 +3804,7 @@ const getHeadersDataForPilot = async (
 					where: {
 						...whereConditionForMe,
 						...(options.startDate
-							? { createdAt: { gte: startDate, lte: endDate } }
+							? { startDate: { gte: startDate, lte: endDate } }
 							: {}),
 					},
 				});
