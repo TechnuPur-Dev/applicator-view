@@ -167,6 +167,14 @@ router
 		jobController.getHeadersData,
 	);
 router
+	.route('/pilot/headers-stats')
+	.get(
+		verifyToken,
+		normalizeApplicatorUser,
+		validateSchema(jobValidation.headerStatsSchema),
+		jobController.getHeadersDataForPilot,
+	);	
+router
 	.route('/get-rejectedjobs')
 	.get(verifyToken, normalizeApplicatorUser, jobController.getRejectedJobs);
 router

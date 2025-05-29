@@ -238,6 +238,16 @@ const getHeadersData = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getHeadersData(currentUser, options);
 	res.status(httpStatus.OK).json(result);
 });
+const getHeadersDataForPilot = catchAsync(async (req: Request, res: Response) => {
+	const currentUser = req.user;
+	const options = pick(req.query, ['type', 'startDate', 'endDate']) as {
+		type: string;
+		startDate: Date;
+		endDate: Date;
+	};
+	const result = await jobService.getHeadersDataForPilot(currentUser, options);
+	res.status(httpStatus.OK).json(result);
+});
 const getRejectedJobs = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
@@ -493,4 +503,5 @@ export default {
 	uploadFlightLogImage,
 	createFlighLog,
 	getFlighLogById,
+	getHeadersDataForPilot
 };
