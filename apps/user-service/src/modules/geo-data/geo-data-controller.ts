@@ -109,6 +109,11 @@ const searchCity = catchAsync(async (req: Request, res: Response) => {
 	const result = await geoDataService.searchCity(search);
 	res.status(httpStatus.OK).json(result);
 });
+const getValidateUSAddress = catchAsync(async (req: Request, res: Response) => {
+	const value = req.query.search as string
+	const result = await geoDataService.getValidateUSAddress(value);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createCounties,
 	createTownships,
@@ -124,4 +129,5 @@ export default {
 	validateAddress,
 	getCityByZip,
 	searchCity,
+	getValidateUSAddress
 };
