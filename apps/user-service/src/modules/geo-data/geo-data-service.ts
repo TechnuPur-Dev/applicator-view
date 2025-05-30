@@ -10,6 +10,10 @@ import {
 	UpdateCountyData,
 } from './geo-data-types';
 import validateAddressHelper from '../../helper/validate-address';
+import config from '../../config/env-config';
+import axios from 'axios';
+const AUTH_ID = config.smartyAuthId;
+const AUTH_TOKEN = config.smartyAuthToken;
 
 // to update user profile
 // shifted to admin panel 
@@ -247,6 +251,24 @@ const searchCity = async (search: string) => {
 	});
 	return cities;
 };
+
+const getValidateUSAddress = async (search: string) => {	
+if (search) {
+		const url = `https://us-autocomplete-pro.api.smarty.com/lookup?search=${search}&auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}`
+		const response = await axios.get(url);
+
+		if (!response.data || response.data.length === 0) {
+			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid  address.');
+		}
+        const result = response?.data?.suggestions[0]
+		return { result };
+	}
+
+	throw new ApiError(
+		httpStatus.BAD_REQUEST,
+		'Please provide a valid  address.',
+	);
+};
 export default {
 	// createStates,
 	createCounties,
@@ -265,4 +287,5 @@ export default {
 	validateAddress,
 	getCityByZip,
 	searchCity,
+	getValidateUSAddress
 };

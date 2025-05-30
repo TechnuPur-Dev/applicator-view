@@ -65,5 +65,5 @@ router
 router.route('/address-validate').get(geoDataController.validateAddress);
 router.route('/get-city/by-zip').get(geoDataController.getCityByZip);
 router.route('/search-city').get(geoDataController.searchCity);
-
+router.route('/us-address').get(geoDataController.getValidateUSAddress);
 export default router;
