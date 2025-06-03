@@ -27,7 +27,7 @@ const validateAddressHelper = async ({
 	city,
 	state,
 	zipCode,
-}: AddressParams): Promise<{ message: string; cityName?: string }> => {
+}: AddressParams) => {
 	// Step 1: Validate by ZIP Code (if provided)
 	if (zipCode && !city && !state) {
 		const zipUrl = `https://us-zipcode.api.smarty.com/lookup?auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}&zipcode=${encodeURIComponent(zipCode)}`;
@@ -78,7 +78,7 @@ const validateAddressHelper = async ({
 			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid street address.');
 		}
 
-		return { message: 'Valid full address.' };
+		return streetResponse.data[0];
 	}
 
 	throw new ApiError(

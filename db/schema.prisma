@@ -404,6 +404,7 @@ model Product {
 model State {
   id            Int             @id @default(autoincrement())
   name          String          @unique
+  abbreviation  String?         @unique // e.g. "IN"
   counties      County[]
   Farm          Farm[]
   User          User[]
@@ -570,7 +571,7 @@ model ActivityLog {
 model DroneFlightLog {
   id           Int       @id @default(autoincrement())
   jobId        Int
-  droneId      Int?
+  droneId      String?
   startTime    DateTime?
   endTime      DateTime?
   geojsonData  Json // optional full GeoJSON

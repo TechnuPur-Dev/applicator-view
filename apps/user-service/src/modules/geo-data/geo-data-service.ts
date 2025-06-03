@@ -16,7 +16,7 @@ const AUTH_ID = config.smartyAuthId;
 const AUTH_TOKEN = config.smartyAuthToken;
 
 // to update user profile
-// shifted to admin panel 
+// shifted to admin panel
 // const createStates = async (data: StateData[]) => {
 // 	if (!Array.isArray(data) || data.length === 0) {
 // 		throw new ApiError(
@@ -28,7 +28,7 @@ const AUTH_TOKEN = config.smartyAuthToken;
 // 	return await prisma.state.createMany({
 // 		data,
 // 	});
-// }; 
+// };
 
 // to update user profile
 const createCounties = async (data: CountyData) => {
@@ -127,13 +127,13 @@ const getAllTownships = async () =>
 // 	}
 
 // 	if (relatedRecords.counties.length > 0 ||
-// 		relatedRecords.Farm.length > 0 || 
-// 		relatedRecords.User.length > 0) 
+// 		relatedRecords.Farm.length > 0 ||
+// 		relatedRecords.User.length > 0)
 // 		{
 //          throw new ApiError(
 // 			httpStatus.NOT_FOUND,
 // 			'state cannot be deleted.It is currently in use',
-// 		); 
+// 		);
 // 	}
 // 	await prisma.state.delete({
 // 		where: {
@@ -225,12 +225,18 @@ const getTownshipsByCounty = async (countyId: number) => {
 };
 
 const validateAddress = async (street: string, city: string, state: string) => {
-	await validateAddressHelper({
+	const result = await validateAddressHelper({
 		street,
 		city,
 		state,
 	});
-	return { message: 'Valid Address' };
+
+	return {
+		message: 'Valid Address',
+		result: {
+			county: result.metadata.county_name,
+		},
+	};
 };
 
 const getCityByZip = async (zipCode: string) => {
@@ -252,23 +258,49 @@ const searchCity = async (search: string) => {
 	return cities;
 };
 
-const getValidateUSAddress = async (search: string) => {	
-if (search) {
-		const url = `https://us-autocomplete-pro.api.smarty.com/lookup?search=${search}&auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}`
-		const response = await axios.get(url);
-
-		if (!response.data || response.data.length === 0) {
-			throw new ApiError(httpStatus.NOT_FOUND, 'Invalid  address.');
-		}
-        const result = response?.data?.suggestions[0]
-		return { result };
+const getValidateUSAddress = async (search: string) => {
+	if (!search) {
+		throw new ApiError(
+			httpStatus.BAD_REQUEST,
+			'Please provide a valid address.',
+		);
 	}
 
-	throw new ApiError(
-		httpStatus.BAD_REQUEST,
-		'Please provide a valid  address.',
-	);
+	const url = `https://us-autocomplete-pro.api.smarty.com/lookup?search=${encodeURIComponent(search)}&auth-id=${AUTH_ID}&auth-token=${AUTH_TOKEN}`;
+
+	const response = await axios.get(url);
+	const suggestions = response?.data?.suggestions;
+
+	if (!suggestions || suggestions.length === 0) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'No address suggestions found.',
+		);
+	}
+
+	// Fetch all state data from your DB for abbreviation mapping
+	const states = await prisma.state.findMany({
+		select: { id: true, name: true, abbreviation: true },
+	});
+
+	const enrichedSuggestions = suggestions.map((s: any) => {
+		const matchedState = states.find(
+			(state) => state.abbreviation === s.state,
+		);
+
+		return {
+			street: s.street_line,
+			city: s.city,
+			// state: s.state,
+			state: matchedState?.name || null,
+			stateId: matchedState?.id || null,
+			zipcode: s.zipcode,
+		};
+	});
+
+	return enrichedSuggestions;
 };
+
 export default {
 	// createStates,
 	createCounties,
@@ -287,5 +319,5 @@ export default {
 	validateAddress,
 	getCityByZip,
 	searchCity,
-	getValidateUSAddress
+	getValidateUSAddress,
 };
