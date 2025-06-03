@@ -81,7 +81,7 @@ const createJobSchema = Joi.object({
 		applicationFees: Joi.array()
 			.items(
 				Joi.object({
-					description: Joi.string().max(255).required(),
+					description: Joi.string().max(255).optional(),
 					rateUoM: Joi.number().precision(2).positive().required(),
 					perAcre: Joi.boolean().required(),
 				}),
