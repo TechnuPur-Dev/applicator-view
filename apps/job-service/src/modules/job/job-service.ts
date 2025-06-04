@@ -3328,26 +3328,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-							totalExpenditures:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}
+								totalExpenditures:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}
 						: {
-							totalRevenue:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}),
+								totalRevenue:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-							totalApplicators:
-								dashboardtotalGrowersorApplicators,
-						}),
+								totalApplicators:
+									dashboardtotalGrowersorApplicators,
+							}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -3435,17 +3435,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-							totalAcres:
-								myJobsTotalAcres._sum.actualAcres || 0,
-						}),
+								totalAcres:
+									myJobsTotalAcres._sum.actualAcres || 0,
+							}),
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								myJobsTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									myJobsTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicatorJobs,
-						}),
+								totalApplicatorJobs,
+							}),
 				};
 				break;
 			}
@@ -3480,13 +3480,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								openJobTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									openJobTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicators:
-								openJobTotalGrowersorApplicators.length,
-						}),
+								totalApplicators:
+									openJobTotalGrowersorApplicators.length,
+							}),
 				};
 				break;
 			}
@@ -3521,11 +3521,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -3537,11 +3537,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -3577,11 +3577,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -3593,11 +3593,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -3680,13 +3680,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -3694,13 +3694,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}),
 					},
 				};
 
@@ -3817,11 +3817,11 @@ const getHeadersDataForPilot = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-										updatedAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											updatedAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -4334,14 +4334,14 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 					BidProduct: applicatorBid
 						? {
-							where: {
-								bidId: applicatorBid.id,
-							},
-							select: {
-								bidRateAcre: true,
-								bidPrice: true,
-							},
-						}
+								where: {
+									bidId: applicatorBid.id,
+								},
+								select: {
+									bidRateAcre: true,
+									bidPrice: true,
+								},
+							}
 						: false,
 				},
 			},
@@ -4349,13 +4349,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 				include: {
 					BidApplicationFee: applicatorBid
 						? {
-							where: {
-								bidId: applicatorBid.id,
-							},
-							select: {
-								bidAmount: true,
-							},
-						}
+								where: {
+									bidId: applicatorBid.id,
+								},
+								select: {
+									bidAmount: true,
+								},
+							}
 						: false,
 				},
 			},
@@ -7014,11 +7014,12 @@ const createFlighLog = async (
 			droneId,
 			uploadedById: userId,
 			mapImageUrl,
-			startTime, // optionally parse from GeoJSON if available
-			endTime,
+			startTime: new Date(Number(startTime) * 1000), // Convert seconds to milliseconds
+			endTime: new Date(Number(endTime) * 1000),
 			geojsonData: geojsonData as Prisma.InputJsonValue,
 		},
 	});
+
 	return {
 		message: 'Flight log uploaded successfully',
 		flightLog,
@@ -7061,7 +7062,6 @@ const getsearchProduct = async (
 			},
 			skip,
 			take: limit,
-
 		}),
 		prisma.chemical.findMany({
 			where: {
@@ -7070,32 +7070,31 @@ const getsearchProduct = async (
 			},
 			skip,
 			take: limit,
-
 		}),
 	]);
 
 	const result = [
-		...products.map(p => ({
+		...products.map((p) => ({
 			id: p.id,
 			productName: p.productName,
 		})),
-		...chemicals.map(c => ({
+		...chemicals.map((c) => ({
 			id: c.id,
 			productName: c.productName,
 			company: c.companyName,
-			label: `${c.productName} (Admin Chemical)`
-		}))
+			label: `${c.productName} (Admin Chemical)`,
+		})),
 	];
-	const totalResults = result?.length
+	const totalResults = result?.length;
 	const totalPages = Math.ceil(totalResults / limit);
 	// Return the paginated result including users, curren
 	return {
-		result:result,
+		result: result,
 		limit,
 		page,
 		totalPages,
-		totalResults
-	}
+		totalResults,
+	};
 };
 export default {
 	createJob,
@@ -7147,5 +7146,5 @@ export default {
 	createFlighLog,
 	getFlighLogById,
 	getHeadersDataForPilot,
-	getsearchProduct
+	getsearchProduct,
 };
