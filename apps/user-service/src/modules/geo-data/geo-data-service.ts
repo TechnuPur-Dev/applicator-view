@@ -234,7 +234,7 @@ const validateAddress = async (street: string, city: string, state: string) => {
 	return {
 		message: 'Valid Address',
 		result: {
-			county: result.metadata.county_name,
+			county: result?.metadata?.county_name,
 		},
 	};
 };
