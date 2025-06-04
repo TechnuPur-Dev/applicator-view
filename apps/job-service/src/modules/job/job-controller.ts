@@ -454,6 +454,12 @@ const getFlighLogById = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getFlighLogById(currentUser, logId);
 	res.status(httpStatus.CREATED).json(result);
 });
+const getsearchProduct = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const options = pick(req.query, ['limit', 'page', 'searchValue']);
+	const result = await jobService.getsearchProduct(user, options);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -503,5 +509,6 @@ export default {
 	uploadFlightLogImage,
 	createFlighLog,
 	getFlighLogById,
-	getHeadersDataForPilot
+	getHeadersDataForPilot,
+	getsearchProduct
 };

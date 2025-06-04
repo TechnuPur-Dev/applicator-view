@@ -3328,26 +3328,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-								totalExpenditures:
-									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-										0) +
-									(dashboardtotalProPrice._sum.price?.toNumber() ||
-										0),
-							}
+							totalExpenditures:
+								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+									0) +
+								(dashboardtotalProPrice._sum.price?.toNumber() ||
+									0),
+						}
 						: {
-								totalRevenue:
-									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-										0) +
-									(dashboardtotalProPrice._sum.price?.toNumber() ||
-										0),
-							}),
+							totalRevenue:
+								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+									0) +
+								(dashboardtotalProPrice._sum.price?.toNumber() ||
+									0),
+						}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-								totalApplicators:
-									dashboardtotalGrowersorApplicators,
-							}),
+							totalApplicators:
+								dashboardtotalGrowersorApplicators,
+						}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -3435,17 +3435,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-								totalAcres:
-									myJobsTotalAcres._sum.actualAcres || 0,
-							}),
+							totalAcres:
+								myJobsTotalAcres._sum.actualAcres || 0,
+						}),
 					...(role === 'APPLICATOR'
 						? {
-								totalGrowers:
-									myJobsTotalGrowersorApplicators.length,
-							}
+							totalGrowers:
+								myJobsTotalGrowersorApplicators.length,
+						}
 						: {
-								totalApplicatorJobs,
-							}),
+							totalApplicatorJobs,
+						}),
 				};
 				break;
 			}
@@ -3480,13 +3480,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-								totalGrowers:
-									openJobTotalGrowersorApplicators.length,
-							}
+							totalGrowers:
+								openJobTotalGrowersorApplicators.length,
+						}
 						: {
-								totalApplicators:
-									openJobTotalGrowersorApplicators.length,
-							}),
+							totalApplicators:
+								openJobTotalGrowersorApplicators.length,
+						}),
 				};
 				break;
 			}
@@ -3521,11 +3521,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+									createdAt: {
+										gte: startDate,
+										lte: endDate,
+									},
+								}
 								: {}),
 						},
 						_count: true,
@@ -3537,11 +3537,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-											createdAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -3577,11 +3577,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+									createdAt: {
+										gte: startDate,
+										lte: endDate,
+									},
+								}
 								: {}),
 						},
 						_count: true,
@@ -3593,11 +3593,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-											createdAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -3680,13 +3680,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-									totalGrowers:
-										pendingJobForMetotalGrowersorApplicator.length,
-								}
+								totalGrowers:
+									pendingJobForMetotalGrowersorApplicator.length,
+							}
 							: {
-									totalApplicators:
-										pendingJobForMetotalGrowersorApplicator.length,
-								}),
+								totalApplicators:
+									pendingJobForMetotalGrowersorApplicator.length,
+							}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -3694,13 +3694,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-									totalGrowers:
-										pendingJobForGrowertotalGrowersorApplicator.length,
-								}
+								totalGrowers:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							}
 							: {
-									totalApplicators:
-										pendingJobForGrowertotalGrowersorApplicator.length,
-								}),
+								totalApplicators:
+									pendingJobForGrowertotalGrowersorApplicator.length,
+							}),
 					},
 				};
 
@@ -3817,11 +3817,11 @@ const getHeadersDataForPilot = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-											updatedAt: {
-												gte: startDate,
-												lte: endDate,
-											},
-										}
+										updatedAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 									: {}),
 							},
 						},
@@ -4334,14 +4334,14 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 					BidProduct: applicatorBid
 						? {
-								where: {
-									bidId: applicatorBid.id,
-								},
-								select: {
-									bidRateAcre: true,
-									bidPrice: true,
-								},
-							}
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidRateAcre: true,
+								bidPrice: true,
+							},
+						}
 						: false,
 				},
 			},
@@ -4349,13 +4349,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 				include: {
 					BidApplicationFee: applicatorBid
 						? {
-								where: {
-									bidId: applicatorBid.id,
-								},
-								select: {
-									bidAmount: true,
-								},
-							}
+							where: {
+								bidId: applicatorBid.id,
+							},
+							select: {
+								bidAmount: true,
+							},
+						}
 						: false,
 				},
 			},
@@ -7034,7 +7034,69 @@ const getFlighLogById = async (user: User, logId: number) => {
 	});
 	return flightLog;
 };
+const getsearchProduct = async (
+	user: User,
+	options: PaginateOptions & {
+		searchValue?: string;
+	},
+) => {
+	const applicatorId = user.id;
+	// Set pagination
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	const skip = (page - 1) * limit;
 
+	const query = options.searchValue?.toLowerCase() || '';
+	const [products, chemicals] = await Promise.all([
+		prisma.product.findMany({
+			where: {
+				createdById: applicatorId,
+				productName: { contains: query, mode: 'insensitive' },
+			},
+			skip,
+			take: limit,
+
+		}),
+		prisma.chemical.findMany({
+			where: {
+				deletedAt: null,
+				productName: { contains: query, mode: 'insensitive' },
+			},
+			skip,
+			take: limit,
+
+		}),
+	]);
+
+	const result = [
+		...products.map(p => ({
+			id: p.id,
+			productName: p.productName,
+		})),
+		...chemicals.map(c => ({
+			id: c.id,
+			productName: c.productName,
+			company: c.companyName,
+			label: `${c.productName} (Admin Chemical)`
+		}))
+	];
+	const totalResults = result?.length
+	const totalPages = Math.ceil(totalResults / limit);
+	// Return the paginated result including users, curren
+	return {
+		result:result,
+		limit,
+		page,
+		totalPages,
+		totalResults
+	}
+};
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -7085,4 +7147,5 @@ export default {
 	createFlighLog,
 	getFlighLogById,
 	getHeadersDataForPilot,
+	getsearchProduct
 };
