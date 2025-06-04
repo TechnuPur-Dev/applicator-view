@@ -3806,7 +3806,7 @@ const getHeadersDataForPilot = async (
 					where: {
 						...whereConditionForMe,
 						...(options.startDate
-							? { startDate: { gte: startDate, lte: endDate } }
+							? { updatedAt: { gte: startDate, lte: endDate } }
 							: {}),
 					},
 				});
@@ -3817,7 +3817,7 @@ const getHeadersDataForPilot = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-											createdAt: {
+											updatedAt: {
 												gte: startDate,
 												lte: endDate,
 											},
