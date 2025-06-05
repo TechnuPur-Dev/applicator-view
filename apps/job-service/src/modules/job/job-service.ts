@@ -7082,12 +7082,16 @@ const getSearchProduct = async (
 			type: p.category,
 			category: p.category,
 			perAcreRate: p.perAcreRate,
+			label: 'PRODUCT',
 		})),
 		...chemicals.map((c) => ({
 			id: c.id,
+			code: c.registrationNumber,
 			productName: c.productName,
-			company: c.companyName,
-			label: `${c.productName} (Admin Chemical)`,
+			tag: c.abns,
+			type: c.pesticideType,
+			category: c.pesticideCategory,
+			label: 'CHEMICAL',
 		})),
 	];
 	const totalResults = result?.length;
