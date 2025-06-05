@@ -368,36 +368,38 @@ model WarrantyRegistration {
 }
 
 model Product {
-  id                          Int             @id @default(autoincrement())
-  baseProductName             String
+  id                          Int              @id @default(autoincrement())
   productName                 String
+  baseProductName             String?
+  productCategory             String?
   code                        Int?
-  category                    ProductCategory
-  restrictedUse               Boolean         @default(false)
+  productType                 String?
   epaRegistration             String?
-  company                     String?
-  inventoryUnit               ProductUnit
-  appliedUnits                ProductUnit
   perAcreRate                 Float?
+  restrictedUse               Boolean          @default(false)
+  category                    ProductCategory?
+  company                     String?
+  inventoryUnit               ProductUnit?
+  appliedUnits                ProductUnit?
   density                     String?
-  treatAsLiquid               Boolean         @default(false)
+  treatAsLiquid               Boolean          @default(false)
   canadSalesTax               Float?
   primaryNutrient             String?
   reentryInterval             Int?
   nutrients                   Json?
-  jobPricePerMonth            Json            @default("{}")
-  ticketPricePerMonth         Json            @default("{}")
+  jobPricePerMonth            Json             @default("{}")
+  ticketPricePerMonth         Json             @default("{}")
   // jobPrice                    Float           @default(0)
   // ticketPrice                 Float           @default(0)
   personalProtectiveEquipment String?
   preHarvestInterval          String?
   comments                    String?
-  createdAt                   DateTime        @default(now())
-  updatedAt                   DateTime        @updatedAt
+  createdAt                   DateTime         @default(now())
+  updatedAt                   DateTime         @updatedAt
   createdById                 Int
   // chemicalId                  Int?
   JobProduct                  JobProduct[]
-  craetedBy                   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  craetedBy                   User             @relation(fields: [createdById], references: [id], onDelete: Cascade)
   // chemical                    Chemical?       @relation(fields: [chemicalId], references: [id], onDelete: Cascade)
 }
 

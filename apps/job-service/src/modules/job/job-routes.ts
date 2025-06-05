@@ -289,7 +289,7 @@ router
 	.post(verifyToken, uploadMiddleware, jobController.uploadFlightLogImage);
 router.route('/flight-log/:id').post(verifyToken, jobController.createFlighLog);
 router.route('/flight-log/:id').get(verifyToken, jobController.getFlighLogById);
-router.route('/search-product').get(verifyToken, jobController.getsearchProduct);
+router.route('/search-product').get(verifyToken, jobController.getSearchProduct);
 
 
 export default router;

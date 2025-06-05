@@ -7035,7 +7035,7 @@ const getFlighLogById = async (user: User, logId: number) => {
 	});
 	return flightLog;
 };
-const getsearchProduct = async (
+const getSearchProduct = async (
 	user: User,
 	options: PaginateOptions & {
 		searchValue?: string;
@@ -7076,7 +7076,12 @@ const getsearchProduct = async (
 	const result = [
 		...products.map((p) => ({
 			id: p.id,
+			code: p.epaRegistration,
 			productName: p.productName,
+			tag: p.baseProductName,
+			type: p.category,
+			category: p.category,
+			perAcreRate: p.perAcreRate,
 		})),
 		...chemicals.map((c) => ({
 			id: c.id,
@@ -7146,5 +7151,5 @@ export default {
 	createFlighLog,
 	getFlighLogById,
 	getHeadersDataForPilot,
-	getsearchProduct,
+	getSearchProduct,
 };

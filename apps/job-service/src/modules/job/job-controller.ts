@@ -454,10 +454,10 @@ const getFlighLogById = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getFlighLogById(currentUser, logId);
 	res.status(httpStatus.CREATED).json(result);
 });
-const getsearchProduct = catchAsync(async (req: Request, res: Response) => {
+const getSearchProduct = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user;
 	const options = pick(req.query, ['limit', 'page', 'searchValue']);
-	const result = await jobService.getsearchProduct(user, options);
+	const result = await jobService.getSearchProduct(user, options);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -510,5 +510,5 @@ export default {
 	createFlighLog,
 	getFlighLogById,
 	getHeadersDataForPilot,
-	getsearchProduct
+	getSearchProduct
 };
