@@ -7038,11 +7038,11 @@ const getFlighLogById = async (user: User, logId: number) => {
 const getSearchProduct = async (
 	user: User,
 	options: PaginateOptions & {
-		searchValue?: string;
+		search?: string;
 	},
 ) => {
 	const applicatorId = user.id;
-	// Set pagination
+
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -7053,25 +7053,59 @@ const getSearchProduct = async (
 			: 1;
 	const skip = (page - 1) * limit;
 
-	const query = options.searchValue?.toLowerCase() || '';
-	const [products, chemicals] = await Promise.all([
-		prisma.product.findMany({
-			where: {
-				createdById: applicatorId,
-				productName: { contains: query, mode: 'insensitive' },
-			},
-			skip,
-			take: limit,
-		}),
-		prisma.chemical.findMany({
-			where: {
-				deletedAt: null,
-				productName: { contains: query, mode: 'insensitive' },
-			},
-			skip,
-			take: limit,
-		}),
-	]);
+	const query = options.search?.trim().toLowerCase() || '';
+	const hasMinSearch = query.length >= 3;
+
+	// Fetch paginated data
+	const [products, chemicals, productCount, chemicalCount] =
+		await Promise.all([
+			prisma.product.findMany({
+				where: {
+					createdById: applicatorId,
+					...(query && {
+						productName: { contains: query, mode: 'insensitive' },
+					}),
+				},
+				skip,
+				take: limit,
+			}),
+			hasMinSearch
+				? prisma.chemical.findMany({
+						where: hasMinSearch
+							? {
+									deletedAt: null,
+									productName: {
+										contains: query,
+										mode: 'insensitive',
+									},
+								}
+							: undefined,
+						skip,
+						take: limit,
+					})
+				: Promise.resolve([]),
+			prisma.product.count({
+				where: {
+					createdById: applicatorId,
+					...(query && {
+						productName: { contains: query, mode: 'insensitive' },
+					}),
+				},
+			}),
+			hasMinSearch
+				? prisma.chemical.count({
+						where: hasMinSearch
+							? {
+									deletedAt: null,
+									productName: {
+										contains: query,
+										mode: 'insensitive',
+									},
+								}
+							: undefined,
+					})
+				: Promise.resolve(0),
+		]);
 
 	const result = [
 		...products.map((p) => ({
@@ -7094,17 +7128,19 @@ const getSearchProduct = async (
 			label: 'CHEMICAL',
 		})),
 	];
-	const totalResults = result?.length;
+
+	const totalResults = productCount + chemicalCount;
 	const totalPages = Math.ceil(totalResults / limit);
-	// Return the paginated result including users, curren
+
 	return {
-		result: result,
+		result,
 		limit,
 		page,
 		totalPages,
 		totalResults,
 	};
 };
+
 export default {
 	createJob,
 	getAllJobsByApplicator,
