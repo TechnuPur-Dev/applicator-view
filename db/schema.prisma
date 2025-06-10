@@ -72,6 +72,7 @@ model User {
   AdminPermission        AdminPermission[]
   ActivityLog            ActivityLog[]
   Certification          Certification[]
+  Equipment              Equipment[]
 }
 
 model ApplicatorWorker {
@@ -650,6 +651,20 @@ model Certification {
   updatedAt DateTime @updatedAt
 }
 
+model Equipment {
+  id           Int           @id @default(autoincrement())
+  manufacturer String
+  type         EquipmentType @default(DRONE)
+  model        String
+  nickname     String        @default("") // We'll handle defaulting to model in application logic
+  serialNumber String        @unique
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum CertificationType {
   FAA_PART_107
   FAA_PART_137
@@ -783,8 +798,9 @@ enum ProductUnit {
 
 enum EquipmentType {
   DRONE
-  TRACTOR
   SPRAYER
+  CROP_DUSTER
+  TRACTOR
   OTHER
 }
 
