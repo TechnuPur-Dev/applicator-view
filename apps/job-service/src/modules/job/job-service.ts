@@ -665,6 +665,7 @@ const getAllJobsByApplicator = async (
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -764,6 +765,7 @@ const getJobById = async (user: User, jobId: number) => {
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -1247,6 +1249,7 @@ const getFarmListByGrowerId = async (
 					name: true,
 					acres: true,
 					fieldImageUrl: true,
+					config:true
 				},
 			},
 		},
@@ -1300,6 +1303,7 @@ const getFarmListByApplicatorId = async (
 					name: true,
 					acres: true,
 					fieldImageUrl: true,
+					config:true
 				},
 			},
 		},
@@ -1496,6 +1500,7 @@ const getJobs = async (
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -2864,6 +2869,7 @@ const getJobsPendingFromGrowers = async (
 // 							name: true,
 // 							acres: true,
 // 							crop: true,
+//                          config:true
 // 						},
 // 					},
 // 				},
@@ -3236,6 +3242,7 @@ const upcomingApplications = async (
 							name: true,
 							acres: true,
 							crop: true,
+							// config:true
 						},
 					},
 				},
@@ -3254,6 +3261,7 @@ const upcomingApplications = async (
 			acres: fieldJob.field.acres,
 			name: fieldJob.field.name,
 			crop: fieldJob.field.crop,
+			
 		})),
 	}));
 	const upcomingJobApplication = formattedJobs.filter(
@@ -4314,6 +4322,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -5181,6 +5190,7 @@ const getMyJobsByPilot = async (
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -5443,6 +5453,7 @@ const getPilotPendingJobs = async (
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -5701,6 +5712,7 @@ const getPilotRejectedJobs = async (
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -5792,6 +5804,7 @@ const getJobByIdForPilot = async (
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
@@ -6243,6 +6256,7 @@ const getJobBytokenThroughEmail = async (token: string) => {
 							name: true,
 							acres: true,
 							crop: true,
+							config:true
 						},
 					},
 				},
