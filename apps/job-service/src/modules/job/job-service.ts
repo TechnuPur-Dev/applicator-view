@@ -665,7 +665,7 @@ const getAllJobsByApplicator = async (
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -765,7 +765,7 @@ const getJobById = async (user: User, jobId: number) => {
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -1249,7 +1249,7 @@ const getFarmListByGrowerId = async (
 					name: true,
 					acres: true,
 					fieldImageUrl: true,
-					config:true
+					config: true,
 				},
 			},
 		},
@@ -1303,7 +1303,7 @@ const getFarmListByApplicatorId = async (
 					name: true,
 					acres: true,
 					fieldImageUrl: true,
-					config:true
+					config: true,
 				},
 			},
 		},
@@ -1500,7 +1500,7 @@ const getJobs = async (
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -3261,7 +3261,6 @@ const upcomingApplications = async (
 			acres: fieldJob.field.acres,
 			name: fieldJob.field.name,
 			crop: fieldJob.field.crop,
-			
 		})),
 	}));
 	const upcomingJobApplication = formattedJobs.filter(
@@ -4322,7 +4321,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -5190,7 +5189,7 @@ const getMyJobsByPilot = async (
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -5453,7 +5452,7 @@ const getPilotPendingJobs = async (
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -5712,7 +5711,7 @@ const getPilotRejectedJobs = async (
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -5804,7 +5803,7 @@ const getJobByIdForPilot = async (
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -6256,7 +6255,7 @@ const getJobBytokenThroughEmail = async (token: string) => {
 							name: true,
 							acres: true,
 							crop: true,
-							config:true
+							config: true,
 						},
 					},
 				},
@@ -7121,27 +7120,29 @@ const getSearchProduct = async (
 				: Promise.resolve(0),
 		]);
 
-	const result = [
-		...products.map((p) => ({
-			id: p.id,
-			code: p.epaRegistration,
-			productName: p.productName,
-			tag: p.baseProductName,
-			type: p.category,
-			category: p.category,
-			perAcreRate: p.perAcreRate,
-			label: 'PRODUCT',
-		})),
-		...chemicals.map((c) => ({
-			id: c.id,
-			code: c.registrationNumber,
-			productName: c.productName,
-			tag: c.abns,
-			type: c.pesticideType,
-			category: c.pesticideCategory,
-			label: 'CHEMICAL',
-		})),
-	];
+	const productMapped = products.map((p) => ({
+		id: p.id,
+		code: p.epaRegistration,
+		productName: p.productName,
+		tag: p.baseProductName,
+		type: p.category,
+		category: p.category,
+		perAcreRate: p.perAcreRate,
+		label: 'PRODUCT',
+	}));
+
+	const chemicalMapped = chemicals.map((c, index) => ({
+		id: c.id,
+		code: c.registrationNumber,
+		productName: c.productName,
+		tag: c.abns,
+		type: c.pesticideType,
+		category: c.pesticideCategory,
+		label: 'CHEMICAL',
+		isFirstChemical: index === 0, // add identifier only to first chemical
+	}));
+
+	const result = [...productMapped, ...chemicalMapped];
 
 	const totalResults = productCount + chemicalCount;
 	const totalPages = Math.ceil(totalResults / limit);
