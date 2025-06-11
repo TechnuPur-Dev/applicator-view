@@ -7027,8 +7027,10 @@ const createFlighLog = async (
 			droneId,
 			uploadedById: userId,
 			mapImageUrl,
-			startTime: new Date(Number(startTime) * 1000), // Convert seconds to milliseconds
-			endTime: new Date(Number(endTime) * 1000),
+			startTime: startTime
+				? new Date(Number(startTime) * 1000)
+				: null, // Convert seconds to milliseconds
+			endTime: endTime ? new Date(Number(endTime) * 1000) : null,
 			geojsonData: geojsonData as Prisma.InputJsonValue,
 		},
 	});
