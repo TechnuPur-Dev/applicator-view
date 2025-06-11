@@ -170,6 +170,16 @@ const getAllProducts = async (
 		orderBy: {
 			id: 'desc',
 		},
+		select: {
+			id: true,
+			productName: true,
+			baseProductName: true,
+			productType: true,
+			productCategory: true,
+			epaRegistration: true,
+			perAcreRate: true,
+			restrictedUse: true,
+		},
 	});
 	const totalResults = await prisma.product.count({
 		where: filters,
@@ -198,6 +208,16 @@ const getProductById = async (user: User, productId: number) => {
 		where: {
 			id: productId,
 			createdById: userId,
+		},
+		select: {
+			id: true,
+			productName: true,
+			baseProductName: true,
+			productType: true,
+			productCategory: true,
+			epaRegistration: true,
+			perAcreRate: true,
+			restrictedUse: true,
 		},
 	});
 	return product;

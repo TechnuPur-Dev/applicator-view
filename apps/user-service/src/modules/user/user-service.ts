@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import { Decimal } from '@prisma/client/runtime/library';
-import { JobStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
@@ -138,7 +139,6 @@ const updateProfile = async (data: UpdateUser, userId: number) => {
 			stateId: true,
 		},
 	});
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { state } = udpatedUser; // Exclude password
 	if (user?.profileStatus === 'INCOMPLETE') {
 		const subject = 'Welcome to Acre Connect!';
@@ -2236,7 +2236,6 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			);
 
 			// Type assertion to inform TypeScript about `totalAcres`
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(farm as any).totalAcres = totalAcresByFarm
 				?.toDecimalPlaces(2)
 				.toNumber();
