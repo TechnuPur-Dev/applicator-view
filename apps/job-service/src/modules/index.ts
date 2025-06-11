@@ -4,6 +4,7 @@ import supportTicket from './support-ticket/support-ticket-routes';
 import warrantyRegistration from './warranty-registeration/warranty-registration-routes';
 import product from './product/product-routes';
 import integration from './integration/integration-routes';
+import equipment from './equipment/equipment-routes'
 import { BASE_URI } from '../global/baseUri'; // Assuming BASE_URI is exported as a named export
 
 const router: Router = express.Router();
@@ -29,6 +30,10 @@ const defaultRoutes = [
 	{
 		path: '/integration', // Path for the integration routes
 		route: integration,
+	},
+	{
+		path: '/equipment', // Path for the integration routes
+		route: equipment,
 	},
 ];
 
