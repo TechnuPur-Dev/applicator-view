@@ -2200,11 +2200,7 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 									applicatorId,
 								},
 							}, // Include permissions to calculate farm permissions for the applicator
-							fields: {
-								omit: {
-									config: true,
-								},
-							}, // Include fields to calculate total acres
+							fields: true,
 							state: {
 								select: {
 									id: true,
