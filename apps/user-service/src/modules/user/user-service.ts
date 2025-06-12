@@ -2222,9 +2222,29 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 			},
 		},
 	});
+	// Add thumbnail at the top level of each field.
+	if (grower?.grower?.farms) {
+		for (const farm of grower.grower.farms) {
+			for (const field of farm.fields) {
+				// Try-catch in case config or properties are missing
+				try {
+					const config = field.config as any;
+					if (config?.properties?.thumbnail) {
+						(field as any).thumbnail = config.properties.thumbnail;
+						(field as any).config = undefined;
+					}
+				} catch (error) {
+					console.warn(
+						'Failed to flatten thumbnail for field:',
+						field.id,
+						error,
+					);
+				}
+			}
+		}
+	}
 
 	// Calculate total acres for each grower and each farm
-
 	const totalAcresByGrower = grower?.grower?.farms.reduce(
 		(totalGrowerAcres, farm) => {
 			// Calculate total acres for this farm
