@@ -7,7 +7,6 @@ import ApiError from '../../../../../shared/utils/api-error';
 import { PaginateOptions, User } from './../../../../../shared/types/global';
 import { EquipmentType } from '@prisma/client';
 
-
 const createEquipment = async (createdById: number, data: CreateData) => {
 	const existingEquipment = await prisma.equipment.findFirst({
 		where: { serialNumber: data.serialNumber },
@@ -26,8 +25,7 @@ const createEquipment = async (createdById: number, data: CreateData) => {
 			model: data.model,
 			nickname: data.nickname,
 			serialNumber: data.serialNumber,
-			userId: data.userId
-
+			userId: createdById,
 		},
 	});
 
@@ -48,7 +46,9 @@ const getAllEquipmentList = async (user: User, options: PaginateOptions) => {
 	// Calculate the number of users to skip based on the current page and limit
 	const skip = (page - 1) * limit;
 	const result = await prisma.equipment.findMany({
-
+		where: {
+			userId: user.id,
+		},
 		skip,
 		take: limit,
 		orderBy: {
@@ -68,56 +68,38 @@ const getAllEquipmentList = async (user: User, options: PaginateOptions) => {
 	};
 };
 const getEquipmentById = async (user: User, id: number) => {
-
 	const result = await prisma.equipment.findUnique({
 		where: {
 			id,
+			userId: user.id,
 		},
 	});
 	if (!result) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'item not found',
-		);
+		throw new ApiError(httpStatus.NOT_FOUND, 'item not found');
 	}
 	return result;
 };
-const updateEquipment = async ( id: number, data: CreateData) => {
+const updateEquipment = async (user: User, id: number, data: CreateData) => {
 	const result = await prisma.equipment.update({
-		where: { id },
+		where: { id, userId: user.id },
 		data: {
 			...data,
 		},
 	});
 	if (!result) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'item not found',
-		);
+		throw new ApiError(httpStatus.NOT_FOUND, 'item not found');
 	}
 	return result;
 };
 
 const deleteEquipment = async (user: User, id: number) => {
-	const exist = await prisma.equipment.findUnique({
-		where: {
-			id,
-		},
-	});
-	if (!exist) {
-		throw new ApiError(
-			httpStatus.NOT_FOUND,
-			'item not found',
-		);
-	}
 	const result = await prisma.equipment.delete({
-		where: { id },
+		where: { id, userId: user.id },
 	});
-	
+
 	return result;
 };
 export default {
-
 	createEquipment,
 	getAllEquipmentList,
 	getEquipmentById,

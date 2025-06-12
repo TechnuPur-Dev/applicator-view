@@ -766,6 +766,7 @@ const getJobById = async (user: User, jobId: number) => {
 							acres: true,
 							crop: true,
 							config: true,
+							fieldImageUrl: true,
 						},
 					},
 				},
@@ -4322,6 +4323,7 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 							acres: true,
 							crop: true,
 							config: true,
+							fieldImageUrl: true,
 						},
 					},
 				},
@@ -5804,6 +5806,7 @@ const getJobByIdForPilot = async (
 							acres: true,
 							crop: true,
 							config: true,
+							fieldImageUrl: true,
 						},
 					},
 				},
@@ -6256,6 +6259,7 @@ const getJobBytokenThroughEmail = async (token: string) => {
 							acres: true,
 							crop: true,
 							config: true,
+							fieldImageUrl: true,
 						},
 					},
 				},
@@ -7027,9 +7031,7 @@ const createFlighLog = async (
 			droneId,
 			uploadedById: userId,
 			mapImageUrl,
-			startTime: startTime
-				? new Date(Number(startTime) * 1000)
-				: null, // Convert seconds to milliseconds
+			startTime: startTime ? new Date(Number(startTime) * 1000) : null, // Convert seconds to milliseconds
 			endTime: endTime ? new Date(Number(endTime) * 1000) : null,
 			geojsonData: geojsonData as Prisma.InputJsonValue,
 		},

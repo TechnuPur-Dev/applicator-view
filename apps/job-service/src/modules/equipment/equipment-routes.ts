@@ -18,9 +18,7 @@ router
 		equimentController.createEquipment,
 	);
 
-router
-	.route('/all')
-	.get( equimentController.getAllEquipmentList);
+router.route('/all').get(equimentController.getAllEquipmentList);
 router
 	.route('/getById/:id')
 	.get(

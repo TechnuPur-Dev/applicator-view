@@ -11,9 +11,7 @@ const createSchema: Schema = Joi.object({
 		model: Joi.string().required(),
 		nickname: Joi.string().optional(),
 		serialNumber: Joi.string().max(50).required(),
-		userId: Joi.number().max(50).required()
-
-
+		// userId: Joi.number().max(50).required()
 	}).required(),
 });
 const updateSchema: Schema = Joi.object({
@@ -26,10 +24,9 @@ const updateSchema: Schema = Joi.object({
 		model: Joi.string().optional(),
 		nickname: Joi.string().optional(),
 		serialNumber: Joi.string().max(50).optional(),
-		userId: Joi.number().max(50).optional()
+		userId: Joi.number().max(50).optional(),
 	}).required(),
 });
-
 
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
