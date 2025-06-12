@@ -464,6 +464,11 @@ const sendInviteToWorker = async (
 ) => {
 	let invite;
 	const token = generateToken('WORKER');
+	const worker = await prisma.user.findUnique({
+		where: {
+			id: workerId,
+		},
+	});
 
 	const existingInvite = await prisma.applicatorWorker.findUnique({
 		where: {
@@ -473,6 +478,14 @@ const sendInviteToWorker = async (
 			},
 		},
 	});
+	const shouldAutoAccept =
+		worker?.autoAcceptInvite &&
+		((data.percentageFee &&
+			worker.minPercentageFee &&
+			data.percentageFee >= worker.minPercentageFee) ||
+			(data.dollarPerAcre &&
+				worker.minDollarPerAcre &&
+				data.dollarPerAcre >= worker.minDollarPerAcre));
 	if (existingInvite) {
 		if (
 			existingInvite.inviteStatus === 'REJECTED' ||
@@ -491,7 +504,7 @@ const sendInviteToWorker = async (
 				},
 				data: {
 					...data,
-					inviteStatus: 'PENDING', // Only updating the inviteStatus field
+					inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING', // Only updating the inviteStatus field
 					inviteToken: token,
 					expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				},
@@ -507,7 +520,7 @@ const sendInviteToWorker = async (
 			data: {
 				applicatorId,
 				workerId,
-				inviteStatus: 'PENDING',
+				inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 				inviteToken: token,
 				expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 				workerType: 'PILOT',

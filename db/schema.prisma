@@ -44,6 +44,9 @@ model User {
   joiningDate            DateTime?
   lastViewedAt           DateTime? // To handle notifications count
   isActive               Boolean                 @default(true)
+  autoAcceptInvite       Boolean                 @default(false) // To automatically accept invites
+  minDollarPerAcre       Decimal? // e.g., $15.00 To automatically accept invites
+  minPercentageFee       Decimal? // e.g., 20% To automatically accept invites
   applicators            ApplicatorGrower[]      @relation("Applicators")
   growers                ApplicatorGrower[]      @relation("Growers")
   applicatorUser         ApplicatorUser[]        @relation("ApplicatorToUsers")

@@ -967,12 +967,25 @@ const updateJobByApplicator = async (
 	}
 
 	if (fieldWorkerId && user.role === 'APPLICATOR') {
+		const applicatorWorker = await prisma.applicatorWorker.findUnique({
+			where: {
+				applicatorId_workerId: {
+					applicatorId: user.id,
+					workerId: fieldWorkerId,
+				},
+			},
+			select: {
+				autoAcceptJobs: true,
+			},
+		});
 		await prisma.$transaction(async (tx) => {
 			await tx.job.update({
 				where: { id: jobId },
 				data: {
 					...data,
-					status: 'ASSIGNED_TO_PILOT',
+					status: applicatorWorker?.autoAcceptJobs
+						? 'READY_TO_SPRAY'
+						: 'ASSIGNED_TO_PILOT',
 					fieldWorkerId: fieldWorkerId,
 					// Notification: {
 					// 	create: {
@@ -989,7 +1002,9 @@ const updateJobByApplicator = async (
 					changedById: user.id, //Connect to an existing user
 					changedByRole: user.role as UserRole,
 					oldStatus: currentStatus,
-					newStatus: 'ASSIGNED_TO_PILOT',
+					newStatus: applicatorWorker?.autoAcceptJobs
+						? 'READY_TO_SPRAY'
+						: 'ASSIGNED_TO_PILOT',
 					reason: null,
 				},
 			});

@@ -1,7 +1,7 @@
 import Joi, { Schema } from 'joi';
 
 const equipmentTypeSchema = Joi.string()
-	.valid('DRONE', 'TRACTOR', 'SPRAYER', 'OTHER')
+	.valid('DRONE', 'SPRAYER', 'CROP_DUSTER', 'TRACTOR', 'OTHER')
 	.required();
 
 const createSchema: Schema = Joi.object({
