@@ -11,7 +11,7 @@ const createEquipment = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.CREATED).json(result);
 });
 const getAllEquipmentList = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page']);
+	const options = pick(req.query, ['limit', 'page','label','searchValue']);
 	const currentUser = req.user;
 	const result = await equipmentService.getAllEquipmentList(
 		currentUser,
