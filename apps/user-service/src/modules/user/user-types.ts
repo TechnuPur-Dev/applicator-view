@@ -26,6 +26,9 @@ interface UpdateUser {
 	bio?: string;
 	additionalInfo?: string;
 	profileStatus?: ProfileStatus;
+	autoAcceptInvite?: boolean;
+	minDollarPerAcre?: number;
+	minPercentageFee?: number;
 }
 interface UpdateStatus {
 	status: InviteStatus;
