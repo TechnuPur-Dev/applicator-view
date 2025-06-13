@@ -77,4 +77,11 @@ router
 	.get(
 		// verifyToken, 
 		applicatorWorker.getAllApplicatorsByPilot);
+	router
+	.route('/update/autojob-status/:applicatorId')
+	.put(
+		// verifyToken,
+		validateSchema(workerValidation.autoAcceptJobSchema),
+		applicatorWorker.updateAutoJobStatus,
+	);
 export default router;

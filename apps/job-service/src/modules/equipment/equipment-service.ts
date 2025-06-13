@@ -121,7 +121,7 @@ const getAllEquipmentList = async (user: User, options: PaginateOptions & {
 		skip,
 		take: limit,
 		orderBy: {
-			id: 'asc',
+			id: 'desc',
 		},
 	});
 	const totalResults = await prisma.equipment.count({
