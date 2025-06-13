@@ -111,6 +111,17 @@ const getAllApplicatorsByPilot = catchAsync(async (req: Request, res: Response) 
 	);
 	res.status(httpStatus.OK).json(applicators.result);
 });
+const updateAutoJobStatus = catchAsync(async (req: Request, res: Response) => {
+	const applicatorId = +req.params.applicatorId;
+	const workerId = req.payload.id;
+	const status = req.body.status
+	const result = await applicatorWorkersServices.updateAutoJobStatus(
+		applicatorId,
+		workerId,
+		status
+	);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createWorker,
 	getAllWorkers,
@@ -122,5 +133,6 @@ export default {
 	searchWorkerByEmail,
 	getAllApplicators,
 	getPendingInvites,
-	getAllApplicatorsByPilot
+	getAllApplicatorsByPilot,
+	updateAutoJobStatus
 };

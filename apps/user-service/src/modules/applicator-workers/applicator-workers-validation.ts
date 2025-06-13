@@ -48,7 +48,8 @@ const workerCreateSchema: Schema = Joi.object({
 const paramsSchema: Schema = Joi.object({
 	params: Joi.object({
 		id: Joi.number().integer().positive().required(), // growerId should be a positive number
-	}).required(),
+	})
+	.required(),
 });
 
 const updateSchema: Schema = Joi.object({
@@ -108,6 +109,14 @@ const sendInviteSchema: Schema = Joi.object({
 		code: Joi.string().optional(),
 	}).optional(),
 });
+const autoAcceptJobSchema: Schema = Joi.object({
+	params: Joi.object({
+		applicatorId:Joi.number().integer().positive().required(),
+	}),
+	body: Joi.object({
+      status: Joi.boolean().required(),
+	}).required()
+});
 export default {
 	workerCreateSchema,
 	paramsSchema,
@@ -115,4 +124,5 @@ export default {
 	updateInviteStatusSchema,
 	searchWorkerByEmail,
 	sendInviteSchema,
+	autoAcceptJobSchema
 };

@@ -1347,6 +1347,21 @@ const getAllApplicatorsByPilot = async (
 		totalResults,
 	};
 };
+const updateAutoJobStatus = async (applicatorId: number, workerId: number, status: boolean) => {
+		await prisma.applicatorWorker.update({
+			where: {
+				applicatorId_workerId: { applicatorId, workerId },
+			},
+			data: {
+				autoAcceptJobs: status,
+			},
+		});
+	return {
+		message: 'status successfully updated.',
+	};
+
+
+};
 export default {
 	createWorker,
 	getAllWorkers,
@@ -1359,4 +1374,5 @@ export default {
 	getAllApplicators,
 	getPendingInvites,
 	getAllApplicatorsByPilot,
+	updateAutoJobStatus
 };
