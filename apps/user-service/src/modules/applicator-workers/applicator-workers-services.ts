@@ -272,6 +272,7 @@ const getAllWorkers = async (
 			percentageFee: true,
 			code: true,
 			inviteStatus: true,
+			autoAcceptJobs: true,
 			worker: {
 				select: {
 					id: true,
@@ -1347,20 +1348,22 @@ const getAllApplicatorsByPilot = async (
 		totalResults,
 	};
 };
-const updateAutoJobStatus = async (applicatorId: number, workerId: number, status: boolean) => {
-		await prisma.applicatorWorker.update({
-			where: {
-				applicatorId_workerId: { applicatorId, workerId },
-			},
-			data: {
-				autoAcceptJobs: status,
-			},
-		});
+const updateAutoJobStatus = async (
+	applicatorId: number,
+	workerId: number,
+	status: boolean,
+) => {
+	await prisma.applicatorWorker.update({
+		where: {
+			applicatorId_workerId: { applicatorId, workerId },
+		},
+		data: {
+			autoAcceptJobs: status,
+		},
+	});
 	return {
 		message: 'status successfully updated.',
 	};
-
-
 };
 export default {
 	createWorker,
@@ -1374,5 +1377,5 @@ export default {
 	getAllApplicators,
 	getPendingInvites,
 	getAllApplicatorsByPilot,
-	updateAutoJobStatus
+	updateAutoJobStatus,
 };
