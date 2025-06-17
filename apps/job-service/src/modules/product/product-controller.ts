@@ -77,15 +77,15 @@ const updateRestricted = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(productData);
 });
 const getAllChemicals = catchAsync(async (req: Request, res: Response) => {
-	// const options = pick(req.query, ['limit', 'page', 'search']);
+	const options = pick(req.query, ['limit', 'page', 'search']);
 	const search = req.query.search as string;
-	if (!search || search.length < 3) {
-		return res.status(400).json({ error: 'Search term too short' });
-	}
+	// if (!search || search.length < 3) {
+	// 	return res.status(400).json({ error: 'Search term too short' });
+	// }
 	const currentUser = req.user;
 	const productData = await productService.getAllChemicals(
 		currentUser,
-		// options,
+		options,
 		search,
 	);
 	res.status(httpStatus.OK).json(productData);
