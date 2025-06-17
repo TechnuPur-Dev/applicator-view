@@ -1,4 +1,4 @@
-import JWT from 'jsonwebtoken';
+import JWT, { SignOptions } from 'jsonwebtoken';
 import httpStatus from 'http-status';
 import config from '../config/env-config';
 import ApiError from '../utils/api-error';
@@ -11,7 +11,7 @@ import ApiError from '../utils/api-error';
 export const signAccessToken = (userId: number): Promise<string> => {
 	return new Promise((resolve, reject) => {
 		const payload = { id: userId };
-		const options = {
+		const options: SignOptions = {
 			expiresIn: config.jwt.accessExpirationMinutes,
 			issuer: 'acre-app',
 			audience: userId.toString(),

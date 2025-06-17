@@ -40,9 +40,9 @@ const resendOTP = catchAsync(async (req: Request, res: Response) => {
 const acceptInviteAndSignUp = catchAsync(
 	async (req: Request, res: Response) => {
 		const data = req.body;
-		const { canManageFarms, farmPermissions } = data;
+		const { canManageFarms, farmPermissions, ...userData } = data;
 		const result = await authService.acceptInviteAndSignUp(
-			data,
+			userData,
 			canManageFarms,
 			farmPermissions,
 		);

@@ -45,7 +45,7 @@ const config = {
 	jwt: {
 		accessSecret: envVars.ACCESS_TOKEN_SECRET as string,
 		accessExpirationMinutes:
-			envVars.JWT_ACCESS_EXPIRATION_MINUTES as string,
+			envVars.JWT_ACCESS_EXPIRATION_MINUTES,
 	},
 	azureStorageUrl: envVars.AZURE_STORAGE_URL,
 	azureContainerName: envVars.AZURE_CONTAINER_NAME,

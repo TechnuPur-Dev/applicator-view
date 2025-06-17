@@ -403,13 +403,14 @@ const acceptInviteAndSignUp = async (
 					update: {
 						...(() => {
 							// eslint-disable-next-line @typescript-eslint/no-unused-vars
-							const { token, ...rest } = data;
+							const { token, stateId, ...rest } = data;
 							return rest;
 						})(),
 						password,
 						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
 						profileStatus: 'COMPLETE',
 						joiningDate: new Date(),
+						stateId: data.stateId,
 					},
 				},
 			},
