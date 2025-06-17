@@ -1304,9 +1304,10 @@ const getAllApplicatorsByPilot = async (
 		where: {
 			workerId,
 			workerType: 'PILOT',
-			isActive: true,
+			inviteStatus: 'ACCEPTED',
 		},
-		include: {
+		select: {
+			autoAcceptJobs: true,
 			applicator: {
 				select: {
 					id: true,
@@ -1314,12 +1315,8 @@ const getAllApplicatorsByPilot = async (
 					lastName: true,
 					fullName: true,
 					email: true,
-					phoneNumber: true,
 				},
 			},
-		},
-		omit: {
-			inviteToken: true,
 		},
 		skip,
 		take: limit,
@@ -1327,6 +1324,7 @@ const getAllApplicatorsByPilot = async (
 	});
 	const formattedApplicators = applicators.map((entry) => ({
 		...entry.applicator,
+		autoAcceptJobs: entry.autoAcceptJobs,
 	}));
 
 	// Total workers count
@@ -1356,6 +1354,7 @@ const updateAutoJobStatus = async (
 	await prisma.applicatorWorker.update({
 		where: {
 			applicatorId_workerId: { applicatorId, workerId },
+			inviteStatus: 'ACCEPTED',
 		},
 		data: {
 			autoAcceptJobs: status,

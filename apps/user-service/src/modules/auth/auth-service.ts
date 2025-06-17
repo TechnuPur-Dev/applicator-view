@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// Import necessary modules
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
 
 import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
@@ -402,7 +400,6 @@ const acceptInviteAndSignUp = async (
 				grower: {
 					update: {
 						...(() => {
-							// eslint-disable-next-line @typescript-eslint/no-unused-vars
 							const { token, stateId, ...rest } = data;
 							return rest;
 						})(),
@@ -470,7 +467,6 @@ const acceptInviteAndSignUp = async (
 							create: {
 								role: 'APPLICATOR',
 								...(() => {
-									// eslint-disable-next-line @typescript-eslint/no-unused-vars
 									const { stateId, token, ...rest } = data;
 									return rest;
 								})(),
