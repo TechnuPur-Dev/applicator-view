@@ -481,12 +481,17 @@ const sendInviteToWorker = async (
 	});
 	const shouldAutoAccept =
 		worker?.autoAcceptInvite &&
+		// Fee conditions are met
 		((data.percentageFee &&
 			worker.minPercentageFee &&
 			data.percentageFee >= worker.minPercentageFee) ||
 			(data.dollarPerAcre &&
 				worker.minDollarPerAcre &&
-				data.dollarPerAcre >= worker.minDollarPerAcre));
+				data.dollarPerAcre >= worker.minDollarPerAcre) ||
+			// No fee thresholds set
+			(worker.minPercentageFee == null &&
+				worker.minDollarPerAcre == null));
+
 	if (existingInvite) {
 		if (
 			existingInvite.inviteStatus === 'REJECTED' ||
