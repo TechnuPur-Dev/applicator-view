@@ -3079,6 +3079,8 @@ const getWeather = async (user: User, options: city) => {
 		const time12 = `${hour12}:${minutes} ${ampm}`;
 
 		if (!groupedWeather[date]) {
+			item.wind.speed = +(item.wind.speed * 1.60934).toFixed(2); // Converting miles to Kilometer
+			// item.wind.speed = windSpeed.toFixed(2);
 			groupedWeather[date] = {
 				day: localDateObj.toLocaleDateString('en-US', {
 					weekday: 'long',
