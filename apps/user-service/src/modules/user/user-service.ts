@@ -3054,7 +3054,7 @@ const getWeather = async (user: User, options: city) => {
 	const { lat, lon } = geoResponse.data[0];
 
 	// Fetch 5-day weather forecast
-	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&units=metric&appid=${OPEN_WEATHER_API_KEY}`;
+	const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&units=imperial&appid=${OPEN_WEATHER_API_KEY}`;
 	const weatherResponse = await axios.get(weatherUrl);
 	const weatherData = weatherResponse.data.list;
 	const timezoneOffset = weatherResponse.data.city.timezone; // in seconds
@@ -3091,6 +3091,7 @@ const getWeather = async (user: User, options: city) => {
 				hourly: [],
 				aqi: null,
 				city: cityName,
+				wind: item.wind,
 			};
 		}
 
