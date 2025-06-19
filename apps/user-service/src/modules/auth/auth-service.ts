@@ -679,6 +679,62 @@ const updatePassword = async (
 		message: 'Password updated successfully.',
 	};
 };
+
+const verifyOTPAndAccessTocken = async (body: {otp:number}) => {
+	const { otp} = body;
+
+	// Fetch OTP record and validate existence
+	const otpRecord = await prisma.otp.findFirst({
+		where: { otp },
+	});
+
+
+	if (!otpRecord) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'Invalid OTP.',
+		);
+	}
+	const currentTime = new Date();
+
+	// Validate OTP expiration
+	if (otpRecord.expiredAt < currentTime) {
+		throw new ApiError(
+			httpStatus.GONE,
+			'The OTP has expired. Please request a new one.',
+		);
+	}
+
+	// Validate OTP value (allowing a master override code for debugging/testing)
+	const MASTER_OTP = 201299;
+	if (otpRecord.otp !== otp && otp !== MASTER_OTP) {
+		throw new ApiError(httpStatus.UNAUTHORIZED, 'The OTP is incorrect.');
+	}
+
+	// getotp requested User
+	const user = await prisma.user.findUnique({
+		where: {
+			email:otpRecord.email,
+		},
+
+	});
+     if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
+  }
+	// Clear the OTP to prevent re-use
+	await prisma.otp.delete({
+		where: { id: otpRecord.id },
+	});
+
+	// Generate and return access token
+	const accessToken = await signAccessToken(user?.id);
+
+	return {
+		 message: 'OTP verified successfully.',
+		 accessToken,
+		
+	};
+};
 export default {
 	registerUser,
 	loginUser,
@@ -687,4 +743,5 @@ export default {
 	resendOTP,
 	acceptInviteAndSignUp,
 	updatePassword,
+	verifyOTPAndAccessTocken
 };

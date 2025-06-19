@@ -59,6 +59,11 @@ const updatePassword = catchAsync(async (req: Request, res: Response) => {
 	);
 	res.status(httpStatus.OK).json(result);
 });
+
+const verifyOTPAndAccessTocken = catchAsync(async (req, res) => {
+	const result = await authService.verifyOTPAndAccessTocken(req.body);
+	res.status(httpStatus.CREATED).json(result);
+});
 export default {
 	registerUser,
 	verifyEmailAndSendOTP,
@@ -67,4 +72,5 @@ export default {
 	resendOTP,
 	acceptInviteAndSignUp,
 	updatePassword,
+	verifyOTPAndAccessTocken
 };
