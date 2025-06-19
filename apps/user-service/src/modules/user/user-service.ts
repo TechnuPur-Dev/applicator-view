@@ -3066,6 +3066,11 @@ const getWeather = async (user: User, options: city) => {
 
 	// Group weather data by date
 	const groupedWeather: Record<string, any> = {};
+	const degToCompass = (deg: number) => {
+		const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+		const index = Math.round(deg / 45) % 8;
+		return directions[index];
+	};
 
 	weatherData.forEach((item: any) => {
 		// Convert UTC timestamp to local time using timezone offset
@@ -3080,6 +3085,9 @@ const getWeather = async (user: User, options: city) => {
 
 		if (!groupedWeather[date]) {
 			item.wind.speed = +(item.wind.speed * 1.60934).toFixed(2); // Converting miles to Kilometer
+			item.wind.gust = +(item.wind.gust * 1.60934).toFixed(2); // Converting miles to Kilometer
+			item.wind.direction = degToCompass(item.wind.deg);
+
 			// item.wind.speed = windSpeed.toFixed(2);
 			groupedWeather[date] = {
 				day: localDateObj.toLocaleDateString('en-US', {
