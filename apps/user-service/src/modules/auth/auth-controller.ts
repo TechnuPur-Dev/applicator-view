@@ -60,10 +60,17 @@ const updatePassword = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(result);
 });
 
-const verifyOTPAndAccessTocken = catchAsync(async (req, res) => {
-	const result = await authService.verifyOTPAndAccessTocken(req.body);
+const sendOTP = catchAsync(async (req: Request, res: Response) => {
+	const { email } = req.body; // Destructure body
+	const result = await authService.sendOTP(email);
+	res.status(httpStatus.OK).json(result);
+});
+
+const verifyOTP = catchAsync(async (req, res) => {
+	const result = await authService.verifyOTP(req.body);
 	res.status(httpStatus.CREATED).json(result);
 });
+
 export default {
 	registerUser,
 	verifyEmailAndSendOTP,
@@ -72,5 +79,6 @@ export default {
 	resendOTP,
 	acceptInviteAndSignUp,
 	updatePassword,
-	verifyOTPAndAccessTocken
+	sendOTP,
+	verifyOTP,
 };

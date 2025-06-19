@@ -119,8 +119,10 @@ const updatePasswordSchema = Joi.object({
 			}),
 	}).required(),
 });
+
 const verifyOTPSchema = Joi.object({
 	body: Joi.object({
+		email: Joi.string().email().required(),
 		otp: otpSchema.required(),
 	}).required(),
 });
@@ -131,5 +133,5 @@ export default {
 	loginSchema,
 	acceptInviteAndSignUp,
 	updatePasswordSchema,
-	verifyOTPSchema
+	verifyOTPSchema,
 };

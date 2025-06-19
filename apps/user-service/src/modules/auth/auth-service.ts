@@ -680,19 +680,75 @@ const updatePassword = async (
 	};
 };
 
-const verifyOTPAndAccessTocken = async (body: {otp:number}) => {
-	const { otp} = body;
+const sendOTP = async (email: string) => {
+	const isEmailExist = await prisma.user.findFirst({
+		where: {
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
+			profileStatus: 'COMPLETE',
+		},
+		select: {
+			id: true, // Omit password from the response to prevent exposing it to clients
+		},
+	});
+
+	if (!isEmailExist) {
+		throw new ApiError(
+			httpStatus.NOT_FOUND,
+			'An account with this email not found.',
+		);
+	}
+	const { otp, expiryTime } = generateOTP();
+	await prisma.otp.upsert({
+		where: { email },
+		create: {
+			email,
+			otp,
+			expiredAt: expiryTime,
+		},
+		update: {
+			otp,
+			expiredAt: expiryTime,
+			createdAt: new Date(),
+		},
+	});
+
+	const subject = 'We received a request to reset your password';
+	const message = `
+	We received a request to reset your password.<br><br>
+	Please use the following OTP to proceed with the password reset:<br><br>
+	<strong style="color: black; font-size: 1.5em;">${otp}</strong><br><br>
+	This OTP is valid until <strong>${expiryTime}</strong>.<br><br>
+	If you did not request a password reset, please ignore this email or contact support.
+`;
+	const html = await mailHtmlTemplate(subject, message);
+
+	await sendEmail({
+		emailTo: email,
+		subject,
+		text: 'Reset Password Request',
+		html,
+	});
+
+	return {
+		otp,
+	};
+};
+
+const verifyOTP = async (body: { email: string; otp: number }) => {
+	const { email, otp } = body;
 
 	// Fetch OTP record and validate existence
 	const otpRecord = await prisma.otp.findFirst({
-		where: { otp },
+		where: { email },
 	});
-
 
 	if (!otpRecord) {
 		throw new ApiError(
 			httpStatus.NOT_FOUND,
-			'Invalid OTP.',
+			'There is no otp exist against this email.',
 		);
 	}
 	const currentTime = new Date();
@@ -714,13 +770,15 @@ const verifyOTPAndAccessTocken = async (body: {otp:number}) => {
 	// getotp requested User
 	const user = await prisma.user.findUnique({
 		where: {
-			email:otpRecord.email,
+			email: otpRecord.email,
 		},
-
+		select: {
+			id: true,
+		},
 	});
-     if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
-  }
+	if (!user) {
+		throw new ApiError(httpStatus.NOT_FOUND, 'User not found.');
+	}
 	// Clear the OTP to prevent re-use
 	await prisma.otp.delete({
 		where: { id: otpRecord.id },
@@ -730,9 +788,8 @@ const verifyOTPAndAccessTocken = async (body: {otp:number}) => {
 	const accessToken = await signAccessToken(user?.id);
 
 	return {
-		 message: 'OTP verified successfully.',
-		 accessToken,
-		
+		message: 'OTP verified successfully.',
+		accessToken,
 	};
 };
 export default {
@@ -743,5 +800,6 @@ export default {
 	resendOTP,
 	acceptInviteAndSignUp,
 	updatePassword,
-	verifyOTPAndAccessTocken
+	sendOTP,
+	verifyOTP,
 };

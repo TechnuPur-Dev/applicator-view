@@ -52,10 +52,17 @@ router
 		authController.updatePassword,
 	);
 
-	router
+router
+	.route('/send-otp')
+	.post(
+		validateSchema(authValidation.verifyEmailAndSendOTPSchema),
+		authController.sendOTP,
+	);
+
+router
 	.route('/otp-verify')
 	.post(
 		validateSchema(authValidation.verifyOTPSchema),
-		authController.verifyOTPAndAccessTocken,
+		authController.verifyOTP,
 	);
 export default router;
