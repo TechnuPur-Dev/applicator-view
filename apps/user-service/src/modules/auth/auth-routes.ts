@@ -51,4 +51,11 @@ router
 		validateSchema(authValidation.updatePasswordSchema),
 		authController.updatePassword,
 	);
+
+	router
+	.route('/otp-verify')
+	.post(
+		validateSchema(authValidation.verifyOTPSchema),
+		authController.verifyOTPAndAccessTocken,
+	);
 export default router;
