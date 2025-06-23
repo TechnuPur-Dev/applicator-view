@@ -263,6 +263,14 @@ const upcomingApplicationsRangeSchema = Joi.object({
 		}),
 	}).required(),
 });
+const autoAcceptJobSchema: Schema = Joi.object({
+	params: Joi.object({
+		userId:Joi.number().integer().positive().required(),
+	}),
+	body: Joi.object({
+      status: Joi.boolean().required(),
+	}).required()
+});
 export default {
 	createJobSchema,
 	paramsSchema,
@@ -278,4 +286,5 @@ export default {
 	inviteTokenSchema,
 	calendarApplicationsSchema,
 	upcomingApplicationsRangeSchema,
+	autoAcceptJobSchema
 };
