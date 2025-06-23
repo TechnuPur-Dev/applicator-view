@@ -573,6 +573,7 @@ const getAllGrowersByApplicator = async (
 			growerLastName: true,
 			inviteStatus: true,
 			isArchivedByApplicator: true,
+			autoAcceptJobsByApplicator:true,
 			grower: {
 				include: {
 					state: {
@@ -856,6 +857,7 @@ const getAllApplicatorsByGrower = async (
 			email: true,
 			expiresAt: true,
 			inviteInitiator: true,
+			autoAcceptJobsByGrower:true,
 			applicator: {
 				include: {
 					state: {

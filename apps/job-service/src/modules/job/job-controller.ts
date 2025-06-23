@@ -465,6 +465,18 @@ const getSearchProduct = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.getSearchProduct(user, options);
 	res.status(httpStatus.OK).json(result);
 });
+
+const updateAutoJobStatus = catchAsync(async (req: Request, res: Response) => {
+	const userId = +req.params.userId;
+	const user = req.user;
+	const status = req.body.status
+	const result = await jobService.updateAutoJobStatus(
+		userId,
+		user,
+		status
+	);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	createJob,
 	getAllJobsByApplicator,
@@ -516,4 +528,5 @@ export default {
 	getFlighLogById,
 	getHeadersDataForPilot,
 	getSearchProduct,
+	updateAutoJobStatus
 };

@@ -173,7 +173,7 @@ router
 		normalizeApplicatorUser,
 		validateSchema(jobValidation.headerStatsSchema),
 		jobController.getHeadersDataForPilot,
-	);	
+	);
 router
 	.route('/get-rejectedjobs')
 	.get(verifyToken, normalizeApplicatorUser, jobController.getRejectedJobs);
@@ -290,6 +290,8 @@ router
 router.route('/flight-log/:id').post(verifyToken, jobController.createFlighLog);
 router.route('/flight-log/:id').get(verifyToken, jobController.getFlighLogById);
 router.route('/search-product').get(verifyToken, jobController.getSearchProduct);
+
+router.route('/update/autojob-status/:userId').put(verifyToken, validateSchema(jobValidation.autoAcceptJobSchema),jobController.updateAutoJobStatus)
 
 
 export default router;
