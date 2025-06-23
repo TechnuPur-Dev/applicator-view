@@ -107,26 +107,27 @@ model ApplicatorWorker {
 }
 
 model ApplicatorGrower {
-  id                     Int              @id @default(autoincrement())
-  applicatorId           Int?
-  growerId               Int
-  applicatorFirstName    String?
-  applicatorLastName     String?
-  growerFirstName        String?
-  growerLastName         String?
-  inviteStatus           InviteStatus     @default(PENDING)
-  inviteToken            String?          @unique
-  expiresAt              DateTime? // Optional: Invite expiration time
-  inviteInitiator        InviteInitiator? // NEW FIELD: Who sent the invite?
-  isArchivedByApplicator Boolean          @default(false)
-  isArchivedByGrower     Boolean          @default(false)
-  canManageFarms         Boolean          @default(false)
-  isDeletedByApplicator  Boolean          @default(false)
-  isDeletedByGrower      Boolean          @default(false)
-  autoAcceptJobs         Boolean          @default(false)
-  applicatorDeletedTill  DateTime? // Timestamp for when the applicator deleted till
-  growerDeletedTill      DateTime? // Timestamp for when the grower deleted till
-  email                  String? // Store invited email to handle the case when applicator does notexists in the system
+  id                         Int              @id @default(autoincrement())
+  applicatorId               Int?
+  growerId                   Int
+  applicatorFirstName        String?
+  applicatorLastName         String?
+  growerFirstName            String?
+  growerLastName             String?
+  inviteStatus               InviteStatus     @default(PENDING)
+  inviteToken                String?          @unique
+  expiresAt                  DateTime? // Optional: Invite expiration time
+  inviteInitiator            InviteInitiator? // NEW FIELD: Who sent the invite?
+  isArchivedByApplicator     Boolean          @default(false)
+  isArchivedByGrower         Boolean          @default(false)
+  canManageFarms             Boolean          @default(false)
+  isDeletedByApplicator      Boolean          @default(false)
+  isDeletedByGrower          Boolean          @default(false)
+  autoAcceptJobsByApplicator Boolean          @default(false)
+  autoAcceptJobsByGrower     Boolean          @default(false)
+  applicatorDeletedTill      DateTime? // Timestamp for when the applicator deleted till
+  growerDeletedTill          DateTime? // Timestamp for when the grower deleted till
+  email                      String? // Store invited email to handle the case when applicator does notexists in the system
 
   applicator User? @relation("Applicators", fields: [applicatorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   grower     User  @relation("Growers", fields: [growerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
