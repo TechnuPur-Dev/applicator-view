@@ -22,7 +22,7 @@ import { hashPassword } from '../../helper/bcrypt';
 import {
 	PaginateOptions,
 	User,
-	city,
+	City,
 } from '../../../../../shared/types/global';
 import { generateToken, verifyInvite } from '../../helper/invite-token';
 import { InviteStatus } from '@prisma/client';
@@ -3038,7 +3038,7 @@ const verifyInviteToken = async (token: string) => {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
 };
-const getWeather = async (user: User, options: city) => {
+const getWeather = async (user: User, options: City) => {
 	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
 
 	const userData = await prisma.user.findUnique({
