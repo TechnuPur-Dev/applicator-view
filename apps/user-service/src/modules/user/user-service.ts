@@ -1782,7 +1782,7 @@ const sendInviteToApplicator = async (
 	  Click the link below to join.<br><br>
 	  <a href="${inviteLink}">${inviteLink}</a><br><br>
 	  If you did not expect this invitation, please ignore this email.
-	`;
+	 `;
 
 		const html = await mailHtmlTemplate(subject, message);
 		await sendEmail({
@@ -1803,7 +1803,7 @@ const sendInviteToApplicator = async (
 			'User exists but is not an applicator.',
 		);
 	}
-
+    const shouldAutoAccept = applicator?.autoAcceptInvite
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -1883,7 +1883,7 @@ const sendInviteToApplicator = async (
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
-						inviteStatus: 'PENDING',
+						inviteStatus:shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 						inviteToken,
 						expiresAt: new Date(
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
@@ -1925,7 +1925,7 @@ const sendInviteToApplicator = async (
 					applicatorLastName: applicator?.lastName ?? null,
 					growerFirstName: user.firstName,
 					growerLastName: user.lastName,
-					inviteStatus: 'PENDING',
+					inviteStatus: shouldAutoAccept ? 'ACCEPTED' :'PENDING',
 					inviteInitiator: 'GROWER',
 					canManageFarms: data.canManageFarms,
 					inviteToken,
@@ -2004,7 +2004,7 @@ const sendInviteToGrower = async (
 			'Grower with email not found.',
 		);
 	}
-
+  const shouldAutoAccept = grower?.autoAcceptInvite
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -2021,7 +2021,7 @@ const sendInviteToGrower = async (
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
-						inviteStatus: 'PENDING',
+						inviteStatus:shouldAutoAccept ? 'ACCEPTED': 'PENDING',
 						inviteToken: token,
 						expiresAt: new Date(
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
@@ -2059,7 +2059,7 @@ const sendInviteToGrower = async (
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
-						inviteStatus: 'PENDING',
+						inviteStatus:shouldAutoAccept ? 'ACCEPTED':'PENDING',
 						inviteToken: token,
 						expiresAt: new Date(
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
@@ -2100,7 +2100,7 @@ const sendInviteToGrower = async (
 					applicatorLastName: currentUser.lastName ?? null,
 					growerFirstName: grower?.firstName,
 					growerLastName: grower?.lastName,
-					inviteStatus: 'PENDING',
+					inviteStatus:shouldAutoAccept ? 'ACCEPTED':'PENDING',
 					inviteInitiator: 'APPLICATOR',
 					canManageFarms: data.canManageFarms,
 					inviteToken: token,
