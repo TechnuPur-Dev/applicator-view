@@ -123,6 +123,7 @@ model ApplicatorGrower {
   canManageFarms         Boolean          @default(false)
   isDeletedByApplicator  Boolean          @default(false)
   isDeletedByGrower      Boolean          @default(false)
+  autoAcceptJobs         Boolean          @default(false)
   applicatorDeletedTill  DateTime? // Timestamp for when the applicator deleted till
   growerDeletedTill      DateTime? // Timestamp for when the grower deleted till
   email                  String? // Store invited email to handle the case when applicator does notexists in the system

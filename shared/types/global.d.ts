@@ -36,6 +36,6 @@ interface PaginateOptions {
 	limit?: string;
 	page?: string;
 }
-interface city {
+interface City {
 	city?: string;
 }
