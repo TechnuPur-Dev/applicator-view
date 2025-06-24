@@ -211,7 +211,7 @@ const verifyEmailAndSendOTP = async (email: string) => {
 	await prisma.otp.upsert({
 		where: { email },
 		create: {
-			email,
+			email: email.toLowerCase(),
 			otp,
 			expiredAt: expiryTime,
 		},
@@ -246,7 +246,12 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 
 	// Fetch OTP record and validate existence
 	const otpRecord = await prisma.otp.findFirst({
-		where: { email },
+		where: {
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
+		},
 	});
 
 	if (!otpRecord) {
@@ -704,7 +709,7 @@ const sendOTP = async (email: string) => {
 	await prisma.otp.upsert({
 		where: { email },
 		create: {
-			email,
+			email: email.toLowerCase(),
 			otp,
 			expiredAt: expiryTime,
 		},
@@ -742,7 +747,12 @@ const verifyOTP = async (body: { email: string; otp: number }) => {
 
 	// Fetch OTP record and validate existence
 	const otpRecord = await prisma.otp.findFirst({
-		where: { email },
+		where: {
+			email: {
+				equals: email,
+				mode: 'insensitive',
+			},
+		},
 	});
 
 	if (!otpRecord) {
