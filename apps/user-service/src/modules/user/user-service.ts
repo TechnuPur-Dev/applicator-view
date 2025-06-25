@@ -573,7 +573,7 @@ const getAllGrowersByApplicator = async (
 			growerLastName: true,
 			inviteStatus: true,
 			isArchivedByApplicator: true,
-			autoAcceptJobsByApplicator:true,
+			autoAcceptJobsByApplicator: true,
 			grower: {
 				include: {
 					state: {
@@ -857,7 +857,7 @@ const getAllApplicatorsByGrower = async (
 			email: true,
 			expiresAt: true,
 			inviteInitiator: true,
-			autoAcceptJobsByGrower:true,
+			autoAcceptJobsByGrower: true,
 			applicator: {
 				include: {
 					state: {
@@ -1805,7 +1805,7 @@ const sendInviteToApplicator = async (
 			'User exists but is not an applicator.',
 		);
 	}
-    const shouldAutoAccept = applicator?.autoAcceptInvite
+	const shouldAutoAccept = applicator?.autoAcceptInvite
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -1885,7 +1885,7 @@ const sendInviteToApplicator = async (
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
-						inviteStatus:shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
+						inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 						inviteToken,
 						expiresAt: new Date(
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
@@ -1900,17 +1900,30 @@ const sendInviteToApplicator = async (
 				await tx.pendingFarmPermission.deleteMany({
 					where: { inviteId: existingInvite.id },
 				});
+				if (shouldAutoAccept) {
+					await tx.farmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								applicatorId: applicator.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				} else {
+					await tx.pendingFarmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								inviteId: invite.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				}
 
-				await tx.pendingFarmPermission.createMany({
-					data: data.farmPermission
-						.filter((farm) => farm.canView) // filter where canView is true
-						.map((farm) => ({
-							farmId: farm.farmId,
-							inviteId: invite.id,
-							canView: farm.canView,
-							canEdit: farm.canEdit,
-						})),
-				});
 			} else {
 				throw new ApiError(
 					httpStatus.BAD_REQUEST,
@@ -1927,7 +1940,7 @@ const sendInviteToApplicator = async (
 					applicatorLastName: applicator?.lastName ?? null,
 					growerFirstName: user.firstName,
 					growerLastName: user.lastName,
-					inviteStatus: shouldAutoAccept ? 'ACCEPTED' :'PENDING',
+					inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 					inviteInitiator: 'GROWER',
 					canManageFarms: data.canManageFarms,
 					inviteToken,
@@ -1938,16 +1951,29 @@ const sendInviteToApplicator = async (
 			});
 
 			if (data.farmPermission.length > 0) {
-				await tx.pendingFarmPermission.createMany({
-					data: data.farmPermission
-						.filter((farm) => farm.canView) // filter where canView is true
-						.map((farm) => ({
-							farmId: farm.farmId,
-							inviteId: invite.id,
-							canView: farm.canView,
-							canEdit: farm.canEdit,
-						})),
-				});
+				if (shouldAutoAccept) {
+					await tx.farmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								applicatorId: applicator.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				} else {
+					await tx.pendingFarmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								inviteId: invite.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				}
 			}
 		}
 		await tx.notification.create({
@@ -2006,7 +2032,7 @@ const sendInviteToGrower = async (
 			'Grower with email not found.',
 		);
 	}
-  const shouldAutoAccept = grower?.autoAcceptInvite
+	const shouldAutoAccept = grower?.autoAcceptInvite
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -2023,7 +2049,7 @@ const sendInviteToGrower = async (
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
-						inviteStatus:shouldAutoAccept ? 'ACCEPTED': 'PENDING',
+						inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 						inviteToken: token,
 						expiresAt: new Date(
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
@@ -2034,6 +2060,7 @@ const sendInviteToGrower = async (
 					select: { id: true },
 				});
 
+			
 				// Keep previous farm permissions
 				// const previousPermissions =
 				// 	await tx.pendingFarmPermission.findMany({
@@ -2061,7 +2088,7 @@ const sendInviteToGrower = async (
 				invite = await tx.applicatorGrower.update({
 					where: { id: existingInvite.id },
 					data: {
-						inviteStatus:shouldAutoAccept ? 'ACCEPTED':'PENDING',
+						inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 						inviteToken: token,
 						expiresAt: new Date(
 							Date.now() + 3 * 24 * 60 * 60 * 1000,
@@ -2076,16 +2103,29 @@ const sendInviteToGrower = async (
 				await tx.pendingFarmPermission.deleteMany({
 					where: { inviteId: existingInvite.id },
 				});
-				await tx.pendingFarmPermission.createMany({
-					data: data.farmPermission
-						.filter((farm) => farm.canView) // filter where canView is true
-						.map((farm) => ({
-							farmId: farm.farmId,
-							inviteId: invite.id,
-							canView: farm.canView,
-							canEdit: farm.canEdit,
-						})),
-				});
+				if (shouldAutoAccept) {
+					await tx.farmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								applicatorId: applicatorId,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				} else {
+					await tx.pendingFarmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								inviteId: invite.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				}
 			} else {
 				throw new ApiError(
 					httpStatus.BAD_REQUEST,
@@ -2102,7 +2142,7 @@ const sendInviteToGrower = async (
 					applicatorLastName: currentUser.lastName ?? null,
 					growerFirstName: grower?.firstName,
 					growerLastName: grower?.lastName,
-					inviteStatus:shouldAutoAccept ? 'ACCEPTED':'PENDING',
+					inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 					inviteInitiator: 'APPLICATOR',
 					canManageFarms: data.canManageFarms,
 					inviteToken: token,
@@ -2113,6 +2153,18 @@ const sendInviteToGrower = async (
 			});
 
 			if (data.farmPermission.length > 0) {
+					if (shouldAutoAccept) {
+					await tx.farmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								applicatorId: applicatorId,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				} else{
 				await tx.pendingFarmPermission.createMany({
 					data: data.farmPermission
 						.filter((farm) => farm.canView) // filter where canView is true
@@ -2123,6 +2175,7 @@ const sendInviteToGrower = async (
 							canEdit: farm.canEdit,
 						})),
 				});
+			}
 			}
 		}
 		await tx.notification.create({
