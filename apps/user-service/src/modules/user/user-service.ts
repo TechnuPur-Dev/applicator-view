@@ -1906,7 +1906,6 @@ const sendInviteToApplicator = async (
 							.filter((farm) => farm.canView) // filter where canView is true
 							.map((farm) => ({
 								farmId: farm.farmId,
-								inviteId: invite.id,
 								applicatorId: applicator.id,
 								canView: farm.canView,
 								canEdit: farm.canEdit,
@@ -1952,16 +1951,29 @@ const sendInviteToApplicator = async (
 			});
 
 			if (data.farmPermission.length > 0) {
-				await tx.pendingFarmPermission.createMany({
-					data: data.farmPermission
-						.filter((farm) => farm.canView) // filter where canView is true
-						.map((farm) => ({
-							farmId: farm.farmId,
-							inviteId: invite.id,
-							canView: farm.canView,
-							canEdit: farm.canEdit,
-						})),
-				});
+				if (shouldAutoAccept) {
+					await tx.farmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								applicatorId: applicator.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				} else {
+					await tx.pendingFarmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								inviteId: invite.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				}
 			}
 		}
 		await tx.notification.create({
@@ -2048,19 +2060,7 @@ const sendInviteToGrower = async (
 					select: { id: true },
 				});
 
-				if (shouldAutoAccept) {
-					await tx.farmPermission.createMany({
-						data: data.farmPermission
-							.filter((farm) => farm.canView) // filter where canView is true
-							.map((farm) => ({
-								farmId: farm.farmId,
-								inviteId: invite.id,
-								applicatorId: applicatorId,
-								canView: farm.canView,
-								canEdit: farm.canEdit,
-							})),
-					});
-				}
+			
 				// Keep previous farm permissions
 				// const previousPermissions =
 				// 	await tx.pendingFarmPermission.findMany({
@@ -2109,7 +2109,6 @@ const sendInviteToGrower = async (
 							.filter((farm) => farm.canView) // filter where canView is true
 							.map((farm) => ({
 								farmId: farm.farmId,
-								inviteId: invite.id,
 								applicatorId: applicatorId,
 								canView: farm.canView,
 								canEdit: farm.canEdit,
@@ -2154,6 +2153,18 @@ const sendInviteToGrower = async (
 			});
 
 			if (data.farmPermission.length > 0) {
+					if (shouldAutoAccept) {
+					await tx.farmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								applicatorId: applicatorId,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				} else{
 				await tx.pendingFarmPermission.createMany({
 					data: data.farmPermission
 						.filter((farm) => farm.canView) // filter where canView is true
@@ -2164,6 +2175,7 @@ const sendInviteToGrower = async (
 							canEdit: farm.canEdit,
 						})),
 				});
+			}
 			}
 		}
 		await tx.notification.create({
