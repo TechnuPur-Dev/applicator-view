@@ -134,8 +134,8 @@ const createApplicatorUser = async (user: User, data: ApplicatorUser) => {
 				applicatorId: true,
 			},
 		});
-		// const inviteLink = `https://applicator-ac.netlify.app/#/userInvitationView?token=${token}`;
-		const inviteLink = `https://applicator-ac.netlify.app/#/login`;
+		// const inviteLink = `https://applicator-ac.netlify.app/userInvitationView?token=${token}`;
+		const inviteLink = `https://applicator-ac.netlify.app/login`;
 		const subject = 'Welcome to Acre Connect!';
 		const message = `<p>Hi ${data.firstName} ${data.lastName},</p><br><br>
 	  <p>Welcome to Acre Connect! We’re excited to have you onboard.</p><br><br>
@@ -399,7 +399,7 @@ const sendInviteToUser = async (
 		});
 	}
 
-	const inviteLink = `https://applicator-ac.netlify.app/#/userInvitationView?token=${token}`;
+	const inviteLink = `https://applicator-ac.netlify.app/userInvitationView?token=${token}`;
 	const subject = 'Invitation Email';
 
 	const message = `

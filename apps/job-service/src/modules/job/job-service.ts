@@ -413,7 +413,7 @@ const createJob = async (user: User, data: CreateJob) => {
 			return { job };
 		});
 
-		const inviteLink = `https://applicator-ac.netlify.app/#/pendingApprovals`;
+		const inviteLink = `https://applicator-ac.netlify.app/pendingApprovals`;
 		const subject = 'Job Confirmation';
 		const message = `
   ${user.firstName} ${user.lastName} added a job that needs your confirmation.!<br><br>

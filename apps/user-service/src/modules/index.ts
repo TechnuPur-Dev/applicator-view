@@ -7,6 +7,7 @@ import table from './table-view/table-view-routes';
 import applicatorWorker from './applicator-workers/applicator-workers-routes';
 import forecastCity from './forecast-city/forecast-city-routes';
 import permission from './permission/permission-routes';
+import integration from './integration/integration-routes';
 
 import geoData from './geo-data/geo-data-routes';
 import userNotification from './notification/notification-routes';
@@ -65,6 +66,10 @@ const defaultRoutes = [
 	{
 		path: '/certification',
 		route: certification,
+	},
+	{
+		path: '/integration',
+		route: integration,
 	},
 ];
 

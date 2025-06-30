@@ -36,6 +36,43 @@ const envVarsSchema = Joi.object({
 	SMARTY_AUTH_TOKEN: Joi.string()
 		.required()
 		.description('Auth Token for SMARTY'),
+	JD_CLIENT_ID: Joi.string()
+		.required()
+		.description(
+			'Client ID provided by John Deere Operations Center for OAuth authentication',
+		),
+
+	JD_CLIENT_SECRET: Joi.string()
+		.required()
+		.description(
+			'Client Secret provided by John Deere Operations Center for secure token exchange',
+		),
+
+	JD_REDIRECT_URI: Joi.string()
+		.required()
+		.description(
+			'Redirect URI registered in the John Deere developer portal for OAuth callback',
+		),
+
+	JD_STATE_STRING: Joi.string()
+		.required()
+		.description(
+			'Static or dynamically generated state string to prevent CSRF in OAuth flow',
+		),
+
+	JD_SCOPE: Joi.string()
+		.required()
+		.description(
+			'Scopes requested from John Deere for accessing user data (e.g., ag1, offline_access)',
+		),
+	JD_AUTH_HEADER: Joi.string()
+		.required()
+		.description(
+			'Auth header is base64 string of both jdClientId and jdClientSecret',
+		),
+	JD_API_URL: Joi.string()
+		.required()
+		.description('URL of John Deere Operation Center APIs'),
 }).unknown(true);
 
 // Validate the environment variables
@@ -60,6 +97,13 @@ const config = {
 	},
 	smartyAuthId: envVars.SMARTY_AUTH_ID as string,
 	smartyAuthToken: envVars.SMARTY_AUTH_TOKEN as string,
+	jdClientId: envVars.JD_CLIENT_ID as string,
+	jdClientSecret: envVars.JD_CLIENT_SECRET as string,
+	jdRedirectUri: envVars.JD_REDIRECT_URI as string,
+	jdStateString: envVars.JD_STATE_STRING as string,
+	jdScope: envVars.JD_SCOPE as string,
+	jdAuthHeader: envVars.JD_AUTH_HEADER as string,
+	jdAPIUrl: envVars.JD_API_URL as string,
 };
 
 export default config; // Default export

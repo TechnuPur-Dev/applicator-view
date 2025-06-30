@@ -886,7 +886,7 @@ const getAllApplicatorsByGrower = async (
 			applicator: applicator.applicator ?? { email: applicator.email }, // Ensure `applicator` is not null
 			inviteUrl:
 				applicator.inviteStatus === 'PENDING'
-					? `https://applicator-ac.netlify.app/#/invitationView?token=${applicator.inviteToken}`
+					? `https://applicator-ac.netlify.app/invitationView?token=${applicator.inviteToken}`
 					: undefined,
 			isInviteExpired:
 				applicator.inviteStatus === 'PENDING'
@@ -1777,7 +1777,7 @@ const sendInviteToApplicator = async (
 	});
 	if (!applicator) {
 		// Send email invitation
-		const inviteLink = `https://applicator-ac.netlify.app/#/signup`;
+		const inviteLink = `https://applicator-ac.netlify.app/signup`;
 		const subject = 'Invitation Email';
 		const message = `
 	  You are invited to join our platform!<br><br>
@@ -1960,7 +1960,7 @@ const sendInviteToApplicator = async (
 	});
 
 	// Send email invitation
-	const inviteLink = `https://applicator-ac.netlify.app/#/invitationView?token=${inviteToken}`;
+	const inviteLink = `https://applicator-ac.netlify.app/invitationView?token=${inviteToken}`;
 	const subject = 'Invitation Email';
 	const message = `
 	  You are invited to join our platform!<br><br>

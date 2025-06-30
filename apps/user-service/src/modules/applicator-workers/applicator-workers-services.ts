@@ -78,7 +78,7 @@ const createWorker = async (user: User, data: ApplicatorWorker) => {
 				updatedAt: true,
 			},
 		});
-		const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
+		const inviteLink = `https://applicator-ac.netlify.app/workerInvitationView?token=${token}`;
 		const subject = 'Invitation Email';
 		const message = `
 	  You are invited to join our platform!<br><br>
@@ -358,7 +358,7 @@ const getWorkerById = async (applicatorId: number, workerId: number) => {
 	if (!workerRecord) {
 		throw new ApiError(httpStatus.NOT_FOUND, 'Worker not found.');
 	}
-	const inviteUrl = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${workerRecord.inviteToken}`;
+	const inviteUrl = `https://applicator-ac.netlify.app/workerInvitationView?token=${workerRecord.inviteToken}`;
 
 	const { worker, ...rest } = workerRecord;
 	const { state } = worker;
@@ -549,7 +549,7 @@ const sendInviteToWorker = async (
 		});
 	}
 
-	const inviteLink = `https://applicator-ac.netlify.app/#/workerInvitationView?token=${token}`;
+	const inviteLink = `https://applicator-ac.netlify.app/workerInvitationView?token=${token}`;
 	const subject = 'Invitation Email';
 
 	const message = `
