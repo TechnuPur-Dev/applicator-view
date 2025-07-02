@@ -122,7 +122,7 @@ model ApplicatorGrower {
   inviteInitiator            InviteInitiator? // NEW FIELD: Who sent the invite?
   isArchivedByApplicator     Boolean          @default(false)
   isArchivedByGrower         Boolean          @default(false)
-  canManageFarms             Boolean          @default(false)
+  canManageFarms             Boolean          @default(true)
   isDeletedByApplicator      Boolean          @default(false)
   isDeletedByGrower          Boolean          @default(false)
   autoAcceptJobsByApplicator Boolean          @default(true)

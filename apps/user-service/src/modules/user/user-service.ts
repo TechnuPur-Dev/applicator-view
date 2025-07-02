@@ -370,7 +370,8 @@ const createGrower = async (data: UpdateUser, userId: number) => {
 				growerId: grower.id,
 				growerFirstName: firstName,
 				growerLastName: lastName,
-				inviteStatus: 'PENDING',
+				// inviteStatus: 'PENDING',
+				inviteStatus: 'ACCEPTED',
 				inviteInitiator: 'APPLICATOR',
 				inviteToken: token,
 				expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
@@ -1805,7 +1806,7 @@ const sendInviteToApplicator = async (
 			'User exists but is not an applicator.',
 		);
 	}
-	const shouldAutoAccept = applicator?.autoAcceptInvite
+	const shouldAutoAccept = applicator?.autoAcceptInvite;
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -1923,7 +1924,6 @@ const sendInviteToApplicator = async (
 							})),
 					});
 				}
-
 			} else {
 				throw new ApiError(
 					httpStatus.BAD_REQUEST,
@@ -2032,7 +2032,7 @@ const sendInviteToGrower = async (
 			'Grower with email not found.',
 		);
 	}
-	const shouldAutoAccept = grower?.autoAcceptInvite
+	const shouldAutoAccept = grower?.autoAcceptInvite;
 	const existingInvite = await prisma.applicatorGrower.findUnique({
 		where: {
 			applicatorId_growerId: {
@@ -2060,7 +2060,6 @@ const sendInviteToGrower = async (
 					select: { id: true },
 				});
 
-			
 				// Keep previous farm permissions
 				// const previousPermissions =
 				// 	await tx.pendingFarmPermission.findMany({
@@ -2153,7 +2152,7 @@ const sendInviteToGrower = async (
 			});
 
 			if (data.farmPermission.length > 0) {
-					if (shouldAutoAccept) {
+				if (shouldAutoAccept) {
 					await tx.farmPermission.createMany({
 						data: data.farmPermission
 							.filter((farm) => farm.canView) // filter where canView is true
@@ -2164,18 +2163,18 @@ const sendInviteToGrower = async (
 								canEdit: farm.canEdit,
 							})),
 					});
-				} else{
-				await tx.pendingFarmPermission.createMany({
-					data: data.farmPermission
-						.filter((farm) => farm.canView) // filter where canView is true
-						.map((farm) => ({
-							farmId: farm.farmId,
-							inviteId: invite.id,
-							canView: farm.canView,
-							canEdit: farm.canEdit,
-						})),
-				});
-			}
+				} else {
+					await tx.pendingFarmPermission.createMany({
+						data: data.farmPermission
+							.filter((farm) => farm.canView) // filter where canView is true
+							.map((farm) => ({
+								farmId: farm.farmId,
+								inviteId: invite.id,
+								canView: farm.canView,
+								canEdit: farm.canEdit,
+							})),
+					});
+				}
 			}
 		}
 		await tx.notification.create({
