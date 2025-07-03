@@ -21,66 +21,91 @@ const getOrganizations = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({ result: userData });
 });
 
-const getOrganizationsById = catchAsync(async (req: Request, res: Response) => {
+const getOrganizationById = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const organizationId = req.params.orgId;
-	const userData = await viewService.getOrganizationsById(userId,organizationId);
+	const userData = await viewService.getOrganizationById(
+		userId,
+		organizationId,
+	);
 	res.status(httpStatus.OK).json({ result: userData });
 });
-const getOrgAllFarmsByOrgId = catchAsync(async (req: Request, res: Response) => {
+const getFarmsByOrgId = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const organizationId = req.params.orgId;
-	const userData = await viewService.getOrgAllFarmsByOrgId(userId,organizationId);
+	const userData = await viewService.getFarmsByOrgId(userId, organizationId);
 	res.status(httpStatus.OK).json({ result: userData });
 });
 const getOrgFarmById = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const organizationId = req.params.orgId;
-	const farmId =  req.params.farmId;
-	const userData = await viewService.getOrgFarmById(userId,organizationId,farmId);
+	const farmId = req.params.farmId;
+	const userData = await viewService.getOrgFarmById(
+		userId,
+		organizationId,
+		farmId,
+	);
 	res.status(httpStatus.OK).json({ result: userData });
 });
-const getOrgAllFieldsByFarmId = catchAsync(async (req: Request, res: Response) => {
+const getFieldsByFarmId = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const organizationId = req.params.orgId;
-	const farmId =  req.params.farmId;
-	const userData = await viewService.getOrgAllFieldsByFarmId(userId,organizationId,farmId);
+	const farmId = req.params.farmId;
+	const userData = await viewService.getFieldsByFarmId(
+		userId,
+		organizationId,
+		farmId,
+	);
 	res.status(httpStatus.OK).json({ result: userData });
 });
 
 const getOrgFieldByFieldId = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const organizationId = req.params.orgId;
-	const fieldId =  req.params.fieldId;
-	const userData = await viewService.getOrgFieldByFieldId(userId,organizationId,fieldId);
+	const fieldId = req.params.fieldId;
+	const userData = await viewService.getOrgFieldByFieldId(
+		userId,
+		organizationId,
+		fieldId,
+	);
 	res.status(httpStatus.OK).json({ result: userData });
 });
 
-const getAllBoundariesByFieldId = catchAsync(async (req: Request, res: Response) => {
+const getBoundariesByFieldId = catchAsync(
+	async (req: Request, res: Response) => {
+		const userId = req.payload.id;
+		const organizationId = req.params.orgId;
+		const fieldId = req.params.fieldId;
+		const userData = await viewService.getBoundariesByFieldId(
+			userId,
+			organizationId,
+			fieldId,
+		);
+		res.status(httpStatus.OK).json({ result: userData });
+	},
+);
+const getFieldBoundaryById = catchAsync(async (req: Request, res: Response) => {
 	const userId = req.payload.id;
 	const organizationId = req.params.orgId;
-	const fieldId =  req.params.fieldId;
-	const userData = await viewService.getAllBoundariesByFieldId(userId,organizationId,fieldId);
-	res.status(httpStatus.OK).json({ result: userData });
-});
-const getFieldBoundariesById = catchAsync(async (req: Request, res: Response) => {
-	const userId = req.payload.id;
-	const organizationId = req.params.orgId;
-	const fieldId =  req.params.fieldId;
-	const  boundId =  req.params.boundId;
-	const userData = await viewService.getFieldBoundariesById(userId,organizationId,fieldId,boundId);
+	const fieldId = req.params.fieldId;
+	const boundId = req.params.boundId;
+	const userData = await viewService.getFieldBoundaryById(
+		userId,
+		organizationId,
+		fieldId,
+		boundId,
+	);
 	res.status(httpStatus.OK).json({ result: userData });
 });
 export default {
 	getAuthUrl,
 	getAuthTokens,
 	getOrganizations,
-	getOrganizationsById,
-	getOrgAllFarmsByOrgId,
+	getOrganizationById,
+	getFarmsByOrgId,
 	getOrgFarmById,
-	getOrgAllFieldsByFarmId,
+	getFieldsByFarmId,
 	getOrgFieldByFieldId,
-	getAllBoundariesByFieldId,
-	getFieldBoundariesById
-	
+	getBoundariesByFieldId,
+	getFieldBoundaryById,
 };

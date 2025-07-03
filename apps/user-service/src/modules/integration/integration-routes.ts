@@ -20,23 +20,23 @@ router
 	.get(verifyToken, integrationController.getOrganizations);
 router
 	.route('/john-deere/organizations/:orgId')
-	.get(verifyToken,  integrationController.getOrganizationsById);	
+	.get(verifyToken, integrationController.getOrganizationById);
 router
-	.route('/john-deere/organizations/all-farms/:orgId')
-	.get(verifyToken, integrationController.getOrgAllFarmsByOrgId);	
+	.route('/john-deere/farms/:orgId')
+	.get(verifyToken, integrationController.getFarmsByOrgId);
 router
-	.route('/john-deere/organizations/farms/:orgId/:farmId')
-	.get(verifyToken, integrationController.getOrgFarmById);	
+	.route('/john-deere/farms/:orgId/:farmId')
+	.get(verifyToken, integrationController.getOrgFarmById);
 router
-	.route('/john-deere/organizations/farms/all-fields/:orgId/:farmId')
-	.get(verifyToken, integrationController.getOrgAllFieldsByFarmId);
+	.route('/john-deere/fields/:orgId/:farmId')
+	.get(verifyToken, integrationController.getFieldsByFarmId);
 router
-	.route('/john-deere/organizations/fields/:orgId/:fieldId')
+	.route('/john-deere/fields/by-id/:orgId/:fieldId')
 	.get(verifyToken, integrationController.getOrgFieldByFieldId);
 router
-	.route('/john-deere/organizations/fields/all-boundaries/:orgId/:fieldId')
-	.get(verifyToken, integrationController.getAllBoundariesByFieldId);
-	router
-	.route('/john-deere/organizations/boundaries/:orgId/:fieldId/:boundId')
-	.get(verifyToken, integrationController.getFieldBoundariesById);
+	.route('/john-deere/boundaries/:orgId/:fieldId')
+	.get(verifyToken, integrationController.getBoundariesByFieldId);
+router
+	.route('/john-deere/boundaries/:orgId/:fieldId/:boundId')
+	.get(verifyToken, integrationController.getFieldBoundaryById);
 export default router;

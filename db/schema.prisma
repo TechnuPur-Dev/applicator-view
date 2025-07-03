@@ -25,6 +25,7 @@ model User {
   lastName               String?
   fullName               String?                 @default("")
   email                  String?                 @unique
+  // email                  String?
   phoneNumber            String?
   password               String?
   role                   UserRole
@@ -121,11 +122,11 @@ model ApplicatorGrower {
   inviteInitiator            InviteInitiator? // NEW FIELD: Who sent the invite?
   isArchivedByApplicator     Boolean          @default(false)
   isArchivedByGrower         Boolean          @default(false)
-  canManageFarms             Boolean          @default(false)
+  canManageFarms             Boolean          @default(true)
   isDeletedByApplicator      Boolean          @default(false)
   isDeletedByGrower          Boolean          @default(false)
-  autoAcceptJobsByApplicator Boolean          @default(false)
-  autoAcceptJobsByGrower     Boolean          @default(false)
+  autoAcceptJobsByApplicator Boolean          @default(true)
+  autoAcceptJobsByGrower     Boolean          @default(true)
   applicatorDeletedTill      DateTime? // Timestamp for when the applicator deleted till
   growerDeletedTill          DateTime? // Timestamp for when the grower deleted till
   email                      String? // Store invited email to handle the case when applicator does notexists in the system
