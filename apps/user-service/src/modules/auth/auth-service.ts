@@ -179,10 +179,32 @@ const loginUser = async (data: LoginUser) => {
 			}
 		}
 		const accessToken = await signAccessToken(user.id);
+		// Step 1: Fetch all integration records
+		const connectedAccounts = await prisma.connectedAccount.findMany({
+			where: { userId: user.id },
+			select: { provider: true },
+		});
+
+		console.log(connectedAccounts);
+
+		// Step 2: Build integration flags
+		const integrations: Record<string, boolean> = {
+			johnDeere: false,
+			climateFieldView: false,
+			// add more if needed
+		};
+		connectedAccounts.forEach(({ provider }) => {
+			if (provider === 'john_deere') {
+				integrations.johnDeere = true;
+			}
+			if (provider === 'climate_fieldview') {
+				integrations.climateFieldView = true;
+			}
+		});
 
 		const { password, state, ...userWithoutPassword } = user; // Exclude password
 		return {
-			user: { ...userWithoutPassword, state: state?.name },
+			user: { ...userWithoutPassword, state: state?.name, integrations },
 			accessToken,
 		};
 	}
