@@ -946,7 +946,7 @@ const updateJobByApplicator = async (
 	const { status: requestedStatus, fieldWorkerId } = data;
 	// Valid job status transitions
 	const statusTransitions: Record<JobStatus, JobStatus[]> = {
-		READY_TO_SPRAY: ['ASSIGNED_TO_PILOT'], // A job in READY_TO_SPRAY can only move to ASSIGNED_TO_PILOT
+		READY_TO_SPRAY: ['ASSIGNED_TO_PILOT', 'SPRAYED' ], // A job in READY_TO_SPRAY can only move to ASSIGNED_TO_PILOT
 		SPRAYED: ['INVOICED'], // A job in SPRAYED can only move to INVOICED
 		INVOICED: ['PAID'], // A job in INVOICED can only move to PAID
 		PAID: ['PAID'], // PAID jobs remain PAID
