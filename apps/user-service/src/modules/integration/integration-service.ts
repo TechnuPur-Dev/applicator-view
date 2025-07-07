@@ -6,6 +6,7 @@ import { prisma } from '../../../../../shared/libs/prisma-client';
 import axios from 'axios';
 import config from '../../config/env-config';
 import { getValidAccessToken } from '../../helper/jd-token';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const getAuthUrl = async () => {
 	const clientId = config.jdClientId;
@@ -163,16 +164,52 @@ const getOrganizationById = async (
 	};
 };
 
+// const getFarmsByOrgId = async (
+// 	userId: number,
+// 	orgId: string,
+// ): Promise<{
+// 	id: string;
+// 	name: string;
+// 	archived: boolean;
+// 	isAuthorized: boolean;
+// 	connectionUrl?: string;
+// }> => {
+// 	const connectedAccount = await prisma.connectedAccount.findFirst({
+// 		where: { userId, provider: 'john_deere' },
+// 	});
+
+// 	if (!connectedAccount) {
+// 		throw new ApiError(
+// 			httpStatus.UNAUTHORIZED,
+// 			'Not connected to John Deere Operations Center',
+// 		);
+// 	}
+
+// 	const accessToken = await getValidAccessToken(connectedAccount);
+// 	const response = await axios.get(
+// 		`${config.jdAPIUrl}/organizations/${orgId}/farms`,
+// 		{
+// 			headers: {
+// 				Authorization: `Bearer ${accessToken}`,
+// 				Accept: 'application/vnd.deere.axiom.v3+json',
+// 			},
+// 		},
+// 	);
+// 	const farms = response.data.values;
+
+// 	return farms.map((farm: any) => {
+// 		return {
+// 			id: farm.id,
+// 			name: farm.name,
+// 			archived: farm.archived,
+// 		};
+// 	});
+// };
+
 const getFarmsByOrgId = async (
 	userId: number,
 	orgId: string,
-): Promise<{
-	id: string;
-	name: string;
-	archived: boolean;
-	isAuthorized: boolean;
-	connectionUrl?: string;
-}> => {
+): Promise<any> => {
 	const connectedAccount = await prisma.connectedAccount.findFirst({
 		where: { userId, provider: 'john_deere' },
 	});
@@ -185,6 +222,8 @@ const getFarmsByOrgId = async (
 	}
 
 	const accessToken = await getValidAccessToken(connectedAccount);
+
+	// Fetch farms
 	const response = await axios.get(
 		`${config.jdAPIUrl}/organizations/${orgId}/farms`,
 		{
@@ -194,15 +233,87 @@ const getFarmsByOrgId = async (
 			},
 		},
 	);
+
 	const farms = response.data.values;
-	return farms.map((farm: any) => {
-		return {
-			id: farm.id,
-			name: farm.name,
-			archived: farm.archived,
-		};
-	});
+
+	const result = await Promise.all(
+		farms.map(async (farm: any) => {
+			const farmId = farm.id;
+
+			// Fetch fields for this farm
+			const fieldsResponse = await axios.get(
+				`${config.jdAPIUrl}/organizations/${orgId}/farms/${farmId}/fields`,
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+						Accept: 'application/vnd.deere.axiom.v3+json',
+					},
+				},
+			);
+
+			const jdFields = fieldsResponse.data.values || [];
+
+			// For each field, fetch boundary config
+			const fieldsWithBoundaries = await Promise.all(
+				jdFields.map(async (field: any) => {
+					let boundaryConfig = null;
+
+					try {
+						const boundaryResponse = await axios.get(
+							`${config.jdAPIUrl}/organizations/${orgId}/fields/${field.id}/boundaries`,
+							{
+								headers: {
+									Authorization: `Bearer ${accessToken}`,
+									Accept: 'application/vnd.deere.axiom.v3+json',
+								},
+							},
+						);
+
+						// Pick first boundary config if available
+						boundaryConfig = boundaryResponse?.data?.values?.[0] || null;
+					} catch (err: any) {
+						console.warn(`Boundary fetch failed for field ${field.id}`, err.message);
+					}
+					return {
+						id: field.id,
+						name: field.name,
+						crop:'',
+						acres: boundaryConfig?.area?.unit === "ha"// Formula:1 hectare = 2.47105 acres
+							? parseFloat(((boundaryConfig?.area?.valueAsDouble || 0) * 2.47105).toFixed(4))
+							: parseFloat(field.acres || '0'),
+						config: boundaryConfig, // Embed full boundary config here
+					};
+				}),
+			);
+
+			const totalAcres = fieldsWithBoundaries.reduce(
+				(sum: any, field: any) => sum.plus(new Decimal(field.acres || 0)),
+				new Decimal(0),
+			);
+
+			return {
+				id: parseInt(farmId),
+				name: farm.name || '',
+				createdById: userId,
+				growerId: userId,
+				county: null,
+				township: null,
+				zipCode: null,
+				isActive: !farm.archived,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				config: {},
+				farmImageUrl: '',
+				stateId: 0,
+				fields: fieldsWithBoundaries,
+				totalAcres: totalAcres.toFixed(2),
+			};
+		}),
+	);
+
+	return { result };
 };
+
 
 const getOrgFarmById = async (
 	userId: number,
