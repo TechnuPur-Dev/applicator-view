@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -91,8 +92,8 @@ const createFarm = async (
 const getAllFarmsByGrower = async (
 	growerId: number,
 	options: PaginateOptions & {
-		label?: string,
-		searchValue?: string
+		label?: string;
+		searchValue?: string;
 	},
 ) => {
 	const limit =
@@ -108,7 +109,7 @@ const getAllFarmsByGrower = async (
 	const skip = (page - 1) * limit;
 	const filters: Prisma.FarmWhereInput = {
 		growerId,
-	}
+	};
 	if (options.label && options.searchValue) {
 		const searchFilter: Prisma.FarmWhereInput = {};
 		const searchValue = options.searchValue;
@@ -116,28 +117,32 @@ const getAllFarmsByGrower = async (
 			Object.assign(filters, {
 				OR: [
 					{
-						name: { contains: options.searchValue, mode: 'insensitive' },
+						name: {
+							contains: options.searchValue,
+							mode: 'insensitive',
+						},
 					},
 					{
-						id:parseInt(searchValue, 10),
+						id: parseInt(searchValue, 10),
 					},
-				]
-			})
-		}else{
-		switch (options.label) {
-			case 'id':
-				searchFilter.id = parseInt(searchValue, 10);
-				break;
-			case 'name':
-				searchFilter.name = {
-					contains: searchValue, mode: 'insensitive',
-				};
-				break;
-			default:
-				throw new Error('Invalid label provided.');
+				],
+			});
+		} else {
+			switch (options.label) {
+				case 'id':
+					searchFilter.id = parseInt(searchValue, 10);
+					break;
+				case 'name':
+					searchFilter.name = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+			Object.assign(filters, searchFilter); // Merge filters dynamically
 		}
-		Object.assign(filters, searchFilter); // Merge filters dynamically
-	}
 	}
 	const farms = await prisma.farm.findMany({
 		where: filters,
@@ -971,6 +976,111 @@ const getFarmsWithPermissions = async (user: User, growerId: number) => {
 	};
 };
 
+const importJDFarmAndFields = async (
+	currentUserId: number,
+	growerId: number,
+	data: any,
+) => {
+	const {
+		id: jdFarmId,
+		name,
+		stateId,
+		county,
+		township,
+		zipCode,
+		fields = [],
+	} = data;
+
+	const grower = await prisma.applicatorGrower.findUnique({
+		where: {
+			applicatorId_growerId: {
+				applicatorId: currentUserId,
+				growerId,
+			},
+			inviteStatus: 'ACCEPTED',
+		},
+		select: { canManageFarms: true },
+	});
+
+	if (!grower?.canManageFarms) {
+		throw new ApiError(
+			httpStatus.UNAUTHORIZED,
+			'You are not authorized to add a farm for this grower.',
+		);
+	}
+
+	// Check if farm exists
+	let farm = await prisma.farm.findFirst({
+		where: {
+			jdFarmId,
+			growerId,
+			createdById: currentUserId,
+		},
+	});
+
+	if (farm) {
+		// Update existing farm
+		farm = await prisma.farm.update({
+			where: { id: farm.id },
+			data: {
+				name,
+				stateId,
+				county,
+				township,
+				zipCode,
+			},
+		});
+	} else {
+		// Create new farm
+		farm = await prisma.farm.create({
+			data: {
+				name,
+				stateId,
+				county,
+				township,
+				zipCode,
+				growerId,
+				createdById: currentUserId,
+				isActive: true,
+				jdFarmId,
+				permissions: {
+					create: {
+						applicatorId: currentUserId,
+						canView: true,
+						canEdit: true,
+					},
+				},
+			},
+		});
+	}
+
+	// Always create new fields, even if jdFieldId already exists
+	for (const field of fields) {
+		const jdFieldId = field.config?.id || field.id;
+
+		await prisma.field.create({
+			data: {
+				name: field.name,
+				crop: field.crop,
+				acres: field.acres,
+				legal: field.legal,
+				latitude: field.latitude,
+				longitude: field.longitude,
+				config: field.config,
+				fieldImageUrl: field.fieldImageUrl,
+				jdFieldId,
+				farmId: farm.id,
+				createdById: growerId, // Or use currentUserId if that's the correct creator
+			},
+		});
+	}
+
+	return {
+		message: 'Import completed (fields always created new)',
+		farmId: farm.id,
+	};
+};
+
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -986,4 +1096,5 @@ export default {
 	handleFarmPermissions,
 	getAvailableApplicators,
 	getFarmsWithPermissions,
+	importJDFarmAndFields,
 };

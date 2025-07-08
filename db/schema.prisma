@@ -155,10 +155,11 @@ model Farm {
   updatedAt             DateTime                @updatedAt
   config                Json?
   farmImageUrl          String?
-  stateId               Int
+  stateId               Int?
+  jdFarmId              String?
   createdBy             User                    @relation("FarmCreator", fields: [createdById], references: [id], onDelete: Cascade)
   grower                User                    @relation("FarmGrower", fields: [growerId], references: [id], onDelete: Cascade)
-  state                 State                   @relation(fields: [stateId], references: [id])
+  state                 State?                  @relation(fields: [stateId], references: [id])
   permissions           FarmPermission[]
   fields                Field[]
   jobs                  Job[]
@@ -207,6 +208,7 @@ model Field {
   updatedAt     DateTime   @updatedAt
   config        Json?
   fieldImageUrl String?
+  jdFieldId     String?
   createdBy     User       @relation("FieldCreator", fields: [createdById], references: [id], onDelete: Cascade)
   farm          Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
   jobs          FieldJob[]

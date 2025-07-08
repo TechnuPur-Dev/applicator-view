@@ -65,5 +65,6 @@ router
 router
 	.route('/by-applicator/:growerId')
 	.get(farmController.getGrowerFarmsByAppllicator);
+router.route('/import/:growerId').post(farmController.importJDFarmAndFields);
 
 export default router;

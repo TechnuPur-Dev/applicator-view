@@ -14,7 +14,7 @@ const createFarm = catchAsync(async (req: Request, res: Response) => {
 });
 // get all farms
 const getAllFarmsByGrower = catchAsync(async (req: Request, res: Response) => {
-	const options = pick(req.query, ['limit', 'page','label','searchValue']);
+	const options = pick(req.query, ['limit', 'page', 'label', 'searchValue']);
 	const growerId = req.payload.id;
 	const userData = await farmService.getAllFarmsByGrower(growerId, options);
 	res.status(httpStatus.OK).json(userData);
@@ -177,6 +177,18 @@ const getGrowerFarmsByAppllicator = catchAsync(
 		res.status(httpStatus.OK).json(userData);
 	},
 );
+const importJDFarmAndFields = catchAsync(
+	async (req: Request, res: Response) => {
+		const currentUserId = req.payload.id;
+		const growerId = +req.params.growerId;
+		const userData = await farmService.importJDFarmAndFields(
+			currentUserId,
+			growerId,
+			req.body,
+		);
+		res.status(httpStatus.OK).json(userData);
+	},
+);
 export default {
 	createFarm,
 	getAllFarmsByGrower,
@@ -193,4 +205,5 @@ export default {
 	getAvailableApplicators,
 	getFarmsWithPermissions,
 	getGrowerFarmsByAppllicator,
+	importJDFarmAndFields,
 };
