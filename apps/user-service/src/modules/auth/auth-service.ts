@@ -300,17 +300,42 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 	}
 
 	// Register the user
-	const user = await prisma.user.upsert({
+	// const user = await prisma.user.upsert({
+	// 	where: {
+	// 		email,
+	// 	},
+	// 	create: {
+	// 		email,
+	// 		role,
+	// 	},
+	// 	update: {},
+	// 	select: { id: true },
+	// });
+
+	const existingUser = await prisma.user.findFirst({
 		where: {
 			email,
 		},
-		create: {
-			email,
-			role,
-		},
-		update: {},
 		select: { id: true },
 	});
+
+	let user;
+
+	if (existingUser) {
+		user = await prisma.user.update({
+			where: { id: existingUser.id },
+			data: {},
+			select: { id: true },
+		});
+	} else {
+		user = await prisma.user.create({
+			data: {
+				email,
+				role,
+			},
+			select: { id: true },
+		});
+	}
 
 	// Clear the OTP to prevent re-use
 	await prisma.otp.delete({
@@ -475,13 +500,121 @@ const acceptInviteAndSignUp = async (
 			where: { id: invite.id },
 			data: { inviteToken: null, expiresAt: null },
 		});
-	} else if (role === 'APPLICATOR') {
+	}
+	// else if (role === 'APPLICATOR') {
+	// 	await prisma.$transaction(async (prisma) => {
+	// 		const invite = await prisma.applicatorGrower.update({
+	// 			where: {
+	// 				inviteToken: token,
+	// 				expiresAt: {
+	// 					gte: new Date(), // Ensures the invite is still valid
+	// 				},
+	// 			},
+	// 			data: {
+	// 				inviteStatus: 'ACCEPTED',
+	// 				applicatorFirstName: firstName,
+	// 				applicatorLastName: lastName,
+	// 				applicator: {
+	// 					connectOrCreate: {
+	// 						where: { email: data.email }, // Assuming email is unique
+	// 						create: {
+	// 							role: 'APPLICATOR',
+	// 							...(() => {
+	// 								const { stateId, token, ...rest } = data;
+	// 								return rest;
+	// 							})(),
+	// 							password,
+	// 							fullName:
+	// 								`${firstName || ''} ${lastName || ''}`.trim(),
+	// 							profileStatus: 'COMPLETE',
+	// 							joiningDate: new Date(),
+	// 							state: data.stateId
+	// 								? { connect: { id: data.stateId } }
+	// 								: undefined,
+	// 						},
+	// 					},
+	// 				},
+	// 			},
+	// 			select: {
+	// 				id: true,
+	// 				applicator: {
+	// 					select: {
+	// 						id: true,
+	// 						email: true,
+	// 						state: { select: { name: true } },
+	// 					},
+	// 				},
+	// 				pendingFarmPermission: true,
+	// 			},
+	// 		});
+
+	// 		// Ensure `applicator` exists before proceeding
+	// 		if (!invite.applicator?.id) {
+	// 			throw new Error('Applicator ID is missing');
+	// 		}
+
+	// 		// Ensure `pendingFarmPermission` is an array before mapping over it
+	// 		if (
+	// 			Array.isArray(invite.pendingFarmPermission) &&
+	// 			invite.pendingFarmPermission.length > 0
+	// 		) {
+	// 			await prisma.farmPermission.createMany({
+	// 				data: invite.pendingFarmPermission
+	// 					.filter(Boolean) // ✅ Remove null/undefined entries
+	// 					.map((perm) => ({
+	// 						farmId: perm.farmId,
+	// 						applicatorId: invite.applicator?.id ?? 0, // ✅ Avoid defaulting to `0`
+	// 						canView: perm.canView,
+	// 						canEdit: perm.canEdit,
+	// 					})),
+	// 			});
+	// 		}
+
+	// 		// Delete pending permissions only if `invite.id` is valid
+	// 		await prisma.pendingFarmPermission.deleteMany({
+	// 			where: { inviteId: invite.id },
+	// 		});
+	// 		email = invite.applicator.email;
+	// 		await prisma.applicatorGrower.update({
+	// 			where: { id: invite.id },
+	// 			data: { inviteToken: null, expiresAt: null },
+	// 		});
+	// 	});
+	// } 
+	else if (role === 'APPLICATOR') {
 		await prisma.$transaction(async (prisma) => {
+		// Check if user with same email exists
+			let applicatorUser = await prisma.user.findFirst({
+				where: {
+					email: data.email,
+					role: 'APPLICATOR', // Optional filter
+				},
+			});
+         console.log(applicatorUser,'applicatorUser')
+			//  If not, create user
+			if (!applicatorUser) {
+				applicatorUser = await prisma.user.create({
+					data: {
+						role: 'APPLICATOR',
+						...(() => {
+							const { stateId, token, ...rest } = data;
+							return rest;
+						})(),
+						password,
+						fullName: `${firstName || ''} ${lastName || ''}`.trim(),
+						profileStatus: 'COMPLETE',
+						joiningDate: new Date(),
+						state: data.stateId ? { connect: { id: data.stateId } } : undefined,
+					},
+				});
+			}
+
+			// Update applicatorGrower and connect to user
 			const invite = await prisma.applicatorGrower.update({
 				where: {
 					inviteToken: token,
 					expiresAt: {
-						gte: new Date(), // Ensures the invite is still valid
+						gte: new Date(),
 					},
 				},
 				data: {
@@ -489,23 +622,8 @@ const acceptInviteAndSignUp = async (
 					applicatorFirstName: firstName,
 					applicatorLastName: lastName,
 					applicator: {
-						connectOrCreate: {
-							where: { email: data.email }, // Assuming email is unique
-							create: {
-								role: 'APPLICATOR',
-								...(() => {
-									const { stateId, token, ...rest } = data;
-									return rest;
-								})(),
-								password,
-								fullName:
-									`${firstName || ''} ${lastName || ''}`.trim(),
-								profileStatus: 'COMPLETE',
-								joiningDate: new Date(),
-								state: data.stateId
-									? { connect: { id: data.stateId } }
-									: undefined,
-							},
+						connect: {
+							id: applicatorUser.id,
 						},
 					},
 				},
@@ -521,30 +639,26 @@ const acceptInviteAndSignUp = async (
 					pendingFarmPermission: true,
 				},
 			});
-
-			// Ensure `applicator` exists before proceeding
+			// Ensure applicator exists before proceeding
 			if (!invite.applicator?.id) {
 				throw new Error('Applicator ID is missing');
 			}
-
-			// Ensure `pendingFarmPermission` is an array before mapping over it
+			// Farm Permissions
 			if (
 				Array.isArray(invite.pendingFarmPermission) &&
 				invite.pendingFarmPermission.length > 0
 			) {
 				await prisma.farmPermission.createMany({
 					data: invite.pendingFarmPermission
-						.filter(Boolean) // ✅ Remove null/undefined entries
+						.filter(Boolean)
 						.map((perm) => ({
 							farmId: perm.farmId,
-							applicatorId: invite.applicator?.id ?? 0, // ✅ Avoid defaulting to `0`
+							applicatorId: invite.applicator?.id ?? 0,
 							canView: perm.canView,
 							canEdit: perm.canEdit,
 						})),
 				});
 			}
-
-			// Delete pending permissions only if `invite.id` is valid
 			await prisma.pendingFarmPermission.deleteMany({
 				where: { inviteId: invite.id },
 			});
@@ -554,7 +668,8 @@ const acceptInviteAndSignUp = async (
 				data: { inviteToken: null, expiresAt: null },
 			});
 		});
-	} else if (role === 'WORKER') {
+	}
+	else if (role === 'WORKER') {
 		const invite = await prisma.applicatorWorker.update({
 			where: {
 				inviteToken: token,
@@ -800,7 +915,7 @@ const verifyOTP = async (body: { email: string; otp: number }) => {
 	}
 
 	// getotp requested User
-	const user = await prisma.user.findUnique({
+	const user = await prisma.user.findFirst({
 		where: {
 			email: otpRecord.email,
 		},
