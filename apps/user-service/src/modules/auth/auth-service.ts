@@ -312,6 +312,8 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 		select: { id: true },
 	});
 
+
+
 	// Clear the OTP to prevent re-use
 	await prisma.otp.delete({
 		where: { id: otpRecord.id },
@@ -475,7 +477,8 @@ const acceptInviteAndSignUp = async (
 			where: { id: invite.id },
 			data: { inviteToken: null, expiresAt: null },
 		});
-	} else if (role === 'APPLICATOR') {
+	}
+	else if (role === 'APPLICATOR') {
 		await prisma.$transaction(async (prisma) => {
 			const invite = await prisma.applicatorGrower.update({
 				where: {
@@ -554,7 +557,9 @@ const acceptInviteAndSignUp = async (
 				data: { inviteToken: null, expiresAt: null },
 			});
 		});
-	} else if (role === 'WORKER') {
+	} 
+
+	else if (role === 'WORKER') {
 		const invite = await prisma.applicatorWorker.update({
 			where: {
 				inviteToken: token,
