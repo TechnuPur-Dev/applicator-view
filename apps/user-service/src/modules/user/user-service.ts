@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -585,11 +586,12 @@ const getAllGrowersByApplicator = async (
 					},
 					farms: {
 						where: {
-							permissions: {
-								some: {
-									applicatorId,
-								},
-							},
+							createdById: applicatorId,
+							// permissions: {
+							// 	some: {
+							// 		applicatorId,
+							// 	},
+							// },
 						},
 						include: {
 							permissions: true,
@@ -2242,11 +2244,12 @@ const getGrowerById = async (applicatorId: number, growerId: number) => {
 					},
 					farms: {
 						where: {
-							permissions: {
-								some: {
-									applicatorId,
-								},
-							},
+							createdById: applicatorId,
+							// permissions: {
+							// 	some: {
+							// 		applicatorId,
+							// 	},
+							// },
 						},
 						include: {
 							permissions: {
