@@ -1773,7 +1773,7 @@ const sendInviteToApplicator = async (
 		throw new Error('You are not allowed to perform this action.');
 	}
 
-	const applicator = await prisma.user.findFirst({
+	const applicator = await prisma.user.findUnique({
 		where: { email: userEmail },
 	});
 	if (!applicator) {
