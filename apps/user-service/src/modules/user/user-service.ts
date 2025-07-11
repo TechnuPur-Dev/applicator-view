@@ -645,6 +645,9 @@ const getAllGrowersByApplicator = async (
 			...grower,
 			grower: {
 				...growerWithoutFarms,
+				firstName: grower.growerFirstName,
+				lastName: grower.growerLastName,
+				fullName: `${grower.growerFirstName} ${grower.growerLastName}`,
 			},
 			totalAcres: totalAcresByGrower.toDecimalPlaces(2).toNumber(),
 		};
@@ -1367,6 +1370,9 @@ const getPendingInvites = async (
 				...grower,
 				grower: {
 					...growerWithoutFarms,
+					firstName: grower.growerFirstName,
+					lastName: grower.growerLastName,
+					fullName: `${grower.growerFirstName} ${grower.growerLastName}`,
 				},
 				totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 			};
@@ -2553,6 +2559,9 @@ const getPendingInvitesFromOthers = async (
 				...grower,
 				grower: {
 					...growerWithoutFarms,
+					firstName: grower.growerFirstName,
+					lastName: grower.growerLastName,
+					fullName: `${grower.growerFirstName} ${grower.growerLastName}`,
 				},
 				totalAcres: totalAcresByGrower?.toDecimalPlaces(2).toNumber(),
 			};
