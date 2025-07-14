@@ -14,7 +14,7 @@ export async function getValidAccessToken(account: ConnectedAccount) {
 		{
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
-				Authorization: `Basic ${config.jdAuthHeader}`, // base64(client_id:client_secret)
+				Authorization: `Basic ${config.johnDeere.jdAuthHeader}`, // base64(client_id:client_secret)
 			},
 		},
 	);

@@ -15,8 +15,6 @@ import {
 	UpdateArchiveStatus,
 	ResponseData,
 } from './user-types';
-import config from '../../../../../shared/config/env-config';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { hashPassword } from '../../helper/bcrypt';
@@ -27,68 +25,56 @@ import {
 } from '../../../../../shared/types/global';
 import { generateToken, verifyInvite } from '../../helper/invite-token';
 import { InviteStatus } from '@prisma/client';
+import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
+
 const uploadProfileImage = async (
 	userId: number,
 	file: Express.Multer.File,
 ) => {
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
-
-	const blobServiceClient =
-		BlobServiceClient.fromConnectionString(storageUrl);
-	const containerClient: ContainerClient =
-		blobServiceClient.getContainerClient(containerName);
-
-	// Generate unique blob names
+	const uploader = getUploader();
 	const blobName = `users/${userId}/profile/${uuidv4()}_${file.originalname}`;
 	const thumbnailBlobName = `users/${userId}/profile/thumbnail_${uuidv4()}_${file.originalname}`;
 
-	// Get original image dimensions
-	const imageMetadata = await sharp(file.buffer).metadata();
-	const originalWidth = imageMetadata.width || 0;
-	const originalHeight = imageMetadata.height || 0;
+	// Get image metadata
+	const metadata = await sharp(file.buffer).metadata();
+	const originalWidth = metadata.width || 0;
+	const originalHeight = metadata.height || 0;
 	const thumbnailSize = Math.min(originalWidth, originalHeight);
 	const left = Math.floor((originalWidth - thumbnailSize) / 2);
 	const top = Math.floor((originalHeight - thumbnailSize) / 2);
 
-	// Create and upload the original image
-	const compressedImageBuffer = await sharp(file.buffer)
-		.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
-		.resize({
-			width: thumbnailSize,
-			height: thumbnailSize,
-			fit: 'cover',
-		})
-		.toBuffer();
+	// Process original and thumbnail images
+	const [compressedImageBuffer, thumbnailBuffer] = await Promise.all([
+		sharp(file.buffer)
+			.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
+			.resize(thumbnailSize, thumbnailSize)
+			.toBuffer(),
 
-	const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-	await blockBlobClient.upload(
-		compressedImageBuffer,
-		compressedImageBuffer.length,
+		sharp(file.buffer)
+			.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
+			.resize(50, 50)
+			.toBuffer(),
+	]);
+
+	const uploadObjects = [
 		{
-			blobHTTPHeaders: {
-				blobContentType: file.mimetype,
-			},
+			Key: blobName,
+			Body: compressedImageBuffer,
+			ContentType: file.mimetype,
 		},
-	);
-
-	// Create and upload the thumbnail
-	const thumbnailBuffer = await sharp(file.buffer)
-		.extract({ left, top, width: thumbnailSize, height: thumbnailSize })
-		.resize({ width: 50, height: 50, fit: 'cover' })
-		.toBuffer();
-
-	const thumbnailBlobClient =
-		containerClient.getBlockBlobClient(thumbnailBlobName);
-	await thumbnailBlobClient.upload(thumbnailBuffer, thumbnailBuffer.length, {
-		blobHTTPHeaders: {
-			blobContentType: file.mimetype,
+		{
+			Key: thumbnailBlobName,
+			Body: thumbnailBuffer,
+			ContentType: file.mimetype,
 		},
-	});
+	];
+
+	// Upload both images using the helper
+	const res = await uploader(uploadObjects);
 
 	return {
-		profileImage: `/${containerName}/${blobName}`,
-		thumbnailProfileImage: `/${containerName}/${thumbnailBlobName}`,
+		profileImage: res[0],
+		thumbnailProfileImage: res[1],
 	};
 };
 

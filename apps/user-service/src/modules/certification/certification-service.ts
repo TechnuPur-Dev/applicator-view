@@ -3,9 +3,8 @@
 // import ApiError from '../../../../../shared/utils/api-error';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { CertificationType } from '@prisma/client';
-import config from '../../../../../shared/config/env-config';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { v4 as uuidv4 } from 'uuid';
+import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
 
 const createCertification = async (userId: number, data: any) => {
 	const created = await prisma.certification.create({
@@ -87,32 +86,17 @@ const getCertificationTypes = async () => {
 const uploadCertification = async (
 	userId: number,
 	files: Express.Multer.File[],
-) => {
-	// make connection with azure storage account for storage access
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
-	const blobServiceClient =
-		BlobServiceClient.fromConnectionString(storageUrl);
-	const containerClient: ContainerClient =
-		blobServiceClient.getContainerClient(containerName);
+): Promise<string[]> => {
+	const uploader = getUploader();
+	const uploadObjects = files.map((file) => ({
+		Key: `certifications/${userId}/${uuidv4()}_${file.originalname}`, // ✅ no leading slash
+		Body: file.buffer,
+		ContentType: file.mimetype,
+	}));
 
-	//  upload all file parralled at one by using promis.all
-	const uploadedFiles = await Promise.all(
-		files.map(async (file) => {
-			// Generate unique blob names by using uniue id uuidv4
-			const blobName = `certifications/${uuidv4()}_${file.originalname}`;
+	const uploadedFiles = await uploader(uploadObjects);
 
-			const blockBlobClient =
-				containerClient.getBlockBlobClient(blobName);
-			await blockBlobClient.upload(file.buffer, file.buffer.length, {
-				blobHTTPHeaders: {
-					blobContentType: file.mimetype,
-				},
-			});
-			return `/${containerName}/${blobName}`;
-		}),
-	);
-	return uploadedFiles;
+	return uploadedFiles; // returns blob paths like `certifications/userId/...`
 };
 
 export default {

@@ -1,14 +1,12 @@
 import httpStatus from 'http-status';
-// import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import config from '../../../../../shared/config/env-config';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { prisma } from '../../../../../shared/libs/prisma-client';
 import { EquipmentType } from '@prisma/client';
 import { CreateData } from './warranty-registration-types';
 import ApiError from '../../../../../shared/utils/api-error';
 import { PaginateOptions, User } from './../../../../../shared/types/global';
+import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
 
 const getAllEquipmentType = async () => {
 	const ticketCategoryList = Object.values(EquipmentType).map(
@@ -19,116 +17,64 @@ const getAllEquipmentType = async () => {
 	);
 	return ticketCategoryList;
 };
-const uploadImage = async (userId: number, files: Express.Multer.File[]) => {
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
 
-	const blobServiceClient =
-		BlobServiceClient.fromConnectionString(storageUrl);
-	const containerClient: ContainerClient =
-		blobServiceClient.getContainerClient(containerName);
-	const uploadedFiles = await Promise.all(
+const uploadImage = async (
+	userId: number,
+	files: Express.Multer.File[],
+): Promise<string[]> => {
+	const uploader = getUploader();
+	const uploads = await Promise.all(
 		files.map(async (file) => {
-			// Generate unique blob names
-			const blobName = `equipments/${userId}/${uuidv4()}_${file.originalname}`;
-			const thumbnailBlobName = `equipments/${userId}/thumbnail_${uuidv4()}_${file.originalname}`;
+			const blobKey = `equipments/${userId}/${uuidv4()}_${file.originalname}`;
 
-			// Get original image dimensions
-			const imageMetadata = await sharp(file.buffer).metadata();
-			const originalWidth = imageMetadata.width || 0;
-			const originalHeight = imageMetadata.height || 0;
-			const thumbnailSize = Math.min(originalWidth, originalHeight);
-			const left = Math.floor((originalWidth - thumbnailSize) / 2);
-			const top = Math.floor((originalHeight - thumbnailSize) / 2);
+			// Get image dimensions for cropping
+			const metadata = await sharp(file.buffer).metadata();
+			const width = metadata.width || 0;
+			const height = metadata.height || 0;
+			const size = Math.min(width, height);
+			const left = Math.floor((width - size) / 2);
+			const top = Math.floor((height - size) / 2);
 
-			// Create and upload the original image
-			const compressedImageBuffer = await sharp(file.buffer)
-				.extract({
-					left,
-					top,
-					width: thumbnailSize,
-					height: thumbnailSize,
-				})
-				.resize({
-					width: thumbnailSize,
-					height: thumbnailSize,
-					fit: 'cover',
-				})
+			// Process the image: crop to square
+			const imageBuffer = await sharp(file.buffer)
+				.extract({ left, top, width: size, height: size })
+				.resize(size, size)
 				.toBuffer();
 
-			const blockBlobClient =
-				containerClient.getBlockBlobClient(blobName);
-			await blockBlobClient.upload(
-				compressedImageBuffer,
-				compressedImageBuffer.length,
+			const uploadObjects = [
 				{
-					blobHTTPHeaders: {
-						blobContentType: file.mimetype,
-					},
+					Key: blobKey,
+					Body: imageBuffer,
+					ContentType: file.mimetype,
 				},
-			);
+			];
 
-			// Create and upload the thumbnail
-			const thumbnailBuffer = await sharp(file.buffer)
-				.extract({
-					left,
-					top,
-					width: thumbnailSize,
-					height: thumbnailSize,
-				})
-				.resize({ width: 50, height: 50, fit: 'cover' })
-				.toBuffer();
+			// // Upload using helper
+			// const res = await uploadToAzure(uploadObjects);
+			const res = await uploader(uploadObjects);
 
-			const thumbnailBlobClient =
-				containerClient.getBlockBlobClient(thumbnailBlobName);
-			await thumbnailBlobClient.upload(
-				thumbnailBuffer,
-				thumbnailBuffer.length,
-				{
-					blobHTTPHeaders: {
-						blobContentType: file.mimetype,
-					},
-				},
-			);
-
-			return `/${containerName}/${blobName}`;
+			return res[0];
 		}),
 	);
-	return uploadedFiles;
+
+	return uploads;
 };
 
-// Upload Attatchments
 const uploadDocAttachments = async (
 	userId: number,
 	files: Express.Multer.File[],
-) => {
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
+): Promise<string[]> => {
+	const uploader = getUploader();
+	const uploadObjects = files.map((file) => ({
+		Key: `equipments/${userId}/${uuidv4()}_${file.originalname}`,
+		Body: file.buffer,
+		ContentType: file.mimetype,
+	}));
 
-	const blobServiceClient =
-		BlobServiceClient.fromConnectionString(storageUrl);
-	const containerClient: ContainerClient =
-		blobServiceClient.getContainerClient(containerName);
-	const uploadedFiles = await Promise.all(
-		files.map(async (file) => {
-			// Generate unique blob names
-			const blobName = `equipments/${userId}/${uuidv4()}_${file.originalname}`;
-			// const thumbnailBlobName = `equipments/${userId}/thumbnail_${uuidv4()}_${file.originalname}`;
+	// const res = await uploadToAzure(uploadObjects);
+	const res = await uploader(uploadObjects);
 
-			// Create and upload the original image
-
-			const blockBlobClient =
-				containerClient.getBlockBlobClient(blobName);
-			await blockBlobClient.upload(file.buffer, file.buffer.length, {
-				blobHTTPHeaders: {
-					blobContentType: file.mimetype,
-				},
-			});
-
-			return `/${containerName}/${blobName}`;
-		}),
-	);
-	return uploadedFiles;
+	return res; // e.g. ["/containerName/equipments/123/file.pdf"]
 };
 
 const createWarrantyReg = async (createdById: number, data: CreateData) => {

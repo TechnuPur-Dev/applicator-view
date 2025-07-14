@@ -5,8 +5,8 @@ export const uploadToAzureBlob = async (
 	buffer: Buffer,
 	blobName: string,
 ): Promise<string> => {
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
+	const storageUrl = config.azure.storageUrl;
+	const containerName = config.azure.containerName;
 	const blobService = BlobServiceClient.fromConnectionString(storageUrl);
 	const containerClient = blobService.getContainerClient(containerName);
 	const blockBlob = containerClient.getBlockBlobClient(blobName);

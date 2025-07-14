@@ -12,8 +12,8 @@ import {
 import validateAddressHelper from '../../helper/validate-address';
 import config from '../../config/env-config';
 import axios from 'axios';
-const AUTH_ID = config.smartyAuthId;
-const AUTH_TOKEN = config.smartyAuthToken;
+const AUTH_ID = config.smarty.smartyAuthId;
+const AUTH_TOKEN = config.smarty.smartyAuthToken;
 
 // to update user profile
 // shifted to admin panel

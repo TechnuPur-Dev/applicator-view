@@ -17,8 +17,6 @@ import {
 } from '../../../../../shared/utils/line-chart';
 import { CreateJob } from './job-types';
 import { v4 as uuidv4 } from 'uuid';
-import config from '../../../../../shared/config/env-config';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { User, PaginateOptions } from '../../../../../shared/types/global';
 import { sendPushNotifications } from '../../../../../shared/helpers/push-notification';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
@@ -27,6 +25,7 @@ import { generateToken } from '../../../../user-service/src/helper/invite-token'
 import { convertKmlToGeoJson } from '../../util/kml-to-geoJson';
 import { generateMapImage } from '../../util/map-image-generator';
 import { uploadToAzureBlob } from '../../util/azure-uploader';
+import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -655,6 +654,15 @@ const getAllJobsByApplicator = async (
 					fullName: true,
 					email: true,
 					phoneNumber: true,
+					growers: {
+						where: {
+							applicatorId,
+						},
+						select: {
+							growerFirstName: true,
+							growerLastName: true,
+						},
+					},
 				},
 			},
 			fieldWorker: {
@@ -692,14 +700,29 @@ const getAllJobsByApplicator = async (
 		},
 	});
 
-	const formattedJobs = jobs.map((job) => ({
-		...job,
-		totalAcres: parseFloat(
-			job.fields
-				.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0)
-				.toFixed(2),
-		),
-	}));
+	const formattedJobs = jobs.map((job) => {
+		const applicatorGrower = job.grower?.growers?.[0];
+		const growerFirstName = applicatorGrower?.growerFirstName || '';
+		const growerLastName = applicatorGrower?.growerLastName || '';
+		return {
+			...job,
+			grower: {
+				...job.grower,
+				growers: undefined,
+				firstName: growerFirstName,
+				lastName: growerLastName,
+				fullName: `${growerFirstName} ${growerLastName}`,
+			},
+			totalAcres: parseFloat(
+				job.fields
+					.reduce(
+						(sum, f) => sum + (f.actualAcres?.toNumber?.() || 0),
+						0,
+					)
+					.toFixed(2),
+			),
+		};
+	});
 
 	// Count total results for pagination
 	const totalResults = await prisma.job.count({
@@ -946,7 +969,7 @@ const updateJobByApplicator = async (
 	const { status: requestedStatus, fieldWorkerId } = data;
 	// Valid job status transitions
 	const statusTransitions: Record<JobStatus, JobStatus[]> = {
-		READY_TO_SPRAY: ['ASSIGNED_TO_PILOT', 'SPRAYED' ], // A job in READY_TO_SPRAY can only move to ASSIGNED_TO_PILOT
+		READY_TO_SPRAY: ['ASSIGNED_TO_PILOT', 'SPRAYED'], // A job in READY_TO_SPRAY can only move to ASSIGNED_TO_PILOT
 		SPRAYED: ['INVOICED'], // A job in SPRAYED can only move to INVOICED
 		INVOICED: ['PAID'], // A job in INVOICED can only move to PAID
 		PAID: ['PAID'], // PAID jobs remain PAID
@@ -1361,36 +1384,19 @@ const getFarmListByApplicatorId = async (
 const uploadJobAttachments = async (
 	userId: number,
 	files: Express.Multer.File[],
-) => {
-	// make connection with azure storage account for storage access
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
-	console.log(storageUrl, containerName, 'blob');
-	const blobServiceClient =
-		BlobServiceClient.fromConnectionString(storageUrl);
-	const containerClient: ContainerClient =
-		blobServiceClient.getContainerClient(containerName);
+): Promise<string[]> => {
+	const uploader = getUploader();
+	// Build upload objects
+	const uploadObjects = files.map((file) => ({
+		Key: `jobs/${userId}/${uuidv4()}_${file.originalname}`,
+		Body: file.buffer,
+		ContentType: file.mimetype,
+	}));
 
-	//  upload all file parralled at one by using promis.all
-	const uploadedFiles = await Promise.all(
-		files.map(async (file) => {
-			// Generate unique blob names by using uniue id uuidv4
-			const blobName = `jobs/${uuidv4()}_${file.originalname}`;
+	// Use the helper to upload all files
+	const uploadedFiles = await uploader(uploadObjects);
 
-			const blockBlobClient =
-				containerClient.getBlockBlobClient(blobName);
-			await blockBlobClient.upload(file.buffer, file.buffer.length, {
-				blobHTTPHeaders: {
-					blobContentType: file.mimetype,
-				},
-			});
-			return `/${containerName}/${blobName}`;
-			// return {
-			// 	jobAttachment: `/${containerName}/${blobName}`,
-			// };
-		}),
-	);
-	return uploadedFiles;
+	return uploadedFiles; // array of blob paths like `/containerName/jobs/...`
 };
 const getJobs = async (
 	growerId: number,
@@ -7006,13 +7012,11 @@ const getFaaReports = async (
 const uploadFlightLogImage = async (
 	user: User,
 	jobId: number,
-	// file: Express.Multer.File,
 	fileBuffer: Buffer,
-) => {
+): Promise<{ imageUrl: string }> => {
 	const { id: userId, role } = user;
-
+	const uploader = getUploader();
 	const whereCondition: any = { id: jobId };
-
 	if (role === 'APPLICATOR') {
 		whereCondition.applicatorId = userId;
 	} else if (role === 'GROWER') {
@@ -7031,12 +7035,19 @@ const uploadFlightLogImage = async (
 		);
 	}
 
-	// Upload image to Azure Blob
-	const blobPath = `flight-maps/${jobId}_${Date.now()}`;
-	const mapImageUrl = await uploadToAzureBlob(fileBuffer, blobPath);
+	const blobKey = `flight-maps/${jobId}_${Date.now()}.webp`;
+	const uploadObjects = [
+		{
+			Key: blobKey,
+			Body: fileBuffer,
+			ContentType: 'image/webp',
+		},
+	];
+
+	const res = await uploader(uploadObjects);
 
 	return {
-		imageUrl: mapImageUrl,
+		imageUrl: res[0],
 	};
 };
 const createFlighLog = async (

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from the correct `.env` file
 dotenv.config({
-	path: path.join(__dirname, '../../.env'),
+	path: path.join(__dirname, '../../../../.env'),
 });
 
 // Log loaded environment variables for debugging
@@ -95,15 +95,19 @@ const config = {
 			envVars.JWT_ACCESS_EXPIRATION_MINUTES as string,
 		refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS as number,
 	},
-	smartyAuthId: envVars.SMARTY_AUTH_ID as string,
-	smartyAuthToken: envVars.SMARTY_AUTH_TOKEN as string,
-	jdClientId: envVars.JD_CLIENT_ID as string,
-	jdClientSecret: envVars.JD_CLIENT_SECRET as string,
-	jdRedirectUri: envVars.JD_REDIRECT_URI as string,
-	jdStateString: envVars.JD_STATE_STRING as string,
-	jdScope: envVars.JD_SCOPE as string,
-	jdAuthHeader: envVars.JD_AUTH_HEADER as string,
-	jdAPIUrl: envVars.JD_API_URL as string,
+	smarty: {
+		smartyAuthId: envVars.SMARTY_AUTH_ID as string,
+		smartyAuthToken: envVars.SMARTY_AUTH_TOKEN as string,
+	},
+	johnDeere: {
+		jdClientId: envVars.JD_CLIENT_ID as string,
+		jdClientSecret: envVars.JD_CLIENT_SECRET as string,
+		jdRedirectUri: envVars.JD_REDIRECT_URI as string,
+		jdStateString: envVars.JD_STATE_STRING as string,
+		jdScope: envVars.JD_SCOPE as string,
+		jdAuthHeader: envVars.JD_AUTH_HEADER as string,
+		jdAPIUrl: envVars.JD_API_URL as string,
+	},
 };
 
 export default config; // Default export

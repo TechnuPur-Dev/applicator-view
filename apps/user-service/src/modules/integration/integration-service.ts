@@ -10,10 +10,10 @@ import { getValidAccessToken } from '../../helper/jd-token';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const getAuthUrl = async () => {
-	const clientId = config.jdClientId;
-	const redirectUri = config.jdRedirectUri;
-	const scope = config.jdScope;
-	const state = config.jdStateString;
+	const clientId = config.johnDeere.jdClientId;
+	const redirectUri = config.johnDeere.jdRedirectUri;
+	const scope = config.johnDeere.jdScope;
+	const state = config.johnDeere.jdStateString;
 
 	const authUrl = `https://signin.johndeere.com/oauth2/aus78tnlaysMraFhC1t7/v1/authorize?scope=${scope}&response_type=code&client_id=${clientId}&state=${state}&redirect_uri=${redirectUri}`;
 	return { authUrl };
@@ -25,12 +25,12 @@ const getAuthTokens = async (userId: number, code: string) => {
 		new URLSearchParams({
 			grant_type: 'authorization_code',
 			code,
-			redirect_uri: config.jdRedirectUri,
+			redirect_uri: config.johnDeere.jdRedirectUri,
 		}),
 		{
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
-				Authorization: `Basic ${config.jdAuthHeader}`, // base64(client_id:client_secret)
+				Authorization: `Basic ${config.johnDeere.jdAuthHeader}`, // base64(client_id:client_secret)
 			},
 		},
 	);
@@ -91,12 +91,15 @@ const getOrganizations = async (
 
 	const accessToken = await getValidAccessToken(connectedAccount);
 
-	const response = await axios.get(`${config.jdAPIUrl}/organizations`, {
-		headers: {
-			Authorization: `Bearer ${accessToken}`,
-			Accept: 'application/vnd.deere.axiom.v3+json',
+	const response = await axios.get(
+		`${config.johnDeere.jdAPIUrl}/organizations`,
+		{
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				Accept: 'application/vnd.deere.axiom.v3+json',
+			},
 		},
-	});
+	);
 
 	const orgs = response.data?.values || [];
 
@@ -140,7 +143,7 @@ const getOrganizationById = async (
 
 	const accessToken = await getValidAccessToken(connectedAccount);
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -188,7 +191,7 @@ const getFarmsByOrgId = async (
 
 	const accessToken = await getValidAccessToken(connectedAccount);
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}/farms`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/farms`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -226,7 +229,7 @@ const getFarmsByOrgId = async (
 
 // 	// Fetch farms
 // 	const response = await axios.get(
-// 		`${config.jdAPIUrl}/organizations/${orgId}/farms`,
+// 		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/farms`,
 // 		{
 // 			headers: {
 // 				Authorization: `Bearer ${accessToken}`,
@@ -243,7 +246,7 @@ const getFarmsByOrgId = async (
 
 // 			// Fetch fields for this farm
 // 			const fieldsResponse = await axios.get(
-// 				`${config.jdAPIUrl}/organizations/${orgId}/farms/${farmId}/fields`,
+// 				`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/farms/${farmId}/fields`,
 // 				{
 // 					headers: {
 // 						Authorization: `Bearer ${accessToken}`,
@@ -261,7 +264,7 @@ const getFarmsByOrgId = async (
 
 // 					try {
 // 						const boundaryResponse = await axios.get(
-// 							`${config.jdAPIUrl}/organizations/${orgId}/fields/${field.id}/boundaries`,
+// 							`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/fields/${field.id}/boundaries`,
 // 							{
 // 								headers: {
 // 									Authorization: `Bearer ${accessToken}`,
@@ -338,7 +341,7 @@ const getOrgFarmById = async (
 	const accessToken = await getValidAccessToken(connectedAccount);
 
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}/farms/${farmId}`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/farms/${farmId}`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -377,7 +380,7 @@ const getFieldsByFarmId = async (
 
 	const accessToken = await getValidAccessToken(connectedAccount);
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}/farms/${farmId}/fields`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/farms/${farmId}/fields`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -416,7 +419,7 @@ const getOrgFieldByFieldId = async (
 	}
 	const accessToken = await getValidAccessToken(connectedAccount);
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}/fields/${fieldId}`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/fields/${fieldId}`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -450,7 +453,7 @@ const getBoundariesByFieldId = async (
 
 	const accessToken = await getValidAccessToken(connectedAccount);
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}/fields/${fieldId}/boundaries`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/fields/${fieldId}/boundaries`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -499,7 +502,7 @@ const getFieldBoundaryById = async (
 	// }
 	const accessToken = await getValidAccessToken(connectedAccount);
 	const response = await axios.get(
-		`${config.jdAPIUrl}/organizations/${orgId}/fields/${fieldId}/boundaries/${bound_Id}`,
+		`${config.johnDeere.jdAPIUrl}/organizations/${orgId}/fields/${fieldId}/boundaries/${bound_Id}`,
 		{
 			headers: {
 				Authorization: `Bearer ${accessToken}`,

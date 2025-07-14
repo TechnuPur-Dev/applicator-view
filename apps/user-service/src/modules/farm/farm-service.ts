@@ -8,11 +8,10 @@ import { CreateFarmParams } from './farm-types';
 import { PaginateOptions, User } from './../../../../../shared/types/global';
 import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'; // Adjust based on Azure SDK usage
-import config from '../../../../../shared/config/env-config';
 // import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@prisma/client';
+import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
 
 const createFarm = async (
 	user: User,
@@ -670,33 +669,26 @@ const askFarmPermission = async (
 
 const uploadFarmImage = async (
 	userId: number,
-	type: string,
+	type: string, // e.g., "farms", "fields"
 	fileBuffer: Buffer,
-) => {
-	const storageUrl = config.azureStorageUrl;
-	const containerName = config.azureContainerName;
+): Promise<{ imageUrl: string }> => {
+	const uploader = getUploader();
+	const blobName = `${type}/${userId}/${uuidv4()}.webp`;
 
-	const blobServiceClient =
-		BlobServiceClient.fromConnectionString(storageUrl);
-	const containerClient: ContainerClient =
-		blobServiceClient.getContainerClient(containerName);
-
-	// Generate a unique blob name
-	const blobName = `${type}/${uuidv4()}`;
-
-	// Upload the file buffer to Azure Blob Storage
-	const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-	await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
-		blobHTTPHeaders: {
-			blobContentType: 'image/webp', // Adjust based on file type
+	const uploadObjects = [
+		{
+			Key: blobName,
+			Body: fileBuffer,
+			ContentType: 'image/webp', // adjust as needed
 		},
-	});
+	];
+
+	const res = await uploader(uploadObjects);
 
 	return {
-		imageUrl: `/${containerName}/${blobName}`,
+		imageUrl: res[0],
 	};
 };
-
 const getAllFarms = async (growerId: number, options: PaginateOptions) => {
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0

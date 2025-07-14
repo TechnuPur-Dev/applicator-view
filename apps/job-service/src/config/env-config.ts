@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 // Load environment variables from the correct `.env` file
 dotenv.config({
-	path: path.join(__dirname, '../../.env'),
+	path: path.join(__dirname, '../../../../.env'),
 });
 
 // Log loaded environment variables for debugging

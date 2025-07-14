@@ -3,8 +3,8 @@ import httpStatus from 'http-status';
 import ApiError from '../../../../shared/utils/api-error';
 import config from '../config/env-config';
 
-const AUTH_ID = config.smartyAuthId;
-const AUTH_TOKEN = config.smartyAuthToken;
+const AUTH_ID = config.smarty.smartyAuthId;
+const AUTH_TOKEN = config.smarty.smartyAuthToken;
 
 const smartyReasonMessages: Record<string, string> = {
 	blank: 'You must provide a ZIP Code and/or city/state combination.',
