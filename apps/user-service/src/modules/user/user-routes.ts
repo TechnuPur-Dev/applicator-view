@@ -150,4 +150,11 @@ router
 	);
 	router.route('/dashboard/user-by-state').get(verifyToken , userController.getUsersByState);
 	
+	router
+	.route('/update/grower-name/:growerId')
+	.put(
+		verifyToken,
+		normalizeApplicatorUser,
+		userController.updateGrowerName,
+	);
 export default router;
