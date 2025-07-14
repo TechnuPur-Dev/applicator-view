@@ -117,10 +117,10 @@ function createErrorHandler(config: { env: string }) {
 		};
 
 		// Log the error in development environment
-		if (config.env === 'development') {
-			logger.error(err);
-			writeLog(logEntry);
-		}
+		// if (config.env === 'development') {
+		// 	logger.error(err);
+		// 	writeLog(logEntry);
+		// }
 
 		res.status(statusCode).send(response);
 	};
