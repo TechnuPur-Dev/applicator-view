@@ -209,6 +209,13 @@ const getUsersByState = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json(userData);
 });
 
+const updateGrowerName = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const data = req.body;
+	const growerId = +req.params.growerId
+	const result = await userService.updateGrowerName(user, data,growerId);
+	res.status(httpStatus.OK).json(result);
+});
 export default {
 	uploadProfileImage,
 	getUserById,
@@ -233,5 +240,6 @@ export default {
 	getWeather,
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
-	getUsersByState
+	getUsersByState,
+	updateGrowerName
 };

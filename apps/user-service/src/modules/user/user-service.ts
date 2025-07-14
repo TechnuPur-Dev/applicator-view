@@ -3767,7 +3767,46 @@ const getUsersByState = async (user: User) => {
 
 	return finalData;
 };
+const updateGrowerName = async(user:User,data:{
+	firstName:string,
+	lastName:string
+},growerId:number)=>{
+  
+	const {id , role} = user
+		if (role === 'APPLICATOR') {
+		const existingRelation = await prisma.applicatorGrower.findUnique({
+			where: {
+				applicatorId_growerId: {
+					applicatorId: id,
+					growerId,
+				},
+			},
+		});
 
+		if (!existingRelation) {
+			throw new ApiError( httpStatus.NOT_FOUND, 'Grower relation not found for this applicator.');
+		}
+
+		await prisma.applicatorGrower.update({
+			where: {
+				applicatorId_growerId: {
+					applicatorId: id,
+					growerId,
+				},
+			},
+			data: {
+				growerFirstName: data.firstName,
+				growerLastName: data.lastName,
+			},
+		});
+
+		return {
+			message: 'Grower name updated successfully.',
+		};
+	} else {
+		throw new ApiError(httpStatus.FORBIDDEN, 'Only applicators can update grower names.');
+	}
+}
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -3793,4 +3832,5 @@ export default {
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
 	getUsersByState,
+	updateGrowerName
 };
