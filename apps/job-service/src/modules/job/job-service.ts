@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import {
@@ -23,7 +24,7 @@ import { mailHtmlTemplate } from '../../../../../shared/helpers/node-mailer';
 import { sendEmail } from '../../../../../shared/helpers/node-mailer';
 import { generateToken } from '../../../../user-service/src/helper/invite-token';
 import { convertKmlToGeoJson } from '../../util/kml-to-geoJson';
-import { generateMapImage } from '../../util/map-image-generator';
+// import { generateMapImage } from '../../util/map-image-generator';
 import { uploadToAzureBlob } from '../../util/azure-uploader';
 import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
 
@@ -688,6 +689,8 @@ const getAllJobsByApplicator = async (
 							acres: true,
 							crop: true,
 							config: true,
+							latitude: true,
+							longitude: true,
 						},
 					},
 				},
@@ -765,17 +768,18 @@ const getJobById = async (user: User, jobId: number) => {
 					email: true,
 					phoneNumber: true,
 					businessName: true,
-					growers: role === 'APPLICATOR'
-						? {
-							where: {
-								applicatorId: id
-							},
-							select: {
-								growerFirstName: true,
-								growerLastName: true,
-							},
-						}
-						: undefined,
+					growers:
+						role === 'APPLICATOR'
+							? {
+									where: {
+										applicatorId: id,
+									},
+									select: {
+										growerFirstName: true,
+										growerLastName: true,
+									},
+								}
+							: undefined,
 				},
 			},
 			applicator: {
@@ -909,15 +913,17 @@ const getJobById = async (user: User, jobId: number) => {
 	}) => ({
 		...job,
 
-		...(role === 'APPLICATOR' ? {
-			grower: {
-				...grower,
-				growers: undefined,
-				firstName,
-				lastName,
-				fullName: `${firstName} ${lastName}`.trim(),
-			},
-		} : {}), // Include grower only if role is APPLICATOR
+		...(role === 'APPLICATOR'
+			? {
+					grower: {
+						...grower,
+						growers: undefined,
+						firstName,
+						lastName,
+						fullName: `${firstName} ${lastName}`.trim(),
+					},
+				}
+			: {}), // Include grower only if role is APPLICATOR
 		...(role === 'GROWER'
 			? { applicator, createdBy: grower?.fullName }
 			: {}), // Include applicator and grower name for createdby prop only if role is GROWER
@@ -3413,26 +3419,26 @@ const getHeadersData = async (
 				result = {
 					...(role === 'GROWER'
 						? {
-							totalExpenditures:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}
+								totalExpenditures:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}
 						: {
-							totalRevenue:
-								(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
-									0) +
-								(dashboardtotalProPrice._sum.price?.toNumber() ||
-									0),
-						}),
+								totalRevenue:
+									(dashboardtotalApplicationFees._sum.rateUoM?.toNumber() ||
+										0) +
+									(dashboardtotalProPrice._sum.price?.toNumber() ||
+										0),
+							}),
 					jobsCompleted,
 					...(role === 'APPLICATOR'
 						? { totalGrowers: dashboardtotalGrowersorApplicators }
 						: {
-							totalApplicators:
-								dashboardtotalGrowersorApplicators,
-						}),
+								totalApplicators:
+									dashboardtotalGrowersorApplicators,
+							}),
 					totalAcres: dashboardtotalAcres._sum.actualAcres || 0,
 					...(role === 'GROWER' && { totalFarms }),
 				};
@@ -3520,17 +3526,17 @@ const getHeadersData = async (
 					...(role === 'GROWER'
 						? { totalGrowerJobs }
 						: {
-							totalAcres:
-								myJobsTotalAcres._sum.actualAcres || 0,
-						}),
+								totalAcres:
+									myJobsTotalAcres._sum.actualAcres || 0,
+							}),
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								myJobsTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									myJobsTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicatorJobs,
-						}),
+								totalApplicatorJobs,
+							}),
 				};
 				break;
 			}
@@ -3565,13 +3571,13 @@ const getHeadersData = async (
 					totalAcres: openJobTotalAcres._sum.actualAcres || 0,
 					...(role === 'APPLICATOR'
 						? {
-							totalGrowers:
-								openJobTotalGrowersorApplicators.length,
-						}
+								totalGrowers:
+									openJobTotalGrowersorApplicators.length,
+							}
 						: {
-							totalApplicators:
-								openJobTotalGrowersorApplicators.length,
-						}),
+								totalApplicators:
+									openJobTotalGrowersorApplicators.length,
+							}),
 				};
 				break;
 			}
@@ -3606,11 +3612,11 @@ const getHeadersData = async (
 							...whereConditionForMe,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -3622,11 +3628,11 @@ const getHeadersData = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -3662,11 +3668,11 @@ const getHeadersData = async (
 							...whereConditionForGrower,
 							...(options.startDate
 								? {
-									createdAt: {
-										gte: startDate,
-										lte: endDate,
-									},
-								}
+										createdAt: {
+											gte: startDate,
+											lte: endDate,
+										},
+									}
 								: {}),
 						},
 						_count: true,
@@ -3678,11 +3684,11 @@ const getHeadersData = async (
 								...whereConditionForGrower,
 								...(options.startDate
 									? {
-										createdAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											createdAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -3765,13 +3771,13 @@ const getHeadersData = async (
 							pendingJobForMetotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForMetotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForMetotalGrowersorApplicator.length,
+								}),
 					},
 					pendingFromGrower: {
 						pendingJobsForGrower,
@@ -3779,13 +3785,13 @@ const getHeadersData = async (
 							pendingJobForGrowertotalAcres._sum.actualAcres || 0,
 						...(role === 'APPLICATOR'
 							? {
-								totalGrowers:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}
+									totalGrowers:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}
 							: {
-								totalApplicators:
-									pendingJobForGrowertotalGrowersorApplicator.length,
-							}),
+									totalApplicators:
+										pendingJobForGrowertotalGrowersorApplicator.length,
+								}),
 					},
 				};
 
@@ -3902,11 +3908,11 @@ const getHeadersDataForPilot = async (
 								...whereConditionForMe,
 								...(options.startDate
 									? {
-										updatedAt: {
-											gte: startDate,
-											lte: endDate,
-										},
-									}
+											updatedAt: {
+												gte: startDate,
+												lte: endDate,
+											},
+										}
 									: {}),
 							},
 						},
@@ -4421,14 +4427,14 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 					},
 					BidProduct: applicatorBid
 						? {
-							where: {
-								bidId: applicatorBid.id,
-							},
-							select: {
-								bidRateAcre: true,
-								bidPrice: true,
-							},
-						}
+								where: {
+									bidId: applicatorBid.id,
+								},
+								select: {
+									bidRateAcre: true,
+									bidPrice: true,
+								},
+							}
 						: false,
 				},
 			},
@@ -4436,13 +4442,13 @@ const getBiddingJobById = async (user: User, jobId: number) => {
 				include: {
 					BidApplicationFee: applicatorBid
 						? {
-							where: {
-								bidId: applicatorBid.id,
-							},
-							select: {
-								bidAmount: true,
-							},
-						}
+								where: {
+									bidId: applicatorBid.id,
+								},
+								select: {
+									bidAmount: true,
+								},
+							}
 						: false,
 				},
 			},
@@ -4893,17 +4899,18 @@ const getAllJobInvoices = async (
 					firstName: true,
 					lastName: true,
 					fullName: true,
-					growers: role === 'APPLICATOR'
-						? {
-							where: {
-								applicatorId: id
-							},
-							select: {
-								growerFirstName: true,
-								growerLastName: true,
-							},
-						}
-						: undefined,
+					growers:
+						role === 'APPLICATOR'
+							? {
+									where: {
+										applicatorId: id,
+									},
+									select: {
+										growerFirstName: true,
+										growerLastName: true,
+									},
+								}
+							: undefined,
 				},
 			},
 			Invoice: {
@@ -4935,12 +4942,19 @@ const getAllJobInvoices = async (
 			grower: {
 				...job.grower,
 				growers: undefined,
-				firstName: role === 'APPLICATOR' ? growerFirstName : job.grower?.firstName,
-				lastName: role === 'APPLICATOR' ? growerLastName : job.grower?.lastName,
-				fullName: role === 'APPLICATOR' ? `${growerFirstName} ${growerLastName}` : job.grower?.fullName,
+				firstName:
+					role === 'APPLICATOR'
+						? growerFirstName
+						: job.grower?.firstName,
+				lastName:
+					role === 'APPLICATOR'
+						? growerLastName
+						: job.grower?.lastName,
+				fullName:
+					role === 'APPLICATOR'
+						? `${growerFirstName} ${growerLastName}`
+						: job.grower?.fullName,
 			},
-
-
 		};
 	});
 
@@ -6855,33 +6869,29 @@ const uploadFlightLog = async (
 	jobId: number,
 	file: Express.Multer.File,
 ) => {
-	// Step 1: Convert KML → GeoJSON
-	const geojson = await convertKmlToGeoJson(file.buffer);
-
-	// Step 2: Generate flight map image
-	const imageBuffer = await generateMapImage(geojson);
-	// const imageBuffer = await generateMapImage();
-
-	// Step 3: Upload image to Azure Blob
-	const blobPath = `flight-maps/${jobId}_${Date.now()}.png`;
-	const mapImageUrl = await uploadToAzureBlob(imageBuffer, blobPath);
-
-	// Step 4: Create record in DB
-	const flightLog = await prisma.droneFlightLog.create({
-		data: {
-			jobId,
-			uploadedById: userId,
-			geojsonData: geojson,
-			mapImageUrl,
-			startTime: new Date(), // optionally parse from GeoJSON if available
-			endTime: new Date(),
-		},
-	});
-
-	return {
-		message: 'Flight log uploaded successfully',
-		flightLog,
-	};
+	// // Step 1: Convert KML → GeoJSON
+	// const geojson = await convertKmlToGeoJson(file.buffer);
+	// // Step 2: Generate flight map image
+	// const imageBuffer = await generateMapImage(geojson);
+	// // const imageBuffer = await generateMapImage();
+	// // Step 3: Upload image to Azure Blob
+	// const blobPath = `flight-maps/${jobId}_${Date.now()}.png`;
+	// const mapImageUrl = await uploadToAzureBlob(imageBuffer, blobPath);
+	// // Step 4: Create record in DB
+	// const flightLog = await prisma.droneFlightLog.create({
+	// 	data: {
+	// 		jobId,
+	// 		uploadedById: userId,
+	// 		geojsonData: geojson,
+	// 		mapImageUrl,
+	// 		startTime: new Date(), // optionally parse from GeoJSON if available
+	// 		endTime: new Date(),
+	// 	},
+	// });
+	// return {
+	// 	message: 'Flight log uploaded successfully',
+	// 	flightLog,
+	// };
 };
 
 const getFaaReports = async (
@@ -7193,18 +7203,18 @@ const getSearchProduct = async (
 			}),
 			hasMinSearch
 				? prisma.chemical.findMany({
-					where: hasMinSearch
-						? {
-							deletedAt: null,
-							productName: {
-								contains: query,
-								mode: 'insensitive',
-							},
-						}
-						: undefined,
-					skip,
-					take: limit,
-				})
+						where: hasMinSearch
+							? {
+									deletedAt: null,
+									productName: {
+										contains: query,
+										mode: 'insensitive',
+									},
+								}
+							: undefined,
+						skip,
+						take: limit,
+					})
 				: Promise.resolve([]),
 			prisma.product.count({
 				where: {
@@ -7216,16 +7226,16 @@ const getSearchProduct = async (
 			}),
 			hasMinSearch
 				? prisma.chemical.count({
-					where: hasMinSearch
-						? {
-							deletedAt: null,
-							productName: {
-								contains: query,
-								mode: 'insensitive',
-							},
-						}
-						: undefined,
-				})
+						where: hasMinSearch
+							? {
+									deletedAt: null,
+									productName: {
+										contains: query,
+										mode: 'insensitive',
+									},
+								}
+							: undefined,
+					})
 				: Promise.resolve(0),
 		]);
 
