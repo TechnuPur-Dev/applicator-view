@@ -2004,6 +2004,8 @@ const sendInviteToGrower = async (
 	currentUser: User,
 	growerId: number,
 	data: {
+		firstName: string;
+		lastName: string;
 		canManageFarms: boolean;
 		farmPermission: {
 			farmId: number;
@@ -2133,8 +2135,8 @@ const sendInviteToGrower = async (
 					growerId: growerId,
 					applicatorFirstName: currentUser.firstName ?? null,
 					applicatorLastName: currentUser.lastName ?? null,
-					growerFirstName: grower?.firstName,
-					growerLastName: grower?.lastName,
+					growerFirstName: data.firstName,
+					growerLastName: data.lastName,
 					inviteStatus: shouldAutoAccept ? 'ACCEPTED' : 'PENDING',
 					inviteInitiator: 'APPLICATOR',
 					canManageFarms: data.canManageFarms,
@@ -3767,13 +3769,16 @@ const getUsersByState = async (user: User) => {
 
 	return finalData;
 };
-const updateGrowerName = async(user:User,data:{
-	firstName:string,
-	lastName:string
-},growerId:number)=>{
-  
-	const {id , role} = user
-		if (role === 'APPLICATOR') {
+const updateGrowerName = async (
+	user: User,
+	data: {
+		firstName: string;
+		lastName: string;
+	},
+	growerId: number,
+) => {
+	const { id, role } = user;
+	if (role === 'APPLICATOR') {
 		const existingRelation = await prisma.applicatorGrower.findUnique({
 			where: {
 				applicatorId_growerId: {
@@ -3784,10 +3789,13 @@ const updateGrowerName = async(user:User,data:{
 		});
 
 		if (!existingRelation) {
-			throw new ApiError( httpStatus.NOT_FOUND, 'Grower relation not found for this applicator.');
+			throw new ApiError(
+				httpStatus.NOT_FOUND,
+				'Grower relation not found for this applicator.',
+			);
 		}
 
-	const updatedUser =	await prisma.applicatorGrower.update({
+		const updatedUser = await prisma.applicatorGrower.update({
 			where: {
 				applicatorId_growerId: {
 					applicatorId: id,
@@ -3801,16 +3809,19 @@ const updateGrowerName = async(user:User,data:{
 		});
 
 		return {
-			data:{
-              firstName: updatedUser.growerFirstName,
-			  lastName: updatedUser.growerLastName
+			data: {
+				firstName: updatedUser.growerFirstName,
+				lastName: updatedUser.growerLastName,
 			},
 			message: 'Grower name updated successfully.',
 		};
 	} else {
-		throw new ApiError(httpStatus.FORBIDDEN, 'Only applicators can update grower names.');
+		throw new ApiError(
+			httpStatus.FORBIDDEN,
+			'Only applicators can update grower names.',
+		);
 	}
-}
+};
 export default {
 	uploadProfileImage,
 	updateProfile,
@@ -3836,5 +3847,5 @@ export default {
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
 	getUsersByState,
-	updateGrowerName
+	updateGrowerName,
 };
