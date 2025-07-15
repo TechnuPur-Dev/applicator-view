@@ -3787,7 +3787,7 @@ const updateGrowerName = async(user:User,data:{
 			throw new ApiError( httpStatus.NOT_FOUND, 'Grower relation not found for this applicator.');
 		}
 
-		await prisma.applicatorGrower.update({
+	const updatedUser =	await prisma.applicatorGrower.update({
 			where: {
 				applicatorId_growerId: {
 					applicatorId: id,
@@ -3801,6 +3801,10 @@ const updateGrowerName = async(user:User,data:{
 		});
 
 		return {
+			data:{
+              firstName: updatedUser.growerFirstName,
+			  lastName: updatedUser.growerLastName
+			},
 			message: 'Grower name updated successfully.',
 		};
 	} else {
