@@ -724,6 +724,8 @@ const getAllJobsByApplicator = async (
 					)
 					.toFixed(2),
 			),
+			latitude: job.fields[0].field.latitude,
+			longitude: job.fields[0].field.longitude,
 		};
 	});
 
