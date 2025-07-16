@@ -1,4 +1,4 @@
-name: Deploy Dev Branch
+name: Deploy Main Branch
 on:
   push:
     branches: ["main"]
@@ -33,6 +33,5 @@ jobs:
             ls -a
             cd /home/ubuntu/applicator_view/backend/applicator-view
             npm install
-            pm2 flush --only user-service
-            pm2 delete --only user-service
-            pm2 start --only user-service
+            pm2 delete all
+            pm2 start
