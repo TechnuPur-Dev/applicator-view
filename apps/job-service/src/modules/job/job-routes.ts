@@ -16,7 +16,7 @@ const router: Router = express.Router();
 // Get all jobs for applicator by applicatorId (My Jobs Screen)
 router
 	.route('/my-jobs')
-	.get(
+	.post(
 		verifyToken,
 		normalizeApplicatorUser,
 		authorize('APPLICATOR'),

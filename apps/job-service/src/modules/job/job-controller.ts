@@ -11,22 +11,40 @@ const createJob = catchAsync(async (req: Request, res: Response) => {
 	const result = await jobService.createJob(currentUser, data);
 	res.status(httpStatus.CREATED).json(result);
 });
+// const getAllJobsByApplicator = catchAsync(
+// 	async (req: Request, res: Response) => {
+// 		const options = pick(req.query, [
+// 			'limit',
+// 			'page',
+// 			'label',
+// 			'searchValue',
+// 		]);
+// 		const applicatorId = +req.payload.id;
+// 		const result = await jobService.getAllJobsByApplicator(
+// 			applicatorId,
+// 			options,
+// 		);
+// 		res.status(httpStatus.OK).json(result);
+// 	},
+// );
+
 const getAllJobsByApplicator = catchAsync(
 	async (req: Request, res: Response) => {
 		const options = pick(req.query, [
 			'limit',
-			'page',
-			'label',
-			'searchValue',
+			'page'
 		]);
 		const applicatorId = +req.payload.id;
+		const filtersOption = req.body
 		const result = await jobService.getAllJobsByApplicator(
 			applicatorId,
 			options,
+			filtersOption
 		);
 		res.status(httpStatus.OK).json(result);
 	},
 );
+
 const getJobById = catchAsync(async (req: Request, res: Response) => {
 	const currentUser = req.user;
 	const id = +req.params.jobId;
