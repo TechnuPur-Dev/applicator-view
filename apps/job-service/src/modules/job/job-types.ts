@@ -1,5 +1,5 @@
 import { JobType } from '@prisma/client';
-import { JobStatus } from '@prisma/client';
+// import { JobStatus } from '@prisma/client';
 interface CreateJob {
 	title: string; // Job title (Required)
 	type: JobType; // Enum for job type (Required)
@@ -27,8 +27,11 @@ interface CreateJob {
 	attachments?: object; // JSON object (Optional)
 }
 interface MyJobsFilters {
-  
-    statuses?: JobStatus[]; // Enum type array
-    groupBy?: ('Growers' | 'Zip' | 'county' | 'township' | 'Status')[]; 
+
+	dateRange:string,
+	fromDate:string,
+	toDate:string,
+    filter?: []; // Enum type array
+    groupBy?: ('Growers' | 'Zip' | 'Pilots'| 'Type'|'County' | 'City' | 'State')[]; 
 }
 export { CreateJob,MyJobsFilters };
