@@ -27,11 +27,19 @@ interface CreateJob {
 	attachments?: object; // JSON object (Optional)
 }
 interface MyJobsFilters {
-
-	dateRange:string,
-	fromDate:string,
-	toDate:string,
-    filter?: []; // Enum type array
-    groupBy?: ('Growers' | 'Zip' | 'Pilots'| 'Type'|'County' | 'City' | 'State')[]; 
+	startDate: string;
+	// dateRange: string;
+	// fromDate: string;
+	// toDate: string;
+	filter?: []; // Enum type array
+	groupBy?: (
+		| 'Growers'
+		| 'Zip'
+		| 'Pilots'
+		| 'Type'
+		| 'County'
+		| 'City'
+		| 'State'
+	)[];
 }
-export { CreateJob,MyJobsFilters };
+export { CreateJob, MyJobsFilters };

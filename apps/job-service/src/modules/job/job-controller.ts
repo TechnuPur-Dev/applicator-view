@@ -30,16 +30,13 @@ const getAllJobsByApplicator = catchAsync(
 
 const getAllJobsByApplicatorDashboard = catchAsync(
 	async (req: Request, res: Response) => {
-		const options = pick(req.query, [
-			'limit',
-			'page',
-		]);
+		const options = pick(req.query, ['limit', 'page']);
 		const applicatorId = +req.payload.id;
-		const filtersOption = req.body
+		const filtersOption = req.body;
 		const result = await jobService.getAllJobsByApplicatorDashboard(
 			applicatorId,
 			options,
-			filtersOption
+			filtersOption,
 		);
 		res.status(httpStatus.OK).json(result);
 	},
@@ -487,12 +484,8 @@ const getSearchProduct = catchAsync(async (req: Request, res: Response) => {
 const updateAutoJobStatus = catchAsync(async (req: Request, res: Response) => {
 	const userId = +req.params.userId;
 	const user = req.user;
-	const status = req.body.status
-	const result = await jobService.updateAutoJobStatus(
-		userId,
-		user,
-		status
-	);
+	const status = req.body.status;
+	const result = await jobService.updateAutoJobStatus(userId, user, status);
 	res.status(httpStatus.OK).json(result);
 });
 export default {
@@ -547,5 +540,5 @@ export default {
 	getHeadersDataForPilot,
 	getSearchProduct,
 	updateAutoJobStatus,
-	getAllJobsByApplicatorDashboard
+	getAllJobsByApplicatorDashboard,
 };

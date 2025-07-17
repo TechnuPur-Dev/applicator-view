@@ -1,35 +1,14 @@
-# Step 1: Base image
 FROM node:20.12.2-alpine
 
-# Set environment variables
-ENV NODE_ENV=production
-
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
 COPY package.json package-lock.json ./
-
-# Install all dependencies (including devDependencies)
 RUN npm install
 
-# Change ownership of node_modules to current user
-RUN chown -R node:node /app/node_modules
+COPY ./apps/job-service ./apps/job-service
+COPY ./shared ./shared
 
-# Copy the rest of your application code to the working directory
-COPY --chown=node:node . .
+WORKDIR /app/apps/job-service
+RUN npm run build
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build application
-RUN npm run build:job-service
-
-# Switch to non-root user
-USER node
-
-# Expose the port
-EXPOSE 3000
-
-# Application startup
-CMD ["node", "./apps/job-service/build/index.js"]
+CMD ["node", "dist/main.js"]
