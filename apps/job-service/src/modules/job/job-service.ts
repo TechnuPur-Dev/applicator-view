@@ -28,6 +28,7 @@ import { convertKmlToGeoJson } from '../../util/kml-to-geoJson';
 import { uploadToAzureBlob } from '../../util/azure-uploader';
 import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
 import { groupBy } from 'lodash';
+import moment from 'moment';
 
 // create grower
 const createJob = async (user: User, data: CreateJob) => {
@@ -446,316 +447,14 @@ const createJob = async (user: User, data: CreateJob) => {
 };
 
 // Get job list by applicator with filters
-// const getAllJobsByApplicator = async (
-// 	applicatorId: number,
-// 	options: PaginateOptions & {
-// 		label?: string;
-// 		searchValue?: string;
-// 	},
-// ) => {
-// 	// Set pagination
-// 	const limit =
-// 		options.limit && parseInt(options.limit, 10) > 0
-// 			? parseInt(options.limit, 10)
-// 			: 10;
-// 	const page =
-// 		options.page && parseInt(options.page, 10) > 0
-// 			? parseInt(options.page, 10)
-// 			: 1;
-// 	const skip = (page - 1) * limit;
-
-// 	// Build filters dynamically
-// 	const filters: Prisma.JobWhereInput = {
-// 		applicatorId,
-// 		status: {
-// 			in: [
-// 				'READY_TO_SPRAY',
-// 				'ASSIGNED_TO_PILOT',
-// 				'PILOT_REJECTED',
-// 				'IN_PROGRESS',
-// 				'SPRAYED',
-// 				'INVOICED',
-// 				'PAID',
-// 			],
-// 		},
-// 	};
-
-// 	// Apply dynamic label filtering
-// 	if (options.label && options.searchValue) {
-// 		const searchFilter: Prisma.JobWhereInput = {};
-// 		const searchValue = options.searchValue;
-// 		if (options.label === 'all') {
-// 			const searchValue = options.searchValue?.toUpperCase();
-
-// 			// Try to match enums first
-// 			const isJobTypeMatch = Object.values(JobType).includes(
-// 				searchValue as JobType,
-// 			);
-// 			const isJobSourceMatch = Object.values(JobSource).includes(
-// 				searchValue as JobSource,
-// 			);
-// 			const isJobStatusMatch = Object.values(JobStatus).includes(
-// 				searchValue as JobStatus,
-// 			);
-
-// 			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
-// 				// Only filter on the first matched enum
-// 				if (isJobTypeMatch) {
-// 					filters.type = searchValue as JobType;
-// 				} else if (isJobSourceMatch) {
-// 					filters.source = searchValue as JobSource;
-// 				} else if (isJobStatusMatch) {
-// 					filters.status = searchValue as JobStatus;
-// 				}
-// 			} else {
-// 				Object.assign(filters, {
-// 					OR: [
-// 						{
-// 							title: {
-// 								contains: options.searchValue,
-// 								mode: 'insensitive',
-// 							},
-// 						},
-// 						{
-// 							farm: {
-// 								name: {
-// 									contains: options.searchValue,
-// 									mode: 'insensitive',
-// 								},
-// 							},
-// 						},
-// 						{
-// 							grower: {
-// 								OR: [
-// 									{
-// 										id: !isNaN(Number(searchValue))
-// 											? parseInt(searchValue, 10)
-// 											: undefined,
-// 									},
-// 									{
-// 										fullName: {
-// 											contains: options.searchValue,
-// 											mode: 'insensitive',
-// 										},
-// 									},
-// 								],
-// 							},
-// 						},
-// 					],
-// 				});
-// 			}
-// 		} else {
-// 			switch (options.label) {
-// 				case 'title':
-// 					searchFilter.title = {
-// 						contains: searchValue,
-// 						mode: 'insensitive',
-// 					};
-// 					break;
-// 				case 'type':
-// 					searchFilter.type = {
-// 						equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
-// 					};
-// 					break;
-// 				case 'source':
-// 					searchFilter.source = {
-// 						equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
-// 					};
-// 					break;
-
-// 				case 'growerName':
-// 					searchFilter.grower = {
-// 						OR: [
-// 							{
-// 								fullName: {
-// 									contains: searchValue,
-// 									mode: 'insensitive',
-// 								},
-// 							},
-// 							{
-// 								firstName: {
-// 									contains: searchValue,
-// 									mode: 'insensitive',
-// 								},
-// 							},
-// 							{
-// 								lastName: {
-// 									contains: searchValue,
-// 									mode: 'insensitive',
-// 								},
-// 							},
-// 						],
-// 					};
-// 					break;
-// 				case 'growerId':
-// 					searchFilter.growerId = parseInt(searchValue, 10);
-
-// 					break;
-// 				case 'status':
-// 					searchFilter.status =
-// 						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
-// 					break;
-// 				case 'township':
-// 					searchFilter.farm = {
-// 						township: {
-// 							contains: searchValue,
-// 							mode: 'insensitive',
-// 						},
-// 					};
-// 					break;
-// 				case 'county':
-// 					searchFilter.farm = {
-// 						county: { contains: searchValue, mode: 'insensitive' },
-// 					};
-// 					break;
-// 				case 'state':
-// 					searchFilter.farm = {
-// 						state: {
-// 							name: {
-// 								contains: searchValue,
-// 								mode: 'insensitive',
-// 							},
-// 						},
-// 					};
-// 					break;
-
-// 				case 'pilot':
-// 					searchFilter.fieldWorker = {
-// 						fullName: {
-// 							contains: searchValue,
-// 							mode: 'insensitive',
-// 						},
-// 					};
-// 					break;
-// 				case 'startDate':
-// 					searchFilter.startDate = {
-// 						gte: new Date(searchValue),
-// 					};
-// 					break;
-// 				case 'endDate':
-// 					searchFilter.endDate = {
-// 						lte: new Date(searchValue),
-// 					};
-// 					break;
-// 				default:
-// 					throw new Error('Invalid label provided.');
-// 			}
-
-// 			Object.assign(filters, searchFilter); // Merge filters dynamically
-// 		}
-// 	}
-
-// 	// Fetch jobs
-// 	const jobs = await prisma.job.findMany({
-// 		where: filters,
-// 		include: {
-// 			grower: {
-// 				select: {
-// 					firstName: true,
-// 					lastName: true,
-// 					fullName: true,
-// 					email: true,
-// 					phoneNumber: true,
-// 					growers: {
-// 						where: {
-// 							applicatorId,
-// 						},
-// 						select: {
-// 							growerFirstName: true,
-// 							growerLastName: true,
-// 						},
-// 					},
-// 				},
-// 			},
-// 			fieldWorker: {
-// 				select: {
-// 					fullName: true,
-// 				},
-// 			},
-// 			farm: {
-// 				select: {
-// 					name: true,
-// 					state: true,
-// 					county: true,
-// 					township: true,
-// 					zipCode: true,
-// 				},
-// 			},
-// 			fields: {
-// 				select: {
-// 					actualAcres: true,
-// 					field: {
-// 						select: {
-// 							name: true,
-// 							acres: true,
-// 							crop: true,
-// 							config: true,
-// 							latitude: true,
-// 							longitude: true,
-// 						},
-// 					},
-// 				},
-// 			},
-// 		},
-// 		skip,
-// 		take: limit,
-// 		orderBy: {
-// 			id: 'desc',
-// 		},
-// 	});
-
-// 	const formattedJobs = jobs.map((job) => {
-// 		const applicatorGrower = job.grower?.growers?.[0];
-// 		const growerFirstName = applicatorGrower?.growerFirstName || '';
-// 		const growerLastName = applicatorGrower?.growerLastName || '';
-// 		return {
-// 			...job,
-// 			grower: {
-// 				...job.grower,
-// 				growers: undefined,
-// 				firstName: growerFirstName,
-// 				lastName: growerLastName,
-// 				fullName: `${growerFirstName} ${growerLastName}`,
-// 			},
-// 			totalAcres: parseFloat(
-// 				job.fields
-// 					.reduce(
-// 						(sum, f) => sum + (f.actualAcres?.toNumber?.() || 0),
-// 						0,
-// 					)
-// 					.toFixed(2),
-// 			),
-// 			latitude: job.fields[0].field.latitude,
-// 			longitude: job.fields[0].field.longitude,
-// 		};
-// 	});
-
-// 	// Count total results for pagination
-// 	const totalResults = await prisma.job.count({
-// 		where: filters,
-// 	});
-
-// 	const totalPages = Math.ceil(totalResults / limit);
-
-// 	return {
-// 		result: formattedJobs,
-// 		page,
-// 		limit,
-// 		totalPages,
-// 		totalResults,
-// 	};
-// };
-
 const getAllJobsByApplicator = async (
 	applicatorId: number,
 	options: PaginateOptions & {
 		label?: string;
 		searchValue?: string;
 	},
-	filtersOption: MyJobsFilters
 ) => {
 	// Set pagination
-	console.log(filtersOption, 'filtersOption')
 	const limit =
 		options.limit && parseInt(options.limit, 10) > 0
 			? parseInt(options.limit, 10)
@@ -769,16 +468,183 @@ const getAllJobsByApplicator = async (
 	// Build filters dynamically
 	const filters: Prisma.JobWhereInput = {
 		applicatorId,
-		AND: [
-			{ status: { in: filtersOption.statuses } },
-		],
+		status: {
+			in: [
+				'READY_TO_SPRAY',
+				'ASSIGNED_TO_PILOT',
+				'PILOT_REJECTED',
+				'IN_PROGRESS',
+				'SPRAYED',
+				'INVOICED',
+				'PAID',
+			],
+		},
 	};
 
-	// if (filtersOption.statuses?.length) {
-	// 	filters.status = { in: filtersOption.statuses };
-	// }
+	// Apply dynamic label filtering
+	if (options.label && options.searchValue) {
+		const searchFilter: Prisma.JobWhereInput = {};
+		const searchValue = options.searchValue;
+		if (options.label === 'all') {
+			const searchValue = options.searchValue?.toUpperCase();
 
-	console.log(filters, 'filters')
+			// Try to match enums first
+			const isJobTypeMatch = Object.values(JobType).includes(
+				searchValue as JobType,
+			);
+			const isJobSourceMatch = Object.values(JobSource).includes(
+				searchValue as JobSource,
+			);
+			const isJobStatusMatch = Object.values(JobStatus).includes(
+				searchValue as JobStatus,
+			);
+
+			if (isJobTypeMatch || isJobSourceMatch || isJobStatusMatch) {
+				// Only filter on the first matched enum
+				if (isJobTypeMatch) {
+					filters.type = searchValue as JobType;
+				} else if (isJobSourceMatch) {
+					filters.source = searchValue as JobSource;
+				} else if (isJobStatusMatch) {
+					filters.status = searchValue as JobStatus;
+				}
+			} else {
+				Object.assign(filters, {
+					OR: [
+						{
+							title: {
+								contains: options.searchValue,
+								mode: 'insensitive',
+							},
+						},
+						{
+							farm: {
+								name: {
+									contains: options.searchValue,
+									mode: 'insensitive',
+								},
+							},
+						},
+						{
+							grower: {
+								OR: [
+									{
+										id: !isNaN(Number(searchValue))
+											? parseInt(searchValue, 10)
+											: undefined,
+									},
+									{
+										fullName: {
+											contains: options.searchValue,
+											mode: 'insensitive',
+										},
+									},
+								],
+							},
+						},
+					],
+				});
+			}
+		} else {
+			switch (options.label) {
+				case 'title':
+					searchFilter.title = {
+						contains: searchValue,
+						mode: 'insensitive',
+					};
+					break;
+				case 'type':
+					searchFilter.type = {
+						equals: searchValue.toUpperCase() as JobType, // Ensure type matches your Prisma enum
+					};
+					break;
+				case 'source':
+					searchFilter.source = {
+						equals: searchValue.toUpperCase() as JobSource, // Ensure type matches your Prisma enum
+					};
+					break;
+
+				case 'growerName':
+					searchFilter.grower = {
+						OR: [
+							{
+								fullName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								firstName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchValue,
+									mode: 'insensitive',
+								},
+							},
+						],
+					};
+					break;
+				case 'growerId':
+					searchFilter.growerId = parseInt(searchValue, 10);
+
+					break;
+				case 'status':
+					searchFilter.status =
+						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+					break;
+				case 'township':
+					searchFilter.farm = {
+						township: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
+					};
+					break;
+				case 'county':
+					searchFilter.farm = {
+						county: { contains: searchValue, mode: 'insensitive' },
+					};
+					break;
+				case 'state':
+					searchFilter.farm = {
+						state: {
+							name: {
+								contains: searchValue,
+								mode: 'insensitive',
+							},
+						},
+					};
+					break;
+
+				case 'pilot':
+					searchFilter.fieldWorker = {
+						fullName: {
+							contains: searchValue,
+							mode: 'insensitive',
+						},
+					};
+					break;
+				case 'startDate':
+					searchFilter.startDate = {
+						gte: new Date(searchValue),
+					};
+					break;
+				case 'endDate':
+					searchFilter.endDate = {
+						lte: new Date(searchValue),
+					};
+					break;
+				default:
+					throw new Error('Invalid label provided.');
+			}
+
+			Object.assign(filters, searchFilter); // Merge filters dynamically
+		}
+	}
 
 	// Fetch jobs
 	const jobs = await prisma.job.findMany({
@@ -839,94 +705,222 @@ const getAllJobsByApplicator = async (
 		},
 	});
 
-	//fetch job by status makes grouped
-	let formattedResponse;
-	if ((filtersOption.statuses?.length) && (!filtersOption.groupBy?.length || filtersOption.groupBy?.length === 0)) {
-		const groupedJobs: Record<string, any[]> = {};
-		jobs.forEach((job) => {
-			const statusKey = job.status;
-			const applicatorGrower = job.grower?.growers?.[0];
-			const growerFirstName = applicatorGrower?.growerFirstName || '';
-			const growerLastName = applicatorGrower?.growerLastName || '';
-
-			if (!groupedJobs[statusKey]) {
-				groupedJobs[statusKey] = [];
-			}
-
-			groupedJobs[statusKey].push({
-				...job,
-				grower: {
-					...job.grower,
-					growers: undefined,
-					firstName: growerFirstName,
-					lastName: growerLastName,
-					fullName: `${growerFirstName} ${growerLastName}`,
-				},
-				totalAcres: parseFloat(
-					job.fields.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0).toFixed(2)
-				),
-				latitude: job.fields[0]?.field?.latitude || null,
-				longitude: job.fields[0]?.field?.longitude || null,
-			});
-		});
-
-		formattedResponse = Object.keys(groupedJobs).map((status) => ({
-			title: status,
-			jobs: groupedJobs[status],
-		}));
-	}
-
-	//fetch job grouped by 
-	const allGroupedResults = filtersOption.groupBy?.map((groupOption: any) => {
-		const groupedJobs: Record<string, any[]> = {};
-
-		jobs.forEach((job) => {
-			let key = 'Unknown';
-
-			if (groupOption === 'Growers') {
-				const grower = job.grower?.growers?.[0];
-				key = `${grower?.growerFirstName || ''} ${grower?.growerLastName || ''}`.trim() || 'Unknown Grower';
-			}
-			else if (groupOption === 'Pilots') {
-				key = job.fieldWorker?.fullName || 'Unknown Pilots';
-			}
-			else if (groupOption === 'Type') {
-				key = job.type || 'Unknown type';
-			}
-			 else if (groupOption === 'Zip') {
-				key = job.farm?.zipCode || 'Unknown ZipCode';
-			} else if (groupOption === 'County') {
-				key = job.farm?.county || 'Unknown County';
-			}
-			 else if (groupOption === 'City') {
-				key = job.farm?.township || 'Unknown County';
-			}
-			else if (groupOption === 'State') {
-				key = job.farm?.state?.name || 'Unknown State';
-			}
-
-			if (!groupedJobs[key]) {
-				groupedJobs[key] = [];
-			}
-
-			groupedJobs[key].push({
-				...job,
-				totalAcres: parseFloat(
-					job.fields.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0).toFixed(2)
-				),
-				latitude: job.fields[0]?.field?.latitude || null,
-				longitude: job.fields[0]?.field?.longitude || null,
-			});
-		});
-
+	const formattedJobs = jobs.map((job) => {
+		const applicatorGrower = job.grower?.growers?.[0];
+		const growerFirstName = applicatorGrower?.growerFirstName || '';
+		const growerLastName = applicatorGrower?.growerLastName || '';
 		return {
-			groupBy: groupOption,
-			data: Object.keys(groupedJobs).map((key) => ({
-				title: key,
-				jobs: groupedJobs[key],
-			})),
+			...job,
+			grower: {
+				...job.grower,
+				growers: undefined,
+				firstName: growerFirstName,
+				lastName: growerLastName,
+				fullName: `${growerFirstName} ${growerLastName}`,
+			},
+			totalAcres: parseFloat(
+				job.fields
+					.reduce(
+						(sum, f) => sum + (f.actualAcres?.toNumber?.() || 0),
+						0,
+					)
+					.toFixed(2),
+			),
+			latitude: job.fields[0]?.field?.latitude,
+			longitude: job.fields[0]?.field?.longitude,
 		};
 	});
+
+	// Count total results for pagination
+	const totalResults = await prisma.job.count({
+		where: filters,
+	});
+
+	const totalPages = Math.ceil(totalResults / limit);
+
+	return {
+		result: formattedJobs,
+		page,
+		limit,
+		totalPages,
+		totalResults,
+	};
+};
+
+const getAllJobsByApplicatorDashboard = async (
+	applicatorId: number,
+	options: PaginateOptions & {
+		label?: string;
+		searchValue?: string;
+	},
+	filtersOption: MyJobsFilters
+) => {
+	// Set pagination
+	const limit =
+		options.limit && parseInt(options.limit, 10) > 0
+			? parseInt(options.limit, 10)
+			: 10;
+	const page =
+		options.page && parseInt(options.page, 10) > 0
+			? parseInt(options.page, 10)
+			: 1;
+	const skip = (page - 1) * limit;
+	//const statuses = (filtersOption.filter || []).map((status: any) => status.toUpperCase());
+	// const hasUnassigned = statuses.includes('UNASSIGNED');
+	// const filteredStatuses = statuses.filter((status) => status !== 'UNASSIGNED');
+	// Build filters
+	const today = moment.utc().startOf('day').toDate();
+	const weekStart = moment.utc().startOf('isoWeek').toDate();
+	const monthStart = moment.utc().startOf('month').toDate();
+	console.log(monthStart,weekStart,today, 'monthStart')
+	let dateFilter: Prisma.JobWhereInput = {};
+
+	if (filtersOption.dateRange === 'today') {
+		dateFilter = {
+			createdAt: {
+				gte: today
+			}
+		};
+	} else if (filtersOption.dateRange === 'weekly') {
+		dateFilter = {
+			createdAt: {
+				gte: weekStart
+			}
+		};
+	} else if (filtersOption.dateRange === 'monthly') {
+		dateFilter = {
+			createdAt: {
+				gte: monthStart
+			}
+		};
+	}
+	const jobFilters: Prisma.JobWhereInput = {
+		applicatorId,
+		...dateFilter,
+		...(filtersOption.filter?.length
+			? { OR: [{ status: { in: filtersOption.filter } }] }
+			: {}),
+		// 	OR: [
+		//     filteredStatuses.length ? { status: { in: filteredStatuses } } : {},
+		//     hasUnassigned ? { fieldWorkerId: null } : {},
+		// ]
+	};
+
+
+
+
+	// Fetch jobs
+	const jobs = await prisma.job.findMany({
+		where: jobFilters,
+		include: {
+			grower: {
+				select: {
+					firstName: true,
+					lastName: true,
+					fullName: true,
+					email: true,
+					phoneNumber: true,
+					growers: {
+						where: {
+							applicatorId,
+						},
+						select: {
+							growerFirstName: true,
+							growerLastName: true,
+						},
+					},
+				},
+			},
+			fieldWorker: {
+				select: {
+					fullName: true,
+				},
+			},
+			farm: {
+				select: {
+					name: true,
+					state: true,
+					county: true,
+					township: true,
+					zipCode: true,
+				},
+			},
+			fields: {
+				select: {
+					actualAcres: true,
+					field: {
+						select: {
+							name: true,
+							acres: true,
+							crop: true,
+							config: true,
+							latitude: true,
+							longitude: true,
+						},
+					},
+				},
+			},
+		},
+		skip,
+		take: limit,
+		orderBy: {
+			id: 'desc',
+		},
+	});
+
+	//fetch job by status makes grouped
+	let formattedResponse;
+	//fetch job grouped by 
+	// const allGroupedResults = filtersOption.groupBy?.map((groupOption: any) => {
+	// 	const groupedJobs: Record<string, any[]> = {};
+
+	// 	jobs.forEach((job) => {
+	// 		let key = 'Unknown';
+
+	// 		if (groupOption === 'Growers') {
+	// 			const grower = job.grower?.growers?.[0];
+	// 			key = `${grower?.growerFirstName || ''} ${grower?.growerLastName || ''}`.trim() || 'Unknown Grower';
+	// 		}
+	// 		else if (groupOption === 'Pilots') {
+	// 			key = job.fieldWorker?.fullName || 'Unknown Pilots';
+	// 		}
+	// 		else if (groupOption === 'Type') {
+	// 			key = job.type || 'Unknown type';
+	// 		}
+	// 		 else if (groupOption === 'Zip') {
+	// 			key = job.farm?.zipCode || 'Unknown ZipCode';
+	// 		} else if (groupOption === 'County') {
+	// 			key = job.farm?.county || 'Unknown County';
+	// 		}
+	// 		 else if (groupOption === 'City') {
+	// 			key = job.farm?.township || 'Unknown County';
+	// 		}
+	// 		else if (groupOption === 'State') {
+	// 			key = job.farm?.state?.name || 'Unknown State';
+	// 		}
+
+	// 		if (!groupedJobs[key]) {
+	// 			groupedJobs[key] = [];
+	// 		}
+
+	// 		groupedJobs[key].push({
+	// 			...job,
+	// 			totalAcres: parseFloat(
+	// 				job.fields.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0).toFixed(2)
+	// 			),
+	// 			latitude: job.fields[0]?.field?.latitude || null,
+	// 			longitude: job.fields[0]?.field?.longitude || null,
+	// 		});
+	// 	});
+
+	// 	return {
+	// 		groupBy: groupOption,
+	// 		data: Object.keys(groupedJobs).map((key) => ({
+	// 			title: key,
+	// 			jobs: groupedJobs[key],
+	// 		})),
+	// 	};
+	// });
 
 	// if (filtersOption.groupBy?.includes('Growers')) {
 	// 	const groupedJobs: Record<string, any[]> = {};
@@ -962,7 +956,7 @@ const getAllJobsByApplicator = async (
 	// 		jobs: groupedJobs[groupKey],
 	// 	}));
 	// } 
-	// if (filtersOption.groupBy?.includes('Zip')) {
+	// else if (filtersOption.groupBy?.includes('Zip')) {
 	// 	const groupedJobs: Record<string, any[]> = {};
 	// 	jobs.forEach((job) => {
 	// 		const zipCode = job.farm?.zipCode || 'Unknown ZipCode';
@@ -985,79 +979,125 @@ const getAllJobsByApplicator = async (
 	// 		groupByZipCode: zipCode,
 	// 		jobs: groupedJobs[zipCode],
 	// 	}));
-	// } 
-	
-
-	// if (filtersOption.statuses?.length) {
-	// 	const groupedJobs: Record<string, any[]> = {};
-	// 	jobs.forEach((job) => {
-	// 		const statusKey = job.status;
-	// 		const applicatorGrower = job.grower?.growers?.[0];
-	// 		const growerFirstName = applicatorGrower?.growerFirstName || '';
-	// 		const growerLastName = applicatorGrower?.growerLastName || ''
-	// 		if (!groupedJobs[statusKey]) {
-	// 			groupedJobs[statusKey] = [];
-	// 		}
-	// 		groupedJobs[statusKey].push({
-	// 			...job,
-	// 			grower: {
-	// 				...job.grower,
-	// 				growers: undefined,
-	// 				firstName: growerFirstName,
-	// 				lastName: growerLastName,
-	// 				fullName: `${growerFirstName} ${growerLastName}`,
-	// 			},
-	// 			totalAcres: parseFloat(
-	// 				job.fields.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0).toFixed(2)
-	// 			),
-	// 			latitude: job.fields[0]?.field?.latitude || null,
-	// 			longitude: job.fields[0]?.field?.longitude || null,
-	// 		});
-	// 	});
-
-	// 	// Convert to array as required by frontend
-	// 	formattedResponse = Object.keys(groupedJobs).map((status) => ({
-	// 		title: status,
-	// 		jobs: groupedJobs[status]
-	// 	}));
-
 	// }
-	// const formattedJobs = jobs.map((job) => {
-	// 	const applicatorGrower = job.grower?.growers?.[0];
-	// 	const growerFirstName = applicatorGrower?.growerFirstName || '';
-	// 	const growerLastName = applicatorGrower?.growerLastName || '';
-	// 	return {
-	// 		...job,
-	// 		grower: {
-	// 			...job.grower,
-	// 			growers: undefined,
-	// 			firstName: growerFirstName,
-	// 			lastName: growerLastName,
-	// 			fullName: `${growerFirstName} ${growerLastName}`,
-	// 		},
-	// 		totalAcres: parseFloat(
-	// 			job.fields
-	// 				.reduce(
-	// 					(sum, f) => sum + (f.actualAcres?.toNumber?.() || 0),
-	// 					0,
-	// 				)
-	// 				.toFixed(2),
-	// 		),
-	// 		latitude: job.fields[0]?.field?.latitude || null,
-	// 		longitude: job.fields[0]?.field?.longitude || null,
-	// 	};
-	// });
+	if (filtersOption.groupBy?.length) {
+		console.log(filtersOption.groupBy?.length, "length")
+		const groupedJobs: Record<string, any[]> = {};
+		const groupBy = filtersOption.groupBy?.[0];
+
+		jobs.forEach((job) => {
+			const applicatorGrower = job.grower?.growers?.[0];
+			const growerFirstName = applicatorGrower?.growerFirstName || '';
+			const growerLastName = applicatorGrower?.growerLastName || '';
+			const growerName = `${growerFirstName} ${growerLastName}`.trim() || 'Unknown Grower';
+
+			let groupKey = 'Ungrouped';
+			switch (groupBy) {
+				case 'Growers':
+					console.log(growerName, "growerNAme")
+
+					groupKey = growerName;
+					break;
+				case 'Pilots':
+					groupKey = job.fieldWorker?.fullName || 'Unknown Pilot';
+					break;
+				case 'Type':
+					groupKey = job.type || 'Unknown Type';
+					break;
+				case 'Zip':
+					groupKey = job.farm?.zipCode || 'Unknown ZipCode';
+					break;
+				case 'County':
+					groupKey = job.farm?.county || 'Unknown County';
+					break;
+				case 'City':
+					groupKey = job.farm?.township || 'Unknown Township';
+					break;
+				case 'State':
+					groupKey = job.farm?.state?.name || 'Unknown State';
+					break;
+				default:
+					groupKey = job.status || 'Unknown Status';
+					break;
+			}
+
+			if (!groupedJobs[groupKey]) groupedJobs[groupKey] = [];
+
+			groupedJobs[groupKey].push({
+				...job,
+				grower: {
+					...job.grower,
+					growers: undefined,
+					firstName: growerFirstName,
+					lastName: growerLastName,
+					fullName: growerName,
+				},
+				totalAcres: parseFloat(job.fields.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0).toFixed(2)),
+				latitude: job.fields[0]?.field?.latitude || null,
+				longitude: job.fields[0]?.field?.longitude || null,
+			});
+		});
+
+		formattedResponse = Object.keys(groupedJobs).map((key) => ({
+			groupBy: groupBy,
+			title: key,
+			jobs: groupedJobs[key],
+		}));
+
+	}
+	else if (filtersOption.filter?.length) {
+		const groupedJobs: Record<string, any[]> = {};
+
+		jobs.forEach((job) => {
+
+			const statusKey = job.status?.toUpperCase() || 'UNKNOWN';
+
+			//if  fieldWorker null or hasUnassigned has status
+			// if (!job.fieldWorkerId && hasUnassigned) {
+			// 	statusKey = 'UNASSIGNED';
+			// }
+			const applicatorGrower = job.grower?.growers?.[0];
+			const growerFirstName = applicatorGrower?.growerFirstName || '';
+			const growerLastName = applicatorGrower?.growerLastName || ''
+			if (!groupedJobs[statusKey]) {
+				groupedJobs[statusKey] = [];
+			}
+			groupedJobs[statusKey].push({
+				...job,
+				grower: {
+					...job.grower,
+					growers: undefined,
+					firstName: growerFirstName,
+					lastName: growerLastName,
+					fullName: `${growerFirstName} ${growerLastName}`,
+				},
+				totalAcres: parseFloat(
+					job.fields.reduce((sum, f) => sum + (f.actualAcres?.toNumber?.() || 0), 0).toFixed(2)
+				),
+				latitude: job.fields[0]?.field?.latitude || null,
+				longitude: job.fields[0]?.field?.longitude || null,
+			});
+		});
+
+		// Convert to array as required by frontend
+		formattedResponse = Object.keys(groupedJobs).map((status) => ({
+			title: status,
+			jobs: groupedJobs[status]
+		}));
+
+	}
+
 
 	// Count total results for pagination
-	
+
 	const totalResults = await prisma.job.count({
-		where: filters,
+		where: jobFilters,
 	});
 
 	const totalPages = Math.ceil(totalResults / limit);
 
 	return {
-		result:filtersOption.groupBy?.length?  allGroupedResults: formattedResponse,
+		result: formattedResponse || [],
 		page,
 		limit,
 		totalPages,
@@ -7686,4 +7726,5 @@ export default {
 	getHeadersDataForPilot,
 	getSearchProduct,
 	updateAutoJobStatus,
+	getAllJobsByApplicatorDashboard
 };
