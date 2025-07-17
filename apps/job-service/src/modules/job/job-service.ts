@@ -772,7 +772,7 @@ const getAllJobsByApplicatorDashboard = async (
 	const today = moment.utc().startOf('day').toDate();
 	const weekStart = moment.utc().startOf('isoWeek').toDate();
 	const monthStart = moment.utc().startOf('month').toDate();
-	console.log(monthStart,weekStart,today, 'monthStart')
+	console.log(monthStart, weekStart, today, 'monthStart')
 	let dateFilter: Prisma.JobWhereInput = {};
 
 	if (filtersOption.dateRange === 'today') {
@@ -794,6 +794,22 @@ const getAllJobsByApplicatorDashboard = async (
 			}
 		};
 	}
+	else if (filtersOption.fromDate && !filtersOption.toDate) {
+		console.log(filtersOption.fromDate, 'filterDate')
+		const fromDate = moment(filtersOption.fromDate).startOf('day').toDate();
+		const toDate = moment(filtersOption.fromDate).endOf('day').toDate();
+		dateFilter.createdAt = {
+			gte: fromDate,
+			lte: toDate,
+		};
+	} else if (filtersOption.fromDate && filtersOption.toDate) {
+		dateFilter.createdAt = {
+			gte: new Date(filtersOption.fromDate),
+			lte: new Date(filtersOption.toDate)
+
+		}
+	}
+	console.log(dateFilter,'date')
 	const jobFilters: Prisma.JobWhereInput = {
 		applicatorId,
 		...dateFilter,

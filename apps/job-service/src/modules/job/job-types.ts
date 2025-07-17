@@ -29,6 +29,8 @@ interface CreateJob {
 interface MyJobsFilters {
 
 	dateRange:string,
+	fromDate:string,
+	toDate:string,
     filter?: []; // Enum type array
     groupBy?: ('Growers' | 'Zip' | 'Pilots'| 'Type'|'County' | 'City' | 'State')[]; 
 }
