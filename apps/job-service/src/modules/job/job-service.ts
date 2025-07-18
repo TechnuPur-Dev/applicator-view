@@ -755,32 +755,22 @@ const getAllJobsByApplicatorDashboard = async (
 	},
 	filtersOption: MyJobsFilters,
 ) => {
-	// Set pagination
-	const limit =
-		options.limit && parseInt(options.limit, 10) > 0
-			? parseInt(options.limit, 10)
-			: 10;
-	const page =
-		options.page && parseInt(options.page, 10) > 0
-			? parseInt(options.page, 10)
-			: 1;
+	// Setup pagination
+	const limit = options.limit && +options.limit > 0 ? +options.limit : 10;
+	const page = options.page && +options.page > 0 ? +options.page : 1;
 	const skip = (page - 1) * limit;
-	//const statuses = (filtersOption.filter || []).map((status: any) => status.toUpperCase());
-	// const hasUnassigned = statuses.includes('UNASSIGNED');
-	// const filteredStatuses = statuses.filter((status) => status !== 'UNASSIGNED');
-	// Build filters
 
+	// Date filter setup
 	const today = moment.utc().startOf('day').toDate();
 	const weekStart = moment.utc().startOf('isoWeek').toDate();
 	const monthStart = moment.utc().startOf('month').toDate();
 	const yearStart = moment.utc().startOf('year').toDate();
 
 	let dateFilter: Prisma.JobWhereInput = {};
-
 	const { startDate } = filtersOption;
 
 	if (!startDate || startDate.trim() === '' || startDate === 'default') {
-		// No filter, return all jobs
+		// No date filtering
 		dateFilter = {};
 	} else if (startDate === 'day') {
 		dateFilter = {
@@ -819,18 +809,44 @@ const getAllJobsByApplicatorDashboard = async (
 		console.warn('Invalid startDate:', startDate);
 	}
 
-	console.log(dateFilter, 'date');
+	// Status + UNASSIGNED filters
+	const filters = filtersOption.filter || [];
+	const hasUnassigned = filters.includes('UNASSIGNED');
+	const jobStatuses = filters.filter((status) => status !== 'UNASSIGNED');
+
+	const statusFilter =
+		jobStatuses.length > 0
+			? {
+					OR: jobStatuses.map((status) => ({ status })),
+				}
+			: {};
+
+	const unassignedFilter = hasUnassigned
+		? {
+				fieldWorkerId: null,
+			}
+		: {};
+
+	const combinedFilter: Prisma.JobWhereInput =
+		filters.length > 0
+			? hasUnassigned && jobStatuses.length > 0
+				? {
+						AND: [unassignedFilter, statusFilter],
+					}
+				: hasUnassigned
+					? unassignedFilter
+					: statusFilter
+			: {};
+
+	// Combine all filters
 	const jobFilters: Prisma.JobWhereInput = {
 		applicatorId,
 		...dateFilter,
-		...(filtersOption.filter?.length
-			? { OR: [{ status: { in: filtersOption.filter } }] }
-			: {}),
-		// 	OR: [
-		//     filteredStatuses.length ? { status: { in: filteredStatuses } } : {},
-		//     hasUnassigned ? { fieldWorkerId: null } : {},
-		// ]
+		...combinedFilter,
 	};
+
+	console.log(jobFilters);
+	
 
 	// Fetch jobs
 	const allJobs = await prisma.job.findMany({
@@ -876,20 +892,23 @@ const getAllJobsByApplicatorDashboard = async (
 							name: true,
 							acres: true,
 							crop: true,
-							// config: true,
 							latitude: true,
 							longitude: true,
+							// config: true,
 						},
 					},
 				},
 			},
 		},
-		// skip,
-		// take: limit,
 		orderBy: {
 			startDate: 'desc',
 		},
+		// Uncomment if you want pagination
+		// skip,
+		// take: limit,
 	});
+	console.log("Jobs Length:",allJobs.length);
+	
 	const jobs = allJobs.map((job) => {
 		const applicatorGrower = job.grower?.growers?.[0];
 		const growerFirstName = applicatorGrower?.growerFirstName || '';
@@ -1100,51 +1119,53 @@ const getAllJobsByApplicatorDashboard = async (
 			title: key,
 			jobs: groupedJobs[key],
 		}));
-	} else if (filtersOption.filter?.length !== 0) {
-		const groupedJobs: Record<string, any[]> = {};
+	} 
+	// else if (filtersOption.filter?.length !== 0) {
+	// 	const groupedJobs: Record<string, any[]> = {};
 
-		allJobs.forEach((job) => {
-			const statusKey = job.status?.toUpperCase() || 'UNKNOWN';
+	// 	allJobs.forEach((job) => {
+	// 		const statusKey = job.status?.toUpperCase() || 'UNKNOWN';
 
-			//if  fieldWorker null or hasUnassigned has status
-			// if (!job.fieldWorkerId && hasUnassigned) {
-			// 	statusKey = 'UNASSIGNED';
-			// }
-			const applicatorGrower = job.grower?.growers?.[0];
-			const growerFirstName = applicatorGrower?.growerFirstName || '';
-			const growerLastName = applicatorGrower?.growerLastName || '';
-			if (!groupedJobs[statusKey]) {
-				groupedJobs[statusKey] = [];
-			}
-			groupedJobs[statusKey].push({
-				...job,
-				grower: {
-					...job.grower,
-					growers: undefined,
-					firstName: growerFirstName,
-					lastName: growerLastName,
-					fullName: `${growerFirstName} ${growerLastName}`,
-				},
-				totalAcres: parseFloat(
-					job.fields
-						.reduce(
-							(sum, f) =>
-								sum + (f.actualAcres?.toNumber?.() || 0),
-							0,
-						)
-						.toFixed(2),
-				),
-				latitude: job.fields[0]?.field?.latitude || null,
-				longitude: job.fields[0]?.field?.longitude || null,
-			});
-		});
+	// 		//if  fieldWorker null or hasUnassigned has status
+	// 		// if (!job.fieldWorkerId && hasUnassigned) {
+	// 		// 	statusKey = 'UNASSIGNED';
+	// 		// }
+	// 		const applicatorGrower = job.grower?.growers?.[0];
+	// 		const growerFirstName = applicatorGrower?.growerFirstName || '';
+	// 		const growerLastName = applicatorGrower?.growerLastName || '';
+	// 		if (!groupedJobs[statusKey]) {
+	// 			groupedJobs[statusKey] = [];
+	// 		}
+	// 		groupedJobs[statusKey].push({
+	// 			...job,
+	// 			grower: {
+	// 				...job.grower,
+	// 				growers: undefined,
+	// 				firstName: growerFirstName,
+	// 				lastName: growerLastName,
+	// 				fullName: `${growerFirstName} ${growerLastName}`,
+	// 			},
+	// 			totalAcres: parseFloat(
+	// 				job.fields
+	// 					.reduce(
+	// 						(sum, f) =>
+	// 							sum + (f.actualAcres?.toNumber?.() || 0),
+	// 						0,
+	// 					)
+	// 					.toFixed(2),
+	// 			),
+	// 			latitude: job.fields[0]?.field?.latitude || null,
+	// 			longitude: job.fields[0]?.field?.longitude || null,
+	// 		});
+	// 	});
 
-		// Convert to array as required by frontend
-		formattedResponse = Object.keys(groupedJobs).map((status) => ({
-			title: status,
-			jobs: groupedJobs[status],
-		}));
-	} else {
+	// 	// Convert to array as required by frontend
+	// 	formattedResponse = Object.keys(groupedJobs).map((status) => ({
+	// 		title: status,
+	// 		jobs: groupedJobs[status],
+	// 	}));
+	// } 
+	else {
 		const groupedJobs = jobs.reduce(
 			(acc, job) => {
 				const date = moment(job.startDate).format('YYYY-MM-DD');

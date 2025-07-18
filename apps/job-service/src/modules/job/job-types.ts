@@ -26,12 +26,17 @@ interface CreateJob {
 	specialInstructions?: string; // Optional special instructions
 	attachments?: object; // JSON object (Optional)
 }
+type JobFilterStatus =
+	| 'READY_TO_SPRAY'
+	| 'IN_PROGRESS'
+	| 'SPRAYED'
+	| 'INVOICED'
+	| 'PAID';
+type ExtendedJobFilter = JobFilterStatus | 'UNASSIGNED';
+
 interface MyJobsFilters {
 	startDate: string;
-	// dateRange: string;
-	// fromDate: string;
-	// toDate: string;
-	filter?: []; // Enum type array
+	filter?: ExtendedJobFilter[];
 	groupBy?: (
 		| 'Growers'
 		| 'Zip'
@@ -42,4 +47,5 @@ interface MyJobsFilters {
 		| 'State'
 	)[];
 }
+
 export { CreateJob, MyJobsFilters };
