@@ -23,7 +23,7 @@ jobs:
 
       # start app on server
       - name: Start App on VPS server
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
