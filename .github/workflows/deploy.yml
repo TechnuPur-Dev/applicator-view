@@ -8,7 +8,7 @@ jobs:
     steps:
       # download repo code in github runner
       - name: Checkout repository in runner
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # copy repo files to server
       - name: Copy repo files to VPS server from runner
