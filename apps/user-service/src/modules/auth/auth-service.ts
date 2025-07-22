@@ -302,10 +302,10 @@ const verifyOTPAndRegisterEmail = async (body: verifyOTPAndRegisterEmail) => {
 	// Register the user
 	const user = await prisma.user.upsert({
 		where: {
-			email,
+			email: email.toLowerCase(),
 		},
 		create: {
-			email,
+			email: email.toLowerCase(),
 			role,
 		},
 		update: {},
