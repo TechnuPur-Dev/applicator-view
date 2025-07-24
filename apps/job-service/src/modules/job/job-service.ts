@@ -657,6 +657,7 @@ const getAllJobsByApplicator = async (
 					fullName: true,
 					email: true,
 					phoneNumber: true,
+					profileImage:true,
 					growers: {
 						where: {
 							applicatorId,
