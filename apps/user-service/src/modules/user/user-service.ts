@@ -3093,6 +3093,7 @@ const verifyInviteToken = async (token: string) => {
 		throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid role in token.');
 	}
 };
+
 const getWeather = async (user: User, options: City) => {
 	const OPEN_WEATHER_API_KEY = config.openWeatherKey;
 
@@ -3197,6 +3198,80 @@ const getWeather = async (user: User, options: City) => {
 	return { weather: formattedWeather };
 };
 
+const getWeatherV2 = async (user: User, options: City) => {
+	const WEATHER_API_KEY = '91e5c8a58b6143ed85a121257252407'; // Replace with your key
+
+	const userData = await prisma.user.findUnique({
+		where: { id: user.id },
+		select: { township: true },
+	});
+
+	const cityName = options.city || userData?.township;
+
+	const weatherUrl = `http://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${cityName}&days=3&aqi=yes`;
+	const response = await axios.get(weatherUrl);
+	const data = response.data;
+
+	const forecastDays = data.forecast.forecastday;
+
+	const degToCompass = (deg: number) => {
+		const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+		const index = Math.round(deg / 45) % 8;
+		return directions[index];
+	};
+
+	const groupedWeather: Record<string, any> = {};
+
+	forecastDays.forEach((day: any) => {
+		const date = day.date;
+		const dateObj = new Date(day.date);
+		const dayInfo = day.day;
+		const hourlyData = day.hour;
+
+		groupedWeather[date] = {
+			day: dateObj.toLocaleDateString('en-US', { weekday: 'long' }),
+			date: dateObj.toISOString(),
+			minTemp: dayInfo.mintemp_c,
+			maxTemp: dayInfo.maxtemp_c,
+			description: dayInfo.condition.text,
+			icon: dayInfo.condition.icon,
+			hourly: [],
+			aqi: day.hour[0]?.air_quality?.pm2_5 ? Math.round(day.hour[0].air_quality.pm2_5) : null,
+			city: data.location.name,
+			wind: {
+				speed: dayInfo.maxwind_kph,
+				direction: degToCompass(day.hour[0].wind_degree),
+				deg: day.hour[0].wind_degree,
+				gust: +(day.hour[0].gust_kph).toFixed(2),
+			},
+		};
+
+		hourlyData.forEach((hour: any) => {
+			const time = new Date(hour.time);
+			const hours = time.getHours();
+			const minutes = time.getMinutes().toString().padStart(2, '0');
+			const hour12 = hours % 12 || 12;
+			const ampm = hours >= 12 ? 'PM' : 'AM';
+			const time12 = `${hour12}:${minutes} ${ampm}`;
+
+			groupedWeather[date].hourly.push({
+				time: time12,
+				temperature: hour.temp_c,
+				description: hour.condition.text,
+				icon: hour.condition.icon,
+				wind: {
+					speed: hour.wind_kph,
+					gust: +(hour.gust_kph).toFixed(2),
+					deg: hour.wind_degree,
+					direction: degToCompass(hour.wind_degree),
+				},
+			});
+		});
+	});
+
+	const formattedWeather = Object.values(groupedWeather);
+	return { weather: formattedWeather };
+};
 const acceptOrRejectInviteThroughEmail = async (
 	token: string,
 	inviteStatus: InviteStatus,
@@ -3851,6 +3926,7 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
+	getWeatherV2,
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
 	getUsersByState,

@@ -184,6 +184,12 @@ const getWeather = catchAsync(async (req: Request, res: Response) => {
 	const result = await userService.getWeather(user, options);
 	res.status(httpStatus.OK).json(result);
 });
+const getWeatherV2 = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user;
+	const options = pick(req.query, ['city']);
+	const result = await userService.getWeatherV2(user, options);
+	res.status(httpStatus.OK).json(result);
+});
 const acceptOrRejectInviteThroughEmail = catchAsync(
 	async (req: Request, res: Response) => {
 		const { token, status, canManageFarms, farmPermissions } = req.body;
@@ -238,6 +244,7 @@ export default {
 	getPendingInvitesFromOthers,
 	verifyInviteToken,
 	getWeather,
+	getWeatherV2,
 	acceptOrRejectInviteThroughEmail,
 	getApplicatorById,
 	getUsersByState,
