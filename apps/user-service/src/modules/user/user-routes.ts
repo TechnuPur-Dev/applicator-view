@@ -134,6 +134,8 @@ router
 		userController.verifyInviteToken,
 	);
 router.route('/dashboard/weather').get(verifyToken, userController.getWeather);
+router.route('/dashboard/weather-api').get(verifyToken, userController.getWeatherV2);
+
 router
 	.route('/respond/invite-email')
 	.put(
