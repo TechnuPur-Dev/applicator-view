@@ -3173,6 +3173,12 @@ const getWeather = async (user: User, options: City) => {
 			temperature: item.main.temp,
 			description: item.weather[0].description,
 			icon: item.weather[0].icon,
+			wind: {
+				speed: +(item.wind.speed * 1.60934).toFixed(2),
+				deg:item.wind.deg,
+				gust: +(item.wind.gust * 1.60934).toFixed(2),
+				direction: degToCompass(item.wind.deg),
+			},
 		});
 	});
 
