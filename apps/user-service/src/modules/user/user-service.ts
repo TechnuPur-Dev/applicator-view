@@ -26,6 +26,7 @@ import {
 import { generateToken, verifyInvite } from '../../helper/invite-token';
 import { InviteStatus } from '@prisma/client';
 import { getUploader } from '../../../../../shared/helpers/uploaderFactory';
+import config from '../../config/env-config';
 
 const uploadProfileImage = async (
 	userId: number,
@@ -3093,7 +3094,7 @@ const verifyInviteToken = async (token: string) => {
 	}
 };
 const getWeather = async (user: User, options: City) => {
-	const OPEN_WEATHER_API_KEY = '4345ab71b47f32abf12039792c92f0c4';
+	const OPEN_WEATHER_API_KEY = config.openWeatherKey;
 
 	const userData = await prisma.user.findUnique({
 		where: { id: user.id },
@@ -3175,7 +3176,7 @@ const getWeather = async (user: User, options: City) => {
 			icon: item.weather[0].icon,
 			wind: {
 				speed: +(item.wind.speed * 1.60934).toFixed(2),
-				deg:item.wind.deg,
+				deg: item.wind.deg,
 				gust: +(item.wind.gust * 1.60934).toFixed(2),
 				direction: degToCompass(item.wind.deg),
 			},

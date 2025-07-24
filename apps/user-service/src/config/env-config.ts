@@ -36,6 +36,9 @@ const envVarsSchema = Joi.object({
 	SMARTY_AUTH_TOKEN: Joi.string()
 		.required()
 		.description('Auth Token for SMARTY'),
+	OPEN_WEATHER_API_KEY: Joi.string()
+		.required()
+		.description('API key for openWeather'),
 	JD_CLIENT_ID: Joi.string()
 		.required()
 		.description(
@@ -99,6 +102,7 @@ const config = {
 		smartyAuthId: envVars.SMARTY_AUTH_ID as string,
 		smartyAuthToken: envVars.SMARTY_AUTH_TOKEN as string,
 	},
+	openWeatherKey: envVars.OPEN_WEATHER_API_KEY as string,
 	johnDeere: {
 		jdClientId: envVars.JD_CLIENT_ID as string,
 		jdClientSecret: envVars.JD_CLIENT_SECRET as string,
