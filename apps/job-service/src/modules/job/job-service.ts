@@ -3666,7 +3666,7 @@ const getHeadersData = async (
 						: { growerId: id }),
 
 					status: {
-						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID'],
+						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID','ASSIGNED_TO_PILOT','IN_PROGRESS'],
 					},
 					...(options.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
