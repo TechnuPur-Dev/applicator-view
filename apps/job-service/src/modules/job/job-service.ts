@@ -486,7 +486,7 @@ const getAllJobsByApplicator = async (
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
 		if (options.label === 'all') {
-			const searchValue = options.searchValue?.toUpperCase();
+			const searchValue = options.searchValue?.toUpperCase().replace(/\s+/g, '_');
 
 			// Try to match enums first
 			const isJobTypeMatch = Object.values(JobType).includes(
@@ -508,7 +508,8 @@ const getAllJobsByApplicator = async (
 				} else if (isJobStatusMatch) {
 					filters.status = searchValue as JobStatus;
 				}
-			} else {
+			}
+			else {
 				Object.assign(filters, {
 					OR: [
 						{
@@ -527,6 +528,7 @@ const getAllJobsByApplicator = async (
 						},
 						{
 							grower: {
+
 								OR: [
 									{
 										id: !isNaN(Number(searchValue))
@@ -537,6 +539,43 @@ const getAllJobsByApplicator = async (
 										fullName: {
 											contains: options.searchValue,
 											mode: 'insensitive',
+										},
+									},
+									{
+										growers: {
+											some: {
+												OR: [
+													{
+														growerFirstName: {
+															contains: searchValue,
+															mode: 'insensitive',
+														},
+													},
+													{
+														growerLastName: {
+															contains: searchValue,
+															mode: 'insensitive',
+														},
+													},
+													{
+														// Full name search 
+														AND: [
+															{
+																growerFirstName: {
+																	contains: searchValue.split(' ')[0] || '',
+																	mode: 'insensitive',
+																},
+															},
+															{
+																growerLastName: {
+																	contains: searchValue.split(' ')[1] || '',
+																	mode: 'insensitive',
+																},
+															},
+														],
+													},
+												],
+											},
 										},
 									},
 								],
@@ -566,26 +605,34 @@ const getAllJobsByApplicator = async (
 
 				case 'growerName':
 					searchFilter.grower = {
-						OR: [
-							{
-								fullName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-							{
-								firstName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-							{
-								lastName: {
-									contains: searchValue,
-									mode: 'insensitive',
-								},
-							},
-						],
+						growers: {
+							some: {
+								OR: [
+									{
+										growerFirstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{
+										growerFirstName: {
+											contains: searchValue,
+											mode: 'insensitive',
+										},
+									},
+									{ // split(' ') is used in case user types full name 
+										growerFirstName: {
+											contains: searchValue.split(' ')[0] || '',
+											mode: 'insensitive',
+										},
+										growerLastName: {
+											contains: searchValue.split(' ')[1] || '',
+											mode: 'insensitive',
+										},
+									},
+								],
+							}
+						}
 					};
 					break;
 				case 'growerId':
@@ -594,7 +641,7 @@ const getAllJobsByApplicator = async (
 					break;
 				case 'status':
 					searchFilter.status =
-						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+						searchValue.toUpperCase().replace(/\s+/g, '_') as Prisma.EnumJobStatusFilter;
 					break;
 				case 'township':
 					searchFilter.farm = {
@@ -657,7 +704,7 @@ const getAllJobsByApplicator = async (
 					fullName: true,
 					email: true,
 					phoneNumber: true,
-					profileImage:true,
+					profileImage: true,
 					growers: {
 						where: {
 							applicatorId,
@@ -1682,7 +1729,7 @@ const getJobs = async (
 		const searchValue = options.searchValue;
 		// Global search if label is "All"
 		if (options.label === 'all') {
-			const searchValue = options.searchValue?.toUpperCase();
+			const searchValue = options.searchValue?.toUpperCase().replace(/\s+/g, '_');
 
 			// Try to match enums first
 			const isJobTypeMatch = Object.values(JobType).includes(
@@ -1752,7 +1799,7 @@ const getJobs = async (
 					break;
 				case 'status':
 					searchFilter.status =
-						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+						searchValue.toUpperCase().replace(/\s+/g, '_') as Prisma.EnumJobStatusFilter;
 					break;
 
 				case 'farm':
@@ -3666,7 +3713,7 @@ const getHeadersData = async (
 						: { growerId: id }),
 
 					status: {
-						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID','ASSIGNED_TO_PILOT','IN_PROGRESS'],
+						in: ['READY_TO_SPRAY', 'SPRAYED', 'INVOICED', 'PAID', 'ASSIGNED_TO_PILOT', 'IN_PROGRESS'],
 					},
 					...(options.startDate
 						? { createdAt: { gte: startDate, lte: endDate } }
@@ -4975,7 +5022,7 @@ const getAllJobInvoices = async (
 		const searchValue = options.searchValue;
 
 		if (options.label === 'all') {
-			const upperValue = searchValue.toUpperCase();
+			const upperValue = searchValue.toUpperCase().replace(/\s+/g, '_');
 
 			const isJobSourceMatch = Object.values(JobSource).includes(
 				upperValue as JobSource,
@@ -5088,7 +5135,7 @@ const getAllJobInvoices = async (
 					break;
 				case 'status':
 					searchFilter.status =
-						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+						searchValue.toUpperCase().replace(/\s+/g, '_') as Prisma.EnumJobStatusFilter;
 					break;
 				default:
 					throw new Error('Invalid label provided.');
@@ -5317,7 +5364,7 @@ const getMyJobsByPilot = async (
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
 		if (options.label === 'all') {
-			const upperValue = options.searchValue?.toUpperCase();
+			const upperValue = options.searchValue?.toUpperCase().replace(/\s+/g, '_');
 
 			// Try to match enums first
 			const isJobTypeMatch = Object.values(JobType).includes(
@@ -5444,7 +5491,7 @@ const getMyJobsByPilot = async (
 					break;
 				case 'status':
 					searchFilter.status =
-						searchValue.toUpperCase() as Prisma.EnumJobStatusFilter;
+						searchValue.toUpperCase().replace(/\s+/g, '_') as Prisma.EnumJobStatusFilter;
 					break;
 				case 'township':
 					searchFilter.farm = {
@@ -7141,7 +7188,7 @@ const getFaaReports = async (
 		const searchFilter: Prisma.JobWhereInput = {};
 		const searchValue = options.searchValue;
 		if (options.label === 'all') {
-			const upperValue = options.searchValue?.toUpperCase();
+			const upperValue = options.searchValue?.toUpperCase().replace(/\s+/g, '_');
 			// Try to match enums first
 			const isJobTypeMatch = Object.values(JobType).includes(
 				upperValue as JobType,
@@ -7196,7 +7243,7 @@ const getFaaReports = async (
 					break;
 				case 'status':
 					searchFilter.status = {
-						equals: searchValue.toUpperCase() as JobStatus, // Ensure type matches your Prisma enum
+						equals: searchValue.toUpperCase().replace(/\s+/g, '_') as JobStatus, // Ensure type matches your Prisma enum
 					};
 					break;
 				default:
