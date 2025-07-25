@@ -82,6 +82,9 @@ router
 	.route('/all-statuses/dropdown')
 	.get(verifyToken, jobController.getAllJobStatus);
 router
+	.route('/statuses/dropdown')
+	.get(verifyToken, jobController.getJobStatusForFilter);
+router
 	.route('/growers-list/by-applicator')
 	.get(
 		verifyToken,

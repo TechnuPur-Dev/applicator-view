@@ -88,6 +88,11 @@ const getAllJobStatus = catchAsync(async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({ result: jobData });
 });
 
+const getJobStatusForFilter = catchAsync(async (req: Request, res: Response) => {
+	const jobData = await jobService.getJobStatusForFilter();
+	res.status(httpStatus.OK).json({ result: jobData });
+});
+
 const getGrowerListForApplicator = catchAsync(
 	async (req: Request, res: Response) => {
 		const applicatorId = +req.payload.id;
@@ -497,6 +502,7 @@ export default {
 	getAllPilotsByApplicator,
 	getAllJobTypes,
 	getAllJobStatus,
+	getJobStatusForFilter,
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerId,

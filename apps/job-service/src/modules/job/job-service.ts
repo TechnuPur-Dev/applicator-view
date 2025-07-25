@@ -1529,6 +1529,26 @@ const getAllJobStatus = async () => {
 	return filteredStatuses;
 };
 
+const getJobStatusForFilter = async () => {
+	const jobStatusList = Object.values(JobStatus).map((status, index) => ({
+		id: index + 1,
+		name: status,
+	}));
+	// Filter the required statuses
+	const filteredStatuses = jobStatusList.filter((status) =>
+		[
+			'READY_TO_SPRAY',
+			'ASSIGNED_TO_PILOT',
+			'PILOT_REJECTED',
+			'IN_PROGRESS',
+			'SPRAYED',
+			'INVOICED',
+			'PAID',
+		].includes(status.name),
+	);
+
+	return filteredStatuses;
+};
 const getGrowerListForApplicator = async (applicatorId: number) => {
 	const growers = await prisma.applicatorGrower.findMany({
 		where: {
@@ -7582,6 +7602,7 @@ export default {
 	getAllPilotsByApplicator,
 	getAllJobTypes,
 	getAllJobStatus,
+	getJobStatusForFilter,
 	getGrowerListForApplicator,
 	getApplicatorListForGrower,
 	getFarmListByGrowerId,
